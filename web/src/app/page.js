@@ -587,7 +587,7 @@ ${item.snippet.description || "No description found."}
               </button>
               {loading && (
                 <div 
-                  className="absolute bottom-0 left-0 h-1 bg-gradient-to-r from-[#0070f3] to-[#00dfd8] transition-all duration-500 ease-out shadow-[0_0_10px_#00dfd8]"
+                  className="absolute bottom-0 left-0 h-px bg-gradient-to-r from-[#0070f3] to-[#00dfd8] transition-all duration-500 ease-out"
                   style={{ width: `${loadingStage}%` }}
                 ></div>
               )}
@@ -782,23 +782,17 @@ ${item.snippet.description || "No description found."}
         </div>
       </main>
 
-      {/* Neural Core Anchor (Bottom Right) */}
+      {/* Minimal Vercel-like Loading (Bottom Right) */}
       {loading && (
-        <div className="fixed bottom-10 right-10 z-[100] flex flex-col items-end gap-3 animate-in fade-in slide-in-from-right-10 duration-1000">
-            <div className="flex items-center gap-4 bg-black/40 backdrop-blur-xl border border-[#00dfd8]/20 px-5 py-3 rounded-2xl shadow-[0_0_50px_rgba(0,223,216,0.1)]">
-                <div className="text-right">
-                    <p className="text-[9px] font-black text-[#00dfd8] uppercase tracking-[0.2em] mb-0.5">Neural Uplink</p>
-                    <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest">Active Processing</p>
-                </div>
-                <div className="relative w-10 h-10 flex items-center justify-center">
-                    <div className="absolute inset-0 border-2 border-[#00dfd8]/20 rounded-full"></div>
-                    <div 
-                        className="absolute inset-0 border-2 border-[#00dfd8] rounded-full border-t-transparent animate-spin"
-                        style={{ animationDuration: '1.5s' }}
-                    ></div>
-                    <div className="w-2 h-2 bg-[#00dfd8] rounded-full animate-pulse shadow-[0_0_15px_#00dfd8]"></div>
-                </div>
+        <div className="fixed bottom-8 right-8 z-[100] animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="flex items-center gap-3 bg-black/80 backdrop-blur-xl border border-white/5 px-4 py-2.5 rounded-full shadow-2xl">
+            <div className="w-3 h-3 relative opacity-40">
+              <div className="absolute inset-0 border border-white/20 rounded-full"></div>
+              <div className="absolute inset-0 border border-white rounded-full border-t-transparent animate-spin"></div>
             </div>
+            <span className="text-[9px] font-bold text-[#444444] uppercase tracking-[0.3em]">{loadingText}</span>
+            <span className="text-[9px] font-bold text-[#222222] tabular-nums">{Math.round(loadingStage)}%</span>
+          </div>
         </div>
       )}
     </div>
