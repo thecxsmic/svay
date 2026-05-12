@@ -16,7 +16,10 @@ export async function fetchYouTubeVideos(filters) {
     throw error;
   }
 
-  return data.items || [];
+  return {
+    items: data.items || [],
+    nextPageToken: data.nextPageToken || null
+  };
 }
 
 /**

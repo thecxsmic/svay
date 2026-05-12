@@ -66,20 +66,40 @@ async function queueBackgroundSave(key, data, query) {
 export async function searchPipeline(filters) {
   const cacheKey = `search:${JSON.stringify(filters)}`;
 
-  /* 1. CACHE CHECK */
+  /* 1. PAGINATION CHECK (Skip cache and vector if pageToken is present) */
+  if (filters.pageToken) {
+    console.log(`[Pipeline] Fetching page token: ${filters.pageToken}`);
+    const { items: fresh, nextPageToken } = await fetchYouTubeVideos({ ...filters, maxResults: 50 });
+    
+    const videoIds = fresh.map(v => v.id.videoId);
+    const enriched = await fetchVideoStats(videoIds);
+    
+    const normalizedResults = enriched.map(item => ({
+      ...item,
+      distance: 0.95,
+      id: typeof item.id === 'string' ? { videoId: item.id } : item.id
+    }));
+
+    return { items: normalizedResults, nextPageToken };
+  }
+
+  /* 2. CACHE CHECK */
   if (!filters.disableCache) {
     const cached = await getCache(cacheKey);
     if (cached) {
       console.log("[Pipeline] Returning cached results");
       // Ensure all cached items have a distance for the UI
-      return cached.map(item => ({
-        ...item,
-        distance: item.distance ?? 0.95
-      }));
+      return {
+        items: cached.map(item => ({
+          ...item,
+          distance: item.distance ?? 0.95
+        })),
+        nextPageToken: null
+      };
     }
   }
 
-  /* 2. VECTOR SEARCH (Semantic) */
+  /* 3. VECTOR SEARCH (Semantic) */
   let vectorResults = [];
   try {
     const embedding = await createEmbedding(filters.query);
@@ -114,13 +134,13 @@ export async function searchPipeline(filters) {
   // in which case we might still want to show something relevant from YouTube
   if (filters.vectorOnly && reranked.length > 0 && hasKeywordMatch) {
     console.log(`[Pipeline] Vector-only: Found ${reranked.length} quality matches.`);
-    return reranked;
+    return { items: reranked, nextPageToken: null };
   }
 
-  /* 3. FALLBACK TO YOUTUBE (Fresh Data) */
+  /* 4. FALLBACK TO YOUTUBE (Fresh Data) */
   if (reranked.length < 10 || !hasKeywordMatch) {
     console.log(`[Pipeline] ${!hasKeywordMatch ? 'No keyword matches' : 'Too few results'}. Fetching fresh from YouTube...`);
-    const fresh = await fetchYouTubeVideos({ ...filters, maxResults: 50 });
+    const { items: fresh, nextPageToken } = await fetchYouTubeVideos({ ...filters, maxResults: 50 });
     
     const videoIds = fresh.map(v => v.id.videoId);
     const enriched = await fetchVideoStats(videoIds);
@@ -134,8 +154,9 @@ export async function searchPipeline(filters) {
     queueBackgroundSave(cacheKey, normalizedResults);
 
     // If virality sort is requested, sort the fresh results before returning
+    let finalResults = normalizedResults;
     if (filters.order === "virality") {
-      return normalizedResults
+      finalResults = normalizedResults
         .map(item => ({
           ...item,
           vScore: calculateViralityScore(item).score
@@ -144,10 +165,8 @@ export async function searchPipeline(filters) {
         .map(({ vScore, ...item }) => item);
     }
 
-    // If we have some vector results, merge them with fresh ones to provide variety
-    // but prioritize the fresh data as it's guaranteed to be relevant to the query
-    return normalizedResults;
+    return { items: finalResults, nextPageToken };
   }
 
-  return reranked;
+  return { items: reranked, nextPageToken: null };
 }

@@ -33,9 +33,32 @@ async function syncSchema() {
       )
     `);
     console.log("✓ Table 'pending_indexing' created or already exists.");
-    
-    // Check if there are other tables needed. 
-    // For now, this is the only one identified in the codebase.
+
+    await client.execute(`
+      CREATE TABLE IF NOT EXISTS channels (
+        id TEXT PRIMARY KEY,
+        custom_url TEXT,
+        title TEXT,
+        thumbnail TEXT,
+        statistics TEXT,
+        last_updated INTEGER
+      )
+    `);
+    console.log("✓ Table 'channels' created or already exists.");
+
+    await client.execute(`
+      CREATE TABLE IF NOT EXISTS videos (
+        id TEXT PRIMARY KEY,
+        channel_id TEXT,
+        title TEXT,
+        thumbnail TEXT,
+        statistics TEXT,
+        published_at TEXT,
+        last_updated INTEGER,
+        FOREIGN KEY (channel_id) REFERENCES channels (id)
+      )
+    `);
+    console.log("✓ Table 'videos' created or already exists.");
     
     console.log("Schema sync complete!");
   } catch (error) {

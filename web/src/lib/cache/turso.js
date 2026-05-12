@@ -141,3 +141,143 @@ export async function markAsIndexed(videoIds) {
     console.error("[Turso] Mark Complete Error:", error);
   }
 }
+
+/**
+ * Search channels in local database
+ */
+export async function searchChannelsLocal(query) {
+  if (!process.env.TURSO_DATABASE_URL) return [];
+
+  try {
+    const rs = await client.execute({
+      sql: `SELECT * FROM channels 
+            WHERE title LIKE ? 
+            OR custom_url LIKE ? 
+            OR id = ?
+            LIMIT 10`,
+      args: [`%${query}%`, `%${query}%`, query],
+    });
+
+    return rs.rows.map(row => ({
+      ...row,
+      statistics: JSON.parse(row.statistics),
+    }));
+  } catch (error) {
+    console.error("[Turso] Search Local Channels Error:", error);
+    return [];
+  }
+}
+
+/**
+ * Get channel from database
+ */
+export async function getChannel(query) {
+  if (!process.env.TURSO_DATABASE_URL) return null;
+
+  try {
+    // Try by ID, Custom URL (handle), or exact Title match
+    const rs = await client.execute({
+      sql: `SELECT * FROM channels 
+            WHERE id = ? 
+            OR custom_url = ? 
+            OR custom_url = ?
+            OR title COLLATE NOCASE = ?
+            LIMIT 1`,
+      args: [query, query, query.startsWith('@') ? query : `@${query}`, query],
+    });
+
+    if (rs.rows.length === 0) return null;
+    
+    const channel = rs.rows[0];
+    return {
+      ...channel,
+      statistics: JSON.parse(channel.statistics),
+    };
+  } catch (error) {
+    console.error("[Turso] Get Channel Error:", error);
+    return null;
+  }
+}
+
+/**
+ * Save channel and its videos to database
+ */
+export async function saveChannel(channel, videos = []) {
+  if (!process.env.TURSO_DATABASE_URL) return;
+
+  try {
+    const now = Math.floor(Date.now() / 1000);
+    
+    // 1. Save Channel
+    await client.execute({
+      sql: `INSERT OR REPLACE INTO channels (id, custom_url, title, thumbnail, statistics, last_updated)
+            VALUES (?, ?, ?, ?, ?, ?)`,
+      args: [
+        channel.id,
+        channel?.snippet?.customUrl || channel.custom_url || "",
+        channel?.snippet?.title || channel.title || "Unknown",
+        channel?.snippet?.thumbnails?.high?.url || channel?.snippet?.thumbnails?.default?.url || channel.thumbnail || null,
+        JSON.stringify(channel.statistics || {}),
+        now
+      ],
+    });
+
+    // 2. Save Videos (if any)
+    if (videos.length > 0) {
+      const videoBatch = videos.map(v => ({
+        sql: `INSERT OR REPLACE INTO videos (id, channel_id, title, thumbnail, statistics, published_at, last_updated)
+              VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        args: [
+          v.id,
+          channel.id,
+          v.snippet.title,
+          v.snippet.thumbnails?.high?.url || v.snippet.thumbnails?.default?.url,
+          JSON.stringify(v.statistics),
+          v.snippet.publishedAt,
+          now
+        ]
+      }));
+
+      await client.batch(videoBatch);
+      console.log(`[Turso] Saved channel ${channel.id} and ${videos.length} videos`);
+    } else {
+      console.log(`[Turso] Saved channel ${channel.id}`);
+    }
+  } catch (error) {
+    console.error("[Turso] Save Channel Error:", error);
+  }
+}
+
+/**
+ * Get videos for a channel from database
+ */
+export async function getChannelVideos(channelId) {
+  if (!process.env.TURSO_DATABASE_URL) return [];
+
+  try {
+    const rs = await client.execute({
+      sql: "SELECT * FROM videos WHERE channel_id = ? ORDER BY published_at DESC",
+      args: [channelId],
+    });
+
+    return rs.rows.map(row => ({
+      ...row,
+      statistics: JSON.parse(row.statistics),
+      snippet: {
+        title: row.title,
+        description: "", // Description not saved as per user request
+        thumbnails: { 
+          default: { url: row.thumbnail },
+          medium: { url: row.thumbnail },
+          high: { url: row.thumbnail } 
+        },
+        publishedAt: row.published_at,
+        channelId: row.channel_id,
+        channelTitle: row.channel_title || "" // Might want to add channel_title to videos table later
+      }
+    }));
+  } catch (error) {
+    console.error("[Turso] Get Channel Videos Error:", error);
+    return [];
+  }
+}

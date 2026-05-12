@@ -19,6 +19,7 @@ export function parseFilters(req) {
     captioned: params.get("captioned") === "true",
     disableCache: params.get("disableCache") === "true",
     vectorOnly: params.get("vectorOnly") === "true",
+    pageToken: params.get("pageToken") || undefined,
   };
 }
 
@@ -32,6 +33,10 @@ export function buildYouTubeSearchURL(filters) {
   url.searchParams.set("regionCode", filters.region || "US");
   url.searchParams.set("relevanceLanguage", filters.language || "en");
   url.searchParams.set("safeSearch", filters.safeSearch || "moderate");
+
+  if (filters.pageToken) {
+    url.searchParams.set("pageToken", filters.pageToken);
+  }
 
   // 'virality' is a custom sort handled in our pipeline, not by YouTube API
   const youtubeOrder = filters.order === "virality" ? "relevance" : (filters.order || "relevance");

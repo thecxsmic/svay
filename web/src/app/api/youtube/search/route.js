@@ -10,9 +10,9 @@ export async function GET(req) {
       return apiError(new Error("Query parameter 'q' is required"), 400);
     }
 
-    const results = await searchPipeline(filters);
+    const { items, nextPageToken } = await searchPipeline(filters);
 
-    return apiSuccess({ items: results });
+    return apiSuccess({ items, nextPageToken });
   } catch (error) {
     return apiError(error);
   }
