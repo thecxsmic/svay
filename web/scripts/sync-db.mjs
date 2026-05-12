@@ -1,5 +1,11 @@
 import "dotenv/config";
 import { createClient } from "@libsql/client";
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(__dirname, "../.env") });
 
 const client = createClient({
   url: process.env.TURSO_DATABASE_URL || "",
@@ -71,9 +77,29 @@ async function syncSchema() {
       )
     `);
     console.log("✓ Table 'user_subscriptions' created or already exists.");
-    
-    console.log("Schema sync complete!");
-  } catch (error) {
+
+    await client.execute(`
+      CREATE TABLE IF NOT EXISTS user_pins (
+        user_id TEXT,
+        channel_id TEXT,
+        created_at INTEGER,
+        PRIMARY KEY (user_id, channel_id),
+        FOREIGN KEY (channel_id) REFERENCES channels (id)
+      )
+    `);
+    console.log("✓ Table 'user_pins' created or already exists.");
+
+    await client.execute(`
+      CREATE TABLE IF NOT EXISTS user_channels (
+        user_id TEXT PRIMARY KEY,
+        channel_id TEXT,
+        created_at INTEGER,
+        FOREIGN KEY (channel_id) REFERENCES channels (id)
+      )
+    `);
+    console.log("✓ Table 'user_channels' created or already exists.");
+
+    console.log("Schema sync complete!");  } catch (error) {
     console.error("Error syncing schema:", error);
     process.exit(1);
   }

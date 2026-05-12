@@ -16,6 +16,8 @@
     "@libsql/client": "^0.17.3",
     "ai": "^6.0.177",
     "chart.js": "^4.5.1",
+    "framer-motion": "^12.38.0",
+    "lucide-react": "^1.14.0",
     "next": "16.2.6",
     "razorpay": "^2.9.6",
     "react": "19.2.4",

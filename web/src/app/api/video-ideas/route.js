@@ -2,7 +2,10 @@ import { generateObject } from "ai";
 import { groq } from "@ai-sdk/groq";
 import { z } from "zod";
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
+import { getUserChannel } from "@/lib/cache/turso";
 import { apiSuccess, apiError } from "@/lib/utils/response";
+import { calculateViralityScore } from "@/lib/ranking/virality";
 
 // Define the schema for video ideas
 const videoIdeasSchema = z.object({
@@ -10,22 +13,33 @@ const videoIdeasSchema = z.object({
     title: z.string().describe('Catchy, clickable video title that matches channel style'),
     description: z.string().describe('Detailed description explaining why this idea would work for this specific channel'),
     category: z.string().describe('Video category (Tutorial, Review, Challenge, Vlog, Gaming, etc.)'),
-    estimatedViews: z.string().describe('Estimated view range based on channel performance (e.g., "10K-25K") with confidence percentage'),
+    estimatedViews: z.string().describe('Estimated view range based on channel performance (e.g., "10K-25K")'),
     difficulty: z.enum(['Easy', 'Medium', 'Hard']).describe('Production difficulty level'),
     trending: z.boolean().describe('Whether this topic is currently trending'),
     tags: z.array(z.string()).describe('Relevant hashtags/keywords (max 5)'),
     targetAudience: z.string().describe('Specific audience segment this video targets'),
     bestPostTime: z.string().describe('Recommended posting time/day for maximum reach'),
     contentFormat: z.string().describe('Recommended format (Short-form, Long-form, Live, etc.)')
-  }))
-})
+  })).max(6)
+});
 
 export async function POST(request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return apiError(new Error("Unauthorized"), 401);
+
     const { channelId, channelData } = await request.json();
 
     if (!channelId && !channelData) {
       return apiError(new Error("Channel ID or Channel Data is required"), 400);
+    }
+
+    // Verify if this is the user's channel
+    const userChannel = await getUserChannel(userId);
+    const targetChannelId = channelId || channelData?.channel?.id;
+    
+    if (!userChannel || userChannel.id !== targetChannelId) {
+      return apiError(new Error("You can only generate ideas for your registered channel."), 403);
     }
 
     let channelInfo = channelData;
@@ -49,7 +63,6 @@ export async function POST(request) {
         throw new Error(channelResult.error || 'Failed to get channel information');
       }
 
-      // Map our pipeline response to what the generator expects
       channelInfo = {
         channel: channelResult.channel,
         recentVideos: channelResult.videos.map(v => ({
@@ -64,70 +77,203 @@ export async function POST(request) {
     const channel = channelInfo.channel;
     const recentVideos = channelInfo.recentVideos || [];
 
-    // Calculate advanced analytics
+    // 1. ANALYZE USER CHANNEL
     const analytics = calculateChannelAnalytics(channel, recentVideos);
+    const topVideos = [...recentVideos].sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0)).slice(0, 5);
 
-    // Create comprehensive context for AI
+    // 4. GENERATE SEARCH QUERIES
+    const searchQueries = [];
+    if (analytics.popularTopics && analytics.popularTopics.length > 0) {
+      searchQueries.push(...analytics.popularTopics.slice(0, 3).map(t => `${t} 2026`));
+      searchQueries.push(...analytics.popularTopics.slice(0, 3).map(t => `how to ${t}`));
+    } else {
+      searchQueries.push("trending topics 2026", "viral videos", "latest trends");
+    }
+
+    // 5. SEARCH TRENDING VIDEOS
+    // Parallel API searches
+    const apiKey = process.env.YOUTUBE_API_KEY;
+    const trendingVideos = [];
+    
+    await Promise.all(searchQueries.map(async (query) => {
+      try {
+        const url = new URL("https://www.googleapis.com/youtube/v3/search");
+        url.searchParams.set("part", "snippet");
+        url.searchParams.set("q", query);
+        url.searchParams.set("type", "video");
+        url.searchParams.set("maxResults", "10");
+        url.searchParams.set("order", "viewCount"); // get popular ones
+        // Keep recent videos only (<=45 days)
+        const date45DaysAgo = new Date();
+        date45DaysAgo.setDate(date45DaysAgo.getDate() - 45);
+        url.searchParams.set("publishedAfter", date45DaysAgo.toISOString());
+        url.searchParams.set("key", apiKey);
+
+        const res = await fetch(url.toString());
+        const data = await res.json();
+        
+        if (data.items) {
+          trendingVideos.push(...data.items);
+        }
+      } catch (err) {
+        console.error("Search query failed:", query, err);
+      }
+    }));
+
+    // Remove duplicates
+    const uniqueTrending = [];
+    const seenVideoIds = new Set();
+    for (const v of trendingVideos) {
+      const vid = v.id?.videoId;
+      if (vid && !seenVideoIds.has(vid)) {
+        seenVideoIds.add(vid);
+        uniqueTrending.push(vid);
+      }
+    }
+
+    // Fetch video stats to calculate metrics
+    let trendingWithStats = [];
+    if (uniqueTrending.length > 0) {
+      // Chunk requests by 50
+      const chunks = [];
+      for (let i = 0; i < uniqueTrending.length; i += 50) {
+        chunks.push(uniqueTrending.slice(i, i + 50));
+      }
+
+      for (const chunk of chunks) {
+        try {
+          const statsUrl = new URL("https://www.googleapis.com/youtube/v3/videos");
+          statsUrl.searchParams.set("part", "snippet,statistics");
+          statsUrl.searchParams.set("id", chunk.join(","));
+          statsUrl.searchParams.set("key", apiKey);
+          const statsRes = await fetch(statsUrl.toString());
+          const statsData = await statsRes.json();
+          if (statsData.items) {
+            trendingWithStats.push(...statsData.items);
+          }
+        } catch(err) {
+          console.error("Stats fetch failed", err);
+        }
+      }
+    }
+
+    // 6. CALCULATE VIRAL METRICS
+    const videosWithMetrics = trendingWithStats.map(item => {
+      const virality = calculateViralityScore(item);
+      return {
+        id: item.id,
+        title: item.snippet.title,
+        channelId: item.snippet.channelId,
+        channelTitle: item.snippet.channelTitle,
+        viewCount: parseInt(item.statistics.viewCount || 0),
+        likeCount: parseInt(item.statistics.likeCount || 0),
+        commentCount: parseInt(item.statistics.commentCount || 0),
+        publishedAt: item.snippet.publishedAt,
+        viralScore: virality.score,
+        engagementRate: virality.engagement,
+        dailyViews: virality.dailyViews
+      };
+    }).sort((a, b) => b.viralScore - a.viralScore);
+
+    // 7. FIND TOP COMPETITORS
+    const channelCounts = {};
+    for (const v of videosWithMetrics) {
+      if (v.channelId === targetChannelId) continue; // Skip own channel
+      if (!channelCounts[v.channelId]) {
+        channelCounts[v.channelId] = { id: v.channelId, title: v.channelTitle, count: 0, totalScore: 0 };
+      }
+      channelCounts[v.channelId].count++;
+      channelCounts[v.channelId].totalScore += v.viralScore;
+    }
+    
+    // Rank competitors
+    const topCompetitors = Object.values(channelCounts)
+      .sort((a, b) => b.totalScore - a.totalScore)
+      .slice(0, 2);
+
+    // 8. ANALYZE COMPETITORS
+    const competitorAnalysis = [];
+    for (const comp of topCompetitors) {
+      try {
+        const compVideosUrl = new URL("https://www.googleapis.com/youtube/v3/search");
+        compVideosUrl.searchParams.set("part", "snippet");
+        compVideosUrl.searchParams.set("channelId", comp.id);
+        compVideosUrl.searchParams.set("order", "date");
+        compVideosUrl.searchParams.set("type", "video");
+        compVideosUrl.searchParams.set("maxResults", "10");
+        compVideosUrl.searchParams.set("key", apiKey);
+        
+        const compRes = await fetch(compVideosUrl.toString());
+        const compData = await compRes.json();
+        
+        if (compData.items && compData.items.length > 0) {
+          const compVideoIds = compData.items.map(i => i.id.videoId).filter(Boolean);
+          if (compVideoIds.length > 0) {
+            const cStatsUrl = new URL("https://www.googleapis.com/youtube/v3/videos");
+            cStatsUrl.searchParams.set("part", "snippet,statistics");
+            cStatsUrl.searchParams.set("id", compVideoIds.join(","));
+            cStatsUrl.searchParams.set("key", apiKey);
+            const cStatsRes = await fetch(cStatsUrl.toString());
+            const cStatsData = await cStatsRes.json();
+            
+            if (cStatsData.items) {
+              const compTitles = cStatsData.items.map(i => i.snippet.title);
+              const compCommonWords = extractCommonWords(compTitles);
+              competitorAnalysis.push({
+                title: comp.title,
+                recentFormats: determineContentType(compTitles),
+                topTopics: compCommonWords.slice(0, 3),
+                avgViews: Math.round(cStatsData.items.reduce((sum, v) => sum + parseInt(v.statistics?.viewCount || 0), 0) / cStatsData.items.length)
+              });
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to analyze competitor", comp.title, err);
+      }
+    }
+
+    // 9. AGGREGATE MARKET INTELLIGENCE
+    const marketIntelligence = {
+      trendingTopics: extractCommonWords(videosWithMetrics.map(v => v.title)).slice(0, 8),
+      topViralVideos: videosWithMetrics.slice(0, 5).map(v => `"${v.title}" (${v.viewCount} views, Score: ${v.viralScore})`),
+      competitorInsights: competitorAnalysis
+    };
+
+    // 10. AI STRATEGY GENERATION
     const channelContext = `
-CHANNEL PROFILE ANALYSIS:
-Channel Name: ${channel.title}
-Subscriber Count: ${parseInt(channel.statistics?.subscriberCount || 0).toLocaleString()}
-Total Videos: ${channel.statistics?.videoCount || 0}
-Total Views: ${parseInt(channel.statistics?.viewCount || 0).toLocaleString()}
-Channel Description: ${channel.description?.substring(0, 500) || 'No description available'}...
+USER CHANNEL ANALYSIS:
+Name: ${channel.title}
+Avg Views/Video: ${analytics.avgViewsPerVideo.toLocaleString()}
+Engagement Rate: ${analytics.avgEngagementRate}%
+Top Formats: ${analytics.topContentType}
+Top Topics: ${analytics.popularTopics.join(', ')}
 
-PERFORMANCE METRICS:
-Average Views per Video: ${analytics.avgViewsPerVideo.toLocaleString()}
-Average Engagement Rate: ${analytics.avgEngagementRate}%
-Most Successful Content Type: ${analytics.topContentType}
-Best Performing Video: "${analytics.bestVideo?.title}" (${analytics.bestVideo?.viewCount?.toLocaleString()} views)
-Upload Frequency: ${analytics.uploadFrequency}
-View Growth Trend: ${analytics.growthTrend}
+TOP RECENT VIDEOS:
+${topVideos.map(v => `- "${v.title}" (${(v.viewCount || 0).toLocaleString()} views)`).join('\n')}
 
-RECENT VIDEO PERFORMANCE (Last ${recentVideos.length} videos):
-${recentVideos.slice(0, 10).map((video, i) => 
-  `${i + 1}. "${video.title}" - ${video.viewCount.toLocaleString()} views, ${video.likeCount || 0} likes, ${video.commentCount || 0} comments`
-).join('\n')}
+MARKET INTELLIGENCE (TRENDS & COMPETITORS):
+Trending Topics right now: ${marketIntelligence.trendingTopics.join(', ')}
+Top Viral Videos in niche:
+${marketIntelligence.topViralVideos.map(v => `- ${v}`).join('\n')}
 
-CONTENT PATTERNS DETECTED:
-- Video Length Preference: ${analytics.preferredLength}
-- Popular Topics: ${analytics.popularTopics.join(', ')}
-- Posting Schedule: ${analytics.postingPattern}
-- Audience Engagement: ${analytics.audienceEngagement}
-- Content Style: ${analytics.contentStyle}
+COMPETITOR STRATEGIES:
+${marketIntelligence.competitorInsights.map(c => `- ${c.title}: Avg Views ${c.avgViews}, Formats: ${c.recentFormats}, Topics: ${c.topTopics.join(', ')}`).join('\n')}
     `;
 
-    const currentDate = new Date().toISOString().split('T')[0];
-    const currentMonth = new Date().toLocaleString('default', { month: 'long' });
-
-    const prompt = `You are an advanced YouTube content strategist AI with deep expertise in viral content creation and audience psychology. 
-
-Based on this comprehensive channel analysis, generate 6 highly personalized, data-driven video ideas that are specifically tailored to THIS channel's unique audience, style, and performance patterns.
+    const prompt = `You are an elite YouTube strategist AI. 
+Based on the provided User Channel Analysis and Market Intelligence, generate 6 highly personalized, data-driven video ideas for this channel.
 
 ${channelContext}
 
 STRATEGIC GUIDELINES:
-1. ANALYZE THE DATA: Study the channel's top-performing content patterns, audience engagement style, and growth trajectory
-2. MATCH THE VOICE: Ensure ideas align with the channel's established tone, style, and brand identity
-3. LEVERAGE STRENGTHS: Build on what's already working well for this channel
-4. CURRENT TRENDS: Consider ${currentMonth} 2026 trends and seasonal opportunities
-5. REALISTIC PROJECTIONS: Base view estimates on actual channel performance data, not generic ranges
-6. AUDIENCE-FIRST: Consider what THIS specific audience wants to see next
-7. GROWTH STRATEGY: Mix content types - some for retention, some for growth, some for monetization
+1. Merge the channel's proven formats with emerging market trends.
+2. Find gaps competitors are missing or formats that can be improved.
+3. Base view estimates realistically on channel's avg views + viral potential.
+4. Ensure title hooks are click-optimized (curiosity, value, or emotion).
 
-CONTENT MIX REQUIREMENTS:
-- 2 ideas that build on the channel's proven successful formats
-- 2 ideas that could attract new audiences while staying true to the brand
-- 2 experimental ideas that could become new series or viral content
-
-For each idea, consider:
-- How it fits the channel's established content style
-- Why THIS audience would click and watch
-- Production feasibility
-- Potential for series/follow-up content
-- Monetization opportunities
-
-Generate ideas that feel like natural next steps for this channel's growth journey.`;
+Generate exactly 6 ideas that maximize growth potential.
+CRITICAL: Return ONLY a raw JSON object with the exact structure requested. Do NOT include "$schema", "properties", or any schema definitions in your output.`;
 
     const { object } = await generateObject({
       model: groq('openai/gpt-oss-120b'),
@@ -136,28 +282,34 @@ Generate ideas that feel like natural next steps for this channel's growth journ
       temperature: 0.7,
     });
 
-    // Add personalization score to each idea
-    const personalizedIdeas = object.ideas.map(idea => ({
+    // 11. SANITIZE AI RESPONSE
+    let ideas = object.ideas || [];
+    ideas = ideas.slice(0, 6); // Limit to 6
+
+    const sanitizedIdeas = ideas.map(idea => ({
       ...idea,
       personalizationScore: calculatePersonalizationScore(idea, analytics),
       channelFit: assessChannelFit(idea, channel, analytics)
     }));
 
+    // 12. REDUCE USER CREDITS
+    // TODO: Deduct 1 credit from user's account when credit system is fully implemented in DB schema.
+
+    // 13. RETURN FINAL REPORT
     return apiSuccess({
-      ideas: personalizedIdeas,
+      ideas: sanitizedIdeas,
       channelAnalytics: analytics,
+      marketIntelligence,
+      competitors: competitorAnalysis,
       generationContext: {
         channelId,
         channelName: channel.title,
-        analysisDate: new Date().toISOString(),
-        videosAnalyzed: recentVideos.length
+        analysisDate: new Date().toISOString()
       }
     });
 
   } catch (error) {
-    console.error('Error generating video ideas with Groq:', error);
-    
-    // Return enhanced fallback ideas if AI fails
+    console.error('Error generating video ideas:', error);
     return apiError(error, 500);
   }
 }
@@ -171,19 +323,16 @@ function calculateChannelAnalytics(channel, recentVideos) {
   const avgViewsPerVideo = recentVideos.length > 0 ? Math.round(totalViews / recentVideos.length) : 0;
   const avgEngagementRate = totalViews > 0 ? ((totalLikes + totalComments) / totalViews * 100).toFixed(2) : 0;
   
-  // Find best performing video
   const bestVideo = recentVideos.reduce((best, current) => 
     (current.viewCount || 0) > (best?.viewCount || 0) ? current : best, null
   );
   
-  // Analyze content patterns
-  const videoTitles = recentVideos.map(v => v.title.toLowerCase());
+  const videoTitles = recentVideos.map(v => v.title?.toLowerCase() || "");
   const commonWords = extractCommonWords(videoTitles);
   
-  // Determine upload frequency
   const uploadDates = recentVideos
-    .filter(v => v.published_at)
-    .map(v => new Date(v.published_at))
+    .filter(v => v.published_at || v.snippet?.publishedAt || v.publishedAt)
+    .map(v => new Date(v.published_at || v.snippet?.publishedAt || v.publishedAt))
     .sort((a, b) => b - a);
     
   const daysBetween = uploadDates.length > 1 ? 
@@ -211,12 +360,12 @@ function calculateChannelAnalytics(channel, recentVideos) {
 
 // Helper functions
 function extractCommonWords(titles) {
-  const words = titles.join(' ').split(/\s+/);
+  const words = titles.join(' ').split(/[^a-z0-9]+/i).filter(Boolean);
   const frequency = {};
   const stopWords = ['the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'how', 'what', 'why', 'when', 'where', 'who', 'i', 'you', 'my', 'this', 'that', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'can', 'must', 'a', 'an'];
   
   words.forEach(word => {
-    const cleanWord = word.toLowerCase().replace(/[^a-z]/g, '');
+    const cleanWord = word.toLowerCase();
     if (cleanWord.length > 3 && !stopWords.includes(cleanWord)) {
       frequency[cleanWord] = (frequency[cleanWord] || 0) + 1;
     }
@@ -224,17 +373,16 @@ function extractCommonWords(titles) {
   
   return Object.entries(frequency)
     .sort(([,a], [,b]) => b - a)
-    .slice(0, 10)
     .map(([word]) => word);
 }
 
 function determineContentType(titles) {
   const types = {
-    tutorial: ['tutorial', 'how', 'guide', 'tips', 'learn'],
-    review: ['review', 'test', 'vs', 'comparison', 'best'],
-    vlog: ['vlog', 'day', 'life', 'routine', 'daily'],
-    gaming: ['gaming', 'gameplay', 'game', 'play', 'stream'],
-    reaction: ['reaction', 'reacting', 'responds', 'react']
+    tutorial: ['tutorial', 'how', 'guide', 'tips', 'learn', 'fix'],
+    review: ['review', 'test', 'vs', 'comparison', 'best', 'unboxing'],
+    vlog: ['vlog', 'day', 'life', 'routine', 'daily', 'trip'],
+    gaming: ['gaming', 'gameplay', 'game', 'play', 'stream', 'lets play'],
+    reaction: ['reaction', 'reacting', 'responds', 'react', 'watch']
   };
   
   let maxCount = 0;

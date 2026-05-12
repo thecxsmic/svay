@@ -281,3 +281,143 @@ export async function getChannelVideos(channelId) {
     return [];
   }
 }
+
+/**
+ * Toggle a channel pin for a user
+ */
+export async function togglePin(userId, channelId) {
+  if (!process.env.TURSO_DATABASE_URL) return { success: false };
+
+  try {
+    const rs = await client.execute({
+      sql: "SELECT 1 FROM user_pins WHERE user_id = ? AND channel_id = ?",
+      args: [userId, channelId],
+    });
+
+    const isPinned = rs.rows.length > 0;
+
+    if (isPinned) {
+      await client.execute({
+        sql: "DELETE FROM user_pins WHERE user_id = ? AND channel_id = ?",
+        args: [userId, channelId],
+      });
+      return { success: true, pinned: false };
+    } else {
+      await client.execute({
+        sql: "INSERT INTO user_pins (user_id, channel_id, created_at) VALUES (?, ?, ?)",
+        args: [userId, channelId, Date.now()],
+      });
+      return { success: true, pinned: true };
+    }
+  } catch (error) {
+    console.error("[Turso] Toggle Pin Error:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Get all pinned channels for a user
+ */
+export async function getPinnedChannels(userId) {
+  if (!process.env.TURSO_DATABASE_URL) return [];
+
+  try {
+    const rs = await client.execute({
+      sql: `SELECT c.* FROM channels c 
+            JOIN user_pins p ON c.id = p.channel_id 
+            WHERE p.user_id = ? 
+            ORDER BY p.created_at DESC`,
+      args: [userId],
+    });
+
+    return rs.rows.map(row => ({
+      ...row,
+      statistics: JSON.parse(row.statistics),
+    }));
+  } catch (error) {
+    console.error("[Turso] Get Pinned Channels Error:", error);
+    return [];
+  }
+}
+
+/**
+ * Check if a channel is pinned by a user
+ */
+export async function isChannelPinned(userId, channelId) {
+  if (!process.env.TURSO_DATABASE_URL) return false;
+
+  try {
+    const rs = await client.execute({
+      sql: "SELECT 1 FROM user_pins WHERE user_id = ? AND channel_id = ?",
+      args: [userId, channelId],
+    });
+
+    return rs.rows.length > 0;
+  } catch (error) {
+    console.error("[Turso] Check Pin Error:", error);
+    return false;
+  }
+}
+
+/**
+ * Set the primary user channel
+ */
+export async function setUserChannel(userId, channelId) {
+  if (!process.env.TURSO_DATABASE_URL) return { success: false };
+
+  try {
+    await client.execute({
+      sql: "INSERT OR REPLACE INTO user_channels (user_id, channel_id, created_at) VALUES (?, ?, ?)",
+      args: [userId, channelId, Date.now()],
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("[Turso] Set User Channel Error:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Get the primary user channel for a user
+ */
+export async function getUserChannel(userId) {
+  if (!process.env.TURSO_DATABASE_URL) return null;
+
+  try {
+    const rs = await client.execute({
+      sql: `SELECT c.* FROM channels c 
+            JOIN user_channels uc ON c.id = uc.channel_id 
+            WHERE uc.user_id = ?`,
+      args: [userId],
+    });
+
+    if (rs.rows.length === 0) return null;
+
+    const row = rs.rows[0];
+    return {
+      ...row,
+      statistics: JSON.parse(row.statistics),
+    };
+  } catch (error) {
+    console.error("[Turso] Get User Channel Error:", error);
+    return null;
+  }
+}
+
+/**
+ * Unset the primary user channel
+ */
+export async function unsetUserChannel(userId) {
+  if (!process.env.TURSO_DATABASE_URL) return { success: false };
+
+  try {
+    await client.execute({
+      sql: "DELETE FROM user_channels WHERE user_id = ?",
+      args: [userId],
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("[Turso] Unset User Channel Error:", error);
+    return { success: false, error: error.message };
+  }
+}
