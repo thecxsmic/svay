@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { EngagementPieChart } from "../components/ChannelCharts";
+import { EngagementPieChart, CompetitorRadarChart, VideoPerformanceScatter, CompetitorBarComparison } from "../components/ChannelCharts";
 
 function CompetitorsContent() {
   const searchParams = useSearchParams();
@@ -345,6 +345,29 @@ function CompetitorsContent() {
             <div className="min-h-[60vh] animate-in fade-in slide-in-from-bottom-2 duration-500">
               {activeTab === "matrix" && (
                 <div className="space-y-8">
+                  {/* Radar Chart Snapshot */}
+                  <div className="border border-zinc-800 rounded-2xl bg-zinc-950/50 p-8 flex flex-col md:flex-row items-center gap-12">
+                    <div className="w-full md:w-1/3 h-64">
+                      <CompetitorRadarChart baseChannel={baseChannel} competitors={competitors} />
+                    </div>
+                    <div className="flex-1 space-y-6">
+                      <h3 className="text-xl font-bold uppercase italic tracking-tight">Ecosystem Radar</h3>
+                      <p className="text-sm text-zinc-400 leading-relaxed">
+                        A multi-dimensional neural map comparing your channel's <span className="text-white font-bold">Reach Potential</span>, <span className="text-white font-bold">Scale Authority</span>, and <span className="text-white font-bold">View Efficiency</span> against your top ecosystem rival.
+                      </p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="p-4 border border-zinc-800 rounded-xl bg-zinc-900/30">
+                          <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Top Strength</p>
+                          <p className="text-sm font-black text-white">{calculateEngagement(baseChannel.statistics) > 2 ? 'Reach Factor' : 'Output Volume'}</p>
+                        </div>
+                        <div className="p-4 border border-zinc-800 rounded-xl bg-zinc-900/30">
+                          <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Rival Advantage</p>
+                          <p className="text-sm font-black text-white">Scale Authority</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                     <div className="lg:col-span-3 border border-zinc-800 rounded-2xl overflow-hidden bg-zinc-950/50">
                       <table className="w-full text-left text-sm">
@@ -437,8 +460,20 @@ function CompetitorsContent() {
               )}
 
               {activeTab === "content" && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                   {contentStats?.map(stat => (
+                <div className="space-y-8">
+                   {/* Scatter Plot */}
+                   <div className="border border-zinc-800 rounded-2xl p-8 bg-zinc-950/50">
+                      <div className="flex items-center justify-between mb-8">
+                         <h4 className="text-lg font-bold uppercase italic tracking-tight">Content Performance Scatter</h4>
+                         <span className="bg-zinc-900 border border-zinc-800 text-[10px] font-bold px-3 py-1 rounded text-zinc-400 uppercase tracking-widest">Views vs Likes</span>
+                      </div>
+                      <div className="h-[400px]">
+                         <VideoPerformanceScatter videos={baseChannel.videos} competitorVideos={competitors[0]?.videos} />
+                      </div>
+                   </div>
+
+                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                     {contentStats?.map(stat => (
                      <div key={stat.id} className={`p-8 border rounded-2xl transition-all ${stat.isBase ? 'border-zinc-500 bg-zinc-900/20' : 'border-zinc-800 hover:border-zinc-600 bg-zinc-950/50'}`}>
                         <div className="flex justify-between items-start mb-8">
                            <p className="font-bold text-sm uppercase italic tracking-tighter truncate max-w-[150px]">{stat.title}</p>
@@ -509,23 +544,32 @@ function CompetitorsContent() {
               )}
 
               {activeTab === "growth" && (
-                <div className="p-12 border border-zinc-800 rounded-2xl bg-zinc-950/50 text-center">
-                   <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-8">
-                      <svg className="w-8 h-8 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
-                   </div>
-                   <h3 className="text-xl font-bold mb-4 uppercase italic tracking-tight">Scale Projections</h3>
-                   <p className="text-zinc-500 text-sm max-w-md mx-auto mb-12">Comparative growth velocity tracking and predictive subscriber scaling benchmarks.</p>
-                   <div className="flex flex-wrap justify-center gap-4">
-                      <div className="px-8 py-6 border border-zinc-800 rounded-xl bg-zinc-900/30">
-                         <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Velocity</p>
-                         <p className="text-2xl font-black text-white">STABLE</p>
-                      </div>
-                      <div className="px-8 py-6 border border-zinc-800 rounded-xl bg-zinc-900/30">
-                         <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Scale Potential</p>
-                         <p className="text-2xl font-black text-white">HIGH</p>
-                      </div>
-                   </div>
-                   <p className="mt-12 text-[10px] text-zinc-600 font-bold uppercase tracking-[0.3em]">Historical Analysis Active</p>
+                <div className="space-y-8">
+                  <div className="p-12 border border-zinc-800 rounded-2xl bg-zinc-950/50 text-center">
+                     <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-8">
+                        <svg className="w-8 h-8 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                     </div>
+                     <h3 className="text-xl font-bold mb-4 uppercase italic tracking-tight">Scale Projections</h3>
+                     <p className="text-zinc-500 text-sm max-w-md mx-auto mb-12">Comparative growth velocity tracking and predictive subscriber scaling benchmarks.</p>
+                     <div className="flex flex-wrap justify-center gap-4">
+                        <div className="px-8 py-6 border border-zinc-800 rounded-xl bg-zinc-900/30">
+                           <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Velocity</p>
+                           <p className="text-2xl font-black text-white">STABLE</p>
+                        </div>
+                        <div className="px-8 py-6 border border-zinc-800 rounded-xl bg-zinc-900/30">
+                           <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Scale Potential</p>
+                           <p className="text-2xl font-black text-white">HIGH</p>
+                        </div>
+                     </div>
+                     <p className="mt-12 text-[10px] text-zinc-600 font-bold uppercase tracking-[0.3em]">Historical Analysis Active</p>
+                  </div>
+
+                  <div className="border border-zinc-800 rounded-2xl p-8 bg-zinc-950/50">
+                    <h4 className="text-lg font-bold mb-8 uppercase italic tracking-tight">Ecosystem Total Views Comparison</h4>
+                    <div className="h-[300px]">
+                      <CompetitorBarComparison channels={[baseChannel, ...competitors]} />
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
