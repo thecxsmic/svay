@@ -15,6 +15,8 @@ function CompetitorsContent() {
   const [loadingText, setLoadingText] = useState("");
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("matrix");
+  const [savedAnalyses, setSavedAnalyses] = useState([]);
+  const [saveLoading, setSaveLoading] = useState(false);
 
   useEffect(() => {
     const channelId = searchParams.get("channelId");
@@ -23,7 +25,43 @@ function CompetitorsContent() {
     } else {
       fetchUserChannel();
     }
+    fetchSavedAnalyses();
   }, [searchParams]);
+
+  const fetchSavedAnalyses = async () => {
+    try {
+      const res = await fetch("/api/competitors/save");
+      const data = await res.json();
+      if (data.success) setSavedAnalyses(data.items);
+    } catch (err) {
+      console.error("Failed to fetch saved analyses:", err);
+    }
+  };
+
+  const handleSaveAnalysis = async () => {
+    if (!baseChannel || competitors.length === 0 || saveLoading) return;
+    setSaveLoading(true);
+    try {
+      const res = await fetch("/api/competitors/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subjectId: baseChannel.id,
+          competitorIds: competitors.map(c => c.id),
+          title: `Analysis for ${baseChannel.title}`
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchSavedAnalyses();
+        alert("Analysis saved successfully!");
+      }
+    } catch (err) {
+      console.error("Failed to save analysis:", err);
+    } finally {
+      setSaveLoading(false);
+    }
+  };
 
   const fetchUserChannel = async () => {
     try {
@@ -268,9 +306,40 @@ function CompetitorsContent() {
                </div>
                <div className="flex gap-2">
                   <button className="bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-md text-[10px] font-bold uppercase tracking-widest hover:bg-zinc-800 transition-colors">Export PDF</button>
-                  <button className="bg-white text-black px-4 py-2 rounded-md text-[10px] font-bold uppercase tracking-widest hover:bg-zinc-200 transition-colors">Pin Subject</button>
+                  <button 
+                    onClick={handleSaveAnalysis}
+                    disabled={saveLoading}
+                    className="bg-white text-black px-4 py-2 rounded-md text-[10px] font-bold uppercase tracking-widest hover:bg-zinc-200 transition-colors disabled:opacity-50"
+                  >
+                    {saveLoading ? "Saving..." : "Save Analysis"}
+                  </button>
                </div>
             </div>
+
+            {/* Saved Analyses Quick Access */}
+            {savedAnalyses.length > 0 && (
+              <div className="bg-zinc-900/20 border border-zinc-800 rounded-2xl p-6">
+                <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-4">Saved Analyses</p>
+                <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
+                   {savedAnalyses.map(analysis => (
+                     <button 
+                      key={analysis.id}
+                      onClick={() => {
+                        const params = new URLSearchParams(searchParams);
+                        params.set("channelId", analysis.subject_id);
+                        window.history.pushState({}, '', `?${params.toString()}`);
+                        analyzeCompetitors(analysis.subject_id);
+                      }}
+                      className="shrink-0 flex items-center gap-3 bg-black border border-zinc-800 px-4 py-2 rounded-xl hover:border-zinc-600 transition-all"
+                     >
+                        <img src={analysis.subject_thumbnail} className="w-6 h-6 rounded-full" alt="" />
+                        <span className="text-[10px] font-bold text-white uppercase tracking-tight">{analysis.subject_title}</span>
+                        <span className="text-[8px] text-zinc-600 font-mono">{new Date(analysis.created_at).toLocaleDateString()}</span>
+                     </button>
+                   ))}
+                </div>
+              </div>
+            )}
 
             {/* Tabbed Content */}
             <div className="min-h-[60vh] animate-in fade-in slide-in-from-bottom-2 duration-500">

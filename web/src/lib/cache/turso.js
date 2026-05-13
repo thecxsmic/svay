@@ -405,6 +405,52 @@ export async function getUserChannel(userId) {
 }
 
 /**
+ * Save a competitor analysis
+ */
+export async function saveAnalysis(userId, subjectId, competitorIds, title) {
+  if (!process.env.TURSO_DATABASE_URL) return { success: false };
+
+  try {
+    const id = Math.random().toString(36).substring(2, 15);
+    await client.execute({
+      sql: `INSERT INTO saved_analyses (id, user_id, subject_id, competitor_ids, title, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)`,
+      args: [id, userId, subjectId, JSON.stringify(competitorIds), title, Date.now()],
+    });
+    return { success: true, id };
+  } catch (error) {
+    console.error("[Turso] Save Analysis Error:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Get all saved analyses for a user
+ */
+export async function getSavedAnalyses(userId) {
+  if (!process.env.TURSO_DATABASE_URL) return [];
+
+  try {
+    const rs = await client.execute({
+      sql: `SELECT a.*, c.title as subject_title, c.thumbnail as subject_thumbnail 
+            FROM saved_analyses a 
+            JOIN channels c ON a.subject_id = c.id 
+            WHERE a.user_id = ? 
+            ORDER BY a.created_at DESC`,
+      args: [userId],
+    });
+
+    return rs.rows.map(row => ({
+      ...row,
+      competitor_ids: JSON.parse(row.competitor_ids)
+    }));
+  } catch (error) {
+    console.error("[Turso] Get Saved Analyses Error:", error);
+    return [];
+  }
+}
+
+/**
  * Unset the primary user channel
  */
 export async function unsetUserChannel(userId) {

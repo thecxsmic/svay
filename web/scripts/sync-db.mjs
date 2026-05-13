@@ -99,6 +99,19 @@ async function syncSchema() {
     `);
     console.log("✓ Table 'user_channels' created or already exists.");
 
+    await client.execute(`
+      CREATE TABLE IF NOT EXISTS saved_analyses (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        subject_id TEXT,
+        competitor_ids TEXT,
+        title TEXT,
+        created_at INTEGER,
+        FOREIGN KEY (subject_id) REFERENCES channels (id)
+      )
+    `);
+    console.log("✓ Table 'saved_analyses' created or already exists.");
+
     console.log("Schema sync complete!");  } catch (error) {
     console.error("Error syncing schema:", error);
     process.exit(1);
