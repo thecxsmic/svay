@@ -7,7 +7,6 @@ import { EngagementPieChart, CompetitorRadarChart, VideoPerformanceScatter, Comp
 
 function CompetitorsContent() {
   const searchParams = useSearchParams();
-  const [query, setQuery] = useState("");
   const [baseChannel, setBaseChannel] = useState(null);
   const [competitors, setCompetitors] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -17,16 +16,22 @@ function CompetitorsContent() {
   const [activeTab, setActiveTab] = useState("matrix");
   const [savedAnalyses, setSavedAnalyses] = useState([]);
   const [saveLoading, setSaveLoading] = useState(false);
+  const [userChannel, setUserChannel] = useState(null);
 
-  useEffect(() => {
-    const channelId = searchParams.get("channelId");
-    if (channelId) {
-      analyzeCompetitors(channelId);
-    } else {
-      fetchUserChannel();
+  // Define helper functions first to avoid reference errors
+  const fetchUserChannelInfo = async () => {
+    try {
+      const res = await fetch("/api/youtube/channel/user");
+      const data = await res.json();
+      if (data.success && data.channel) {
+        setUserChannel(data.channel);
+        return data.channel;
+      }
+    } catch (err) {
+      console.error("Error fetching user channel:", err);
     }
-    fetchSavedAnalyses();
-  }, [searchParams]);
+    return null;
+  };
 
   const fetchSavedAnalyses = async () => {
     try {
@@ -37,6 +42,94 @@ function CompetitorsContent() {
       console.error("Failed to fetch saved analyses:", err);
     }
   };
+
+  const getMatchType = (compSubs, baseSubs) => {
+    if (compSubs > baseSubs * 10) return "Market Leader";
+    if (compSubs > baseSubs * 2) return "Growth Target";
+    if (compSubs >= baseSubs * 0.5) return "Direct Peer";
+    return "Emerging Rival";
+  };
+
+  const analyzeCompetitors = async (channelId, uChannel) => {
+    setLoading(true);
+    setLoadingStage(10);
+    setLoadingText("Extracting Channel DNA...");
+    setError(null);
+    setCompetitors([]);
+
+    try {
+      const res = await fetch(`/api/youtube/channel?channelId=${channelId}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to fetch channel data");
+      
+      const channel = data.channel;
+      const baseVideos = data.videos || [];
+      setBaseChannel({ ...channel, videos: baseVideos });
+
+      setLoadingStage(30);
+      setLoadingText("Identifying Niche Keywords...");
+
+      const topVideos = [...baseVideos]
+        .sort((a, b) => parseInt(b.statistics?.viewCount || 0) - parseInt(a.statistics?.viewCount || 0))
+        .slice(0, 5);
+      
+      const nicheQuery = topVideos
+        .map(v => v.snippet.title.replace(/[^\w\s]/gi, '').split(' ').slice(0, 3).join(' '))
+        .join(' ');
+
+      setLoadingStage(50);
+      setLoadingText("Scanning Ecosystem Rivals...");
+
+      const compRes = await fetch(`/api/youtube/channel?q=${encodeURIComponent(nicheQuery)}`);
+      const compData = await compRes.json();
+      if (!compRes.ok) throw new Error(compData.error || "Competitor search failed");
+      
+      const initialResults = compData.items || [];
+      const currentSubs = parseInt(channel.statistics.subscriberCount || 0);
+
+      setLoadingStage(70);
+      setLoadingText("Crunching Rival Metrics...");
+
+      // Only competitors, excluding our own channel
+      const filtered = initialResults.filter(c => c.id !== channelId).slice(0, 5);
+      
+      const deepCompetitors = await Promise.all(filtered.map(async (c) => {
+        try {
+          const detailRes = await fetch(`/api/youtube/channel?channelId=${c.id}`);
+          const detailData = await detailRes.json();
+          if (detailData.success) {
+            return {
+              ...detailData.channel,
+              videos: detailData.videos || [],
+              matchType: getMatchType(parseInt(detailData.channel.statistics.subscriberCount), currentSubs)
+            };
+          }
+          return null;
+        } catch (e) {
+          return null;
+        }
+      }));
+
+      const validCompetitors = deepCompetitors.filter(c => c !== null);
+      setCompetitors(validCompetitors.sort((a, b) => parseInt(b.statistics.subscriberCount) - parseInt(a.statistics.subscriberCount)));
+      setLoadingStage(100);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserChannelInfo().then((uChannel) => {
+      if (uChannel) {
+        analyzeCompetitors(uChannel.id, uChannel);
+      } else {
+        setLoading(false);
+      }
+    });
+    fetchSavedAnalyses();
+  }, []); // Only run on mount, ignore searchParams as we only analyze OUR channel
 
   const handleSaveAnalysis = async () => {
     if (!baseChannel || competitors.length === 0 || saveLoading) return;
@@ -82,18 +175,6 @@ function CompetitorsContent() {
     }
   };
 
-  const fetchUserChannel = async () => {
-    try {
-      const res = await fetch("/api/youtube/channel/user");
-      const data = await res.json();
-      if (data.success && data.channel) {
-        analyzeCompetitors(data.channel.id);
-      }
-    } catch (err) {
-      console.error("Error fetching user channel:", err);
-    }
-  };
-
   const formatNumber = (num) => {
     if (isNaN(num) || num === null || num === undefined) return "0";
     const n = parseInt(num);
@@ -109,105 +190,6 @@ function CompetitorsContent() {
     const subs = parseInt(statistics.subscriberCount || 0);
     if (subs === 0) return 0;
     return (views / subs).toFixed(2);
-  };
-
-  const analyzeCompetitors = async (channelId) => {
-    setLoading(true);
-    setLoadingStage(10);
-    setLoadingText("Extracting Channel DNA...");
-    setError(null);
-    setCompetitors([]);
-
-    try {
-      const res = await fetch(`/api/youtube/channel?channelId=${channelId}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to fetch channel data");
-      
-      const channel = data.channel;
-      const baseVideos = data.videos || [];
-      setBaseChannel({ ...channel, videos: baseVideos });
-
-      setLoadingStage(30);
-      setLoadingText("Identifying Niche Keywords...");
-
-      const topVideos = [...baseVideos]
-        .sort((a, b) => parseInt(b.statistics?.viewCount || 0) - parseInt(a.statistics?.viewCount || 0))
-        .slice(0, 5);
-      
-      const nicheQuery = topVideos
-        .map(v => v.snippet.title.replace(/[^\w\s]/gi, '').split(' ').slice(0, 3).join(' '))
-        .join(' ');
-
-      setLoadingStage(50);
-      setLoadingText("Scanning Ecosystem Rivals...");
-
-      const compRes = await fetch(`/api/youtube/channel?q=${encodeURIComponent(nicheQuery)}`);
-      const compData = await compRes.json();
-      if (!compRes.ok) throw new Error(compData.error || "Competitor search failed");
-      
-      const initialResults = compData.items || [];
-      const currentSubs = parseInt(channel.statistics.subscriberCount || 0);
-
-      setLoadingStage(70);
-      setLoadingText("Crunching Rival Metrics...");
-
-      const filtered = initialResults.filter(c => c.id !== channelId).slice(0, 5);
-      
-      const deepCompetitors = await Promise.all(filtered.map(async (c) => {
-        try {
-          const detailRes = await fetch(`/api/youtube/channel?channelId=${c.id}`);
-          const detailData = await detailRes.json();
-          if (detailData.success) {
-            return {
-              ...detailData.channel,
-              videos: detailData.videos || [],
-              matchType: getMatchType(parseInt(detailData.channel.statistics.subscriberCount), currentSubs)
-            };
-          }
-          return null;
-        } catch (e) {
-          return null;
-        }
-      }));
-
-      const validCompetitors = deepCompetitors.filter(c => c !== null);
-      setCompetitors(validCompetitors.sort((a, b) => parseInt(b.statistics.subscriberCount) - parseInt(a.statistics.subscriberCount)));
-      setLoadingStage(100);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getMatchType = (compSubs, baseSubs) => {
-    if (compSubs > baseSubs * 10) return "Market Leader";
-    if (compSubs > baseSubs * 2) return "Growth Target";
-    if (compSubs >= baseSubs * 0.5) return "Direct Peer";
-    return "Emerging Rival";
-  };
-
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!query) return;
-    setLoading(true);
-    setError(null);
-    setLoadingText("Searching...");
-    
-    try {
-      const res = await fetch(`/api/youtube/channel?q=${encodeURIComponent(query)}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Search failed");
-      
-      if (data.items && data.items.length > 0) {
-        analyzeCompetitors(data.items[0].id);
-      } else {
-        throw new Error("No channels found");
-      }
-    } catch (err) {
-      setError(err.message);
-      setLoading(false);
-    }
   };
 
   // Content Analysis Logic
@@ -257,16 +239,6 @@ function CompetitorsContent() {
             </div>
             <span className="font-bold text-sm uppercase tracking-widest italic">Matrix v2.1</span>
           </div>
-
-          <form onSubmit={handleSearch} className="relative hidden md:block">
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search Subject..."
-              className="bg-zinc-900 border border-zinc-800 px-4 py-1.5 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-zinc-600 transition-all w-64"
-            />
-          </form>
         </div>
 
         {/* Navigation Tabs */}
@@ -499,30 +471,31 @@ function CompetitorsContent() {
 
                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                      {contentStats?.map(stat => (
-                     <div key={stat.id} className={`p-8 border rounded-2xl transition-all ${stat.isBase ? 'border-zinc-500 bg-zinc-900/20' : 'border-zinc-800 hover:border-zinc-600 bg-zinc-950/50'}`}>
-                        <div className="flex justify-between items-start mb-8">
-                           <p className="font-bold text-sm uppercase italic tracking-tighter truncate max-w-[150px]">{stat.title}</p>
-                           {stat.isBase && <span className="bg-white text-black text-[8px] font-bold px-2 py-0.5 rounded uppercase">Base</span>}
-                        </div>
-                        <div className="space-y-6">
-                           <div>
-                              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Efficiency Rating</p>
-                              <p className="text-2xl font-black">{formatNumber(stat.avgViews)} <span className="text-xs text-zinc-600 uppercase">Avg Views</span></p>
-                           </div>
-                           <div>
-                              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-3">Topic DNA</p>
-                              <div className="flex flex-wrap gap-2">
-                                 {stat.topKeywords.map(kw => (
-                                   <span key={kw} className="bg-zinc-900 border border-zinc-800 px-3 py-1 rounded-md text-[10px] font-bold text-zinc-400 lowercase">#{kw}</span>
-                                 ))}
-                              </div>
-                           </div>
-                           <div className="pt-6 border-t border-zinc-900">
-                              <Link href={`/channels?channelId=${stat.id}`} className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 hover:text-white transition-colors">View Deep Content Audit →</Link>
-                           </div>
-                        </div>
-                     </div>
-                   ))}
+                       <div key={stat.id} className={`p-8 border rounded-2xl transition-all ${stat.isBase ? 'border-zinc-500 bg-zinc-900/20' : 'border-zinc-800 hover:border-zinc-600 bg-zinc-950/50'}`}>
+                          <div className="flex justify-between items-start mb-8">
+                             <p className="font-bold text-sm uppercase italic tracking-tighter truncate max-w-[150px]">{stat.title}</p>
+                             {stat.isBase && <span className="bg-white text-black text-[8px] font-bold px-2 py-0.5 rounded uppercase">Base</span>}
+                          </div>
+                          <div className="space-y-6">
+                             <div>
+                                <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Efficiency Rating</p>
+                                <p className="text-2xl font-black">{formatNumber(stat.avgViews)} <span className="text-xs text-zinc-600 uppercase">Avg Views</span></p>
+                             </div>
+                             <div>
+                                <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-3">Topic DNA</p>
+                                <div className="flex flex-wrap gap-2">
+                                   {stat.topKeywords.map(kw => (
+                                     <span key={kw} className="bg-zinc-900 border border-zinc-800 px-3 py-1 rounded-md text-[10px] font-bold text-zinc-400 lowercase">#{kw}</span>
+                                   ))}
+                                </div>
+                             </div>
+                             <div className="pt-6 border-t border-zinc-900">
+                                <Link href={`/channels?channelId=${stat.id}`} className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 hover:text-white transition-colors">View Deep Content Audit →</Link>
+                             </div>
+                          </div>
+                       </div>
+                     ))}
+                   </div>
                 </div>
               )}
 
@@ -604,23 +577,15 @@ function CompetitorsContent() {
             <div className="w-24 h-24 bg-zinc-900 border border-zinc-800 rounded-full flex items-center justify-center mb-12">
                <svg className="w-10 h-10 text-zinc-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
             </div>
-            <h2 className="text-2xl font-black uppercase italic tracking-tighter mb-4">Subject Required</h2>
-            <p className="text-zinc-500 text-sm max-w-xs mx-auto mb-12 leading-relaxed font-medium">Connect a subject channel to begin strategic ecosystem benchmarking and DNA analysis.</p>
+            <h2 className="text-2xl font-black uppercase italic tracking-tighter mb-4">Channel Connection Required</h2>
+            <p className="text-zinc-500 text-sm max-w-xs mx-auto mb-12 leading-relaxed font-medium">Connect your YouTube channel in the settings to unlock strategic ecosystem benchmarking and DNA analysis.</p>
             
-            <form onSubmit={handleSearch} className="w-full max-w-md">
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Enter Channel ID or URL..."
-                className="w-full bg-zinc-900 border border-zinc-800 px-6 py-4 rounded-xl text-sm font-medium focus:outline-none focus:ring-1 focus:ring-zinc-600 transition-all text-center mb-4"
-              />
-              <button type="submit" className="w-full bg-white text-black py-4 rounded-xl font-black uppercase text-xs tracking-[0.2em] hover:bg-zinc-200 transition-all">Begin Matrix Scan</button>
-            </form>
+            <Link href="/" className="bg-white text-black px-8 py-4 rounded-xl font-black uppercase text-xs tracking-[0.2em] hover:bg-zinc-200 transition-all">Back to Dashboard</Link>
           </div>
         )}
       </main>
 
+      {/* Vercel-style Footer */}
       <footer className="border-t border-zinc-900 py-12 mt-24">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
            <div className="flex items-center gap-3">

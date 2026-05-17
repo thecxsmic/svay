@@ -12,16 +12,24 @@ export async function channelSearchPipeline(query, pageToken = null) {
   if (!pageToken || pageToken === "TURSO_PAGINATION_START") {
     const localChannel = await getChannel(query);
     if (localChannel && !pageToken) {
-      console.log("[Channel Pipeline] Found in Turso:", localChannel.id);
-      const localVideos = await getChannelVideos(localChannel.id);
-      const totalExpected = parseInt(localChannel.statistics.videoCount || 0);
-      
-      return {
-        channel: localChannel,
-        videos: localVideos.slice(0, 50),
-        source: "turso",
-        nextPageToken: localVideos.length < totalExpected ? "TURSO_PAGINATION_START" : null
-      };
+      const now = Math.floor(Date.now() / 1000);
+      const oneDay = 24 * 60 * 60;
+      const isFresh = localChannel.last_updated && (now - localChannel.last_updated < oneDay);
+
+      if (isFresh) {
+        console.log("[Channel Pipeline] Found in Turso and fresh:", localChannel.id);
+        const localVideos = await getChannelVideos(localChannel.id);
+        const totalExpected = parseInt(localChannel.statistics.videoCount || 0);
+        
+        return {
+          channel: localChannel,
+          videos: localVideos.slice(0, 50),
+          source: "turso",
+          nextPageToken: localVideos.length < totalExpected ? "TURSO_PAGINATION_START" : null
+        };
+      } else {
+        console.log("[Channel Pipeline] Local found but STALE or no timestamp:", localChannel.id);
+      }
     }
   }
 
