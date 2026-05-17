@@ -40,7 +40,8 @@ import {
   ZoomOut,
   Maximize,
   Menu,
-  X
+  X,
+  Save
 } from 'lucide-react';
 import { useTitle } from '@/lib/hooks/titles';
 import ResearchNotesModal from './ResearchNotesModal';
