@@ -364,15 +364,19 @@ export default function TrendRadar() {
       {/* Main Content - Flex fill remaining space */}
       <div className="flex-1 h-full relative overflow-hidden">
         {data ? (
-          <MindMap2D 
-            nodes={allNodes}
-            hoveredNode={hoveredNode}
-            setHoveredNode={setHoveredNode}
-            onNodeClick={handleNodeClick}
-            loading={loading}
-            progress={progress}
-            currentStep={currentStep}
-          />
+          isMobile ? (
+            <MobileCardView data={data} onNodeClick={handleNodeClick} />
+          ) : (
+            <MindMap2D 
+              nodes={allNodes}
+              hoveredNode={hoveredNode}
+              setHoveredNode={setHoveredNode}
+              onNodeClick={handleNodeClick}
+              loading={loading}
+              progress={progress}
+              currentStep={currentStep}
+            />
+          )
         ) : !loading ? (
           <EmptyState onScan={scanTrends} hasChannel={!!selectedChannel} />
         ) : null}
@@ -489,6 +493,154 @@ export default function TrendRadar() {
           </div>
         </footer>
       )}
+    </div>
+  );
+}
+
+// ============= MOBILE CARD VIEW COMPONENT =============
+
+function MobileCardView({ data, onNodeClick }) {
+  return (
+    <div className="h-full overflow-y-auto px-4 py-6 space-y-8 no-scrollbar pb-32">
+      {/* Overview Card */}
+      <section>
+        <div className="flex items-center gap-2 mb-4 px-1">
+          <Activity className="w-4 h-4 text-blue-500" />
+          <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500">Market Overview</h2>
+        </div>
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          onClick={() => onNodeClick({ type: 'center', data })}
+          className="bg-zinc-900/40 backdrop-blur-xl border border-white/5 rounded-2xl p-5 relative overflow-hidden group active:scale-[0.98] transition-transform"
+        >
+          <div className="absolute top-0 right-0 p-4">
+             <ArrowUpRight className="w-4 h-4 text-zinc-600" />
+          </div>
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <Radio className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-white">Trend Intelligence</p>
+              <p className="text-[10px] text-zinc-500 uppercase tracking-tight">{data.summary.totalVideosAnalyzed} videos scanned</p>
+            </div>
+          </div>
+          <p className="text-xs text-zinc-400 leading-relaxed line-clamp-3 mb-4 italic">
+            "{data.insights.overview.summary}"
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-black/40 border border-white/5 rounded-lg p-2 flex items-center justify-between">
+              <span className="text-[10px] text-zinc-500">Potential</span>
+              <span className="text-[10px] font-bold text-blue-400">{data.insights.overview.viralPotential}</span>
+            </div>
+            <div className="bg-black/40 border border-white/5 rounded-lg p-2 flex items-center justify-between">
+              <span className="text-[10px] text-zinc-500">Momentum</span>
+              <span className="text-[10px] font-bold text-purple-400">{data.insights.overview.marketMomentum}</span>
+            </div>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* Quick Wins Card */}
+      <section>
+        <div className="flex items-center gap-2 mb-4 px-1">
+          <Zap className="w-4 h-4 text-green-500" />
+          <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500">Quick Wins</h2>
+        </div>
+        <div className="space-y-3">
+          {data.insights.quickWins.map((win, idx) => (
+            <motion.div 
+              key={idx}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: idx * 0.1 }}
+              onClick={() => onNodeClick({ type: 'quickWin', data: win })}
+              className="bg-zinc-900/40 backdrop-blur-xl border border-white/5 rounded-2xl p-4 flex items-center gap-4 active:scale-[0.98] transition-transform"
+            >
+              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${win.effort === 'low' ? 'from-green-500 to-emerald-600' : 'from-yellow-500 to-orange-600'} flex items-center justify-center flex-shrink-0`}>
+                <Lightbulb className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-xs font-bold text-zinc-200 truncate">{win.idea}</h3>
+                <p className="text-[10px] text-zinc-500">{win.timing}</p>
+              </div>
+              <ArrowUpRight className="w-4 h-4 text-zinc-700" />
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* Emerging Trends Card */}
+      <section>
+        <div className="flex items-center gap-2 mb-4 px-1">
+          <Flame className="w-4 h-4 text-red-500" />
+          <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500">Emerging Trends</h2>
+        </div>
+        <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar -mx-4 px-4">
+          {data.insights.emergingTrends.map((trend, idx) => (
+            <motion.div 
+              key={idx}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: idx * 0.1 }}
+              onClick={() => onNodeClick({ type: 'trend', data: trend })}
+              className="min-w-[200px] bg-zinc-900/40 backdrop-blur-xl border border-white/5 rounded-2xl p-4 active:scale-[0.98] transition-transform"
+            >
+              <div className="flex justify-between items-start mb-3">
+                <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${trend.momentum === 'hot' ? 'from-red-500 to-orange-600' : 'from-blue-500 to-cyan-600'} flex items-center justify-center`}>
+                  <Flame className="w-4 h-4 text-white" />
+                </div>
+                <div className="bg-black/40 px-2 py-0.5 rounded-full border border-white/5">
+                  <span className="text-[9px] font-bold text-yellow-500">{trend.viralScore}</span>
+                </div>
+              </div>
+              <h3 className="text-xs font-bold text-zinc-200 mb-1 line-clamp-1">{trend.topic}</h3>
+              <p className="text-[10px] text-zinc-500 truncate mb-3">{trend.estimatedViews} potential</p>
+              <div className="bg-white/5 rounded-lg p-2">
+                <p className="text-[9px] text-zinc-400 line-clamp-2 italic">"{trend.actionableIdea}"</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* Video Ideas Card */}
+      <section>
+        <div className="flex items-center gap-2 mb-4 px-1">
+          <Rocket className="w-4 h-4 text-fuchsia-500" />
+          <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500">AI Video Concepts</h2>
+        </div>
+        <div className="space-y-4">
+          {data.insights.videoIdeas.map((idea, idx) => (
+            <motion.div 
+              key={idx}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.1 }}
+              onClick={() => onNodeClick({ type: 'videoIdea', data: idea })}
+              className="bg-gradient-to-br from-fuchsia-900/10 to-violet-900/10 backdrop-blur-xl border border-fuchsia-500/10 rounded-2xl p-5 active:scale-[0.98] transition-transform"
+            >
+              <div className="flex justify-between items-start mb-3">
+                <h3 className="text-sm font-bold text-white max-w-[80%] leading-tight">{idea.title}</h3>
+                <div className="w-8 h-8 rounded-lg bg-fuchsia-500/10 flex items-center justify-center">
+                  <Video className="w-4 h-4 text-fuchsia-500" />
+                </div>
+              </div>
+              <p className="text-xs text-zinc-400 line-clamp-2 mb-4 leading-relaxed">{idea.description}</p>
+              <div className="flex items-center justify-between">
+                 <div className="flex items-center gap-1.5">
+                    <Eye className="w-3 h-3 text-zinc-600" />
+                    <span className="text-[10px] font-bold text-zinc-500">{idea.predictedViews} Views</span>
+                 </div>
+                 <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${idea.difficulty === 'Easy' ? 'bg-green-500/5 text-green-500 border-green-500/10' : 'bg-yellow-500/5 text-yellow-500 border-yellow-500/10'}`}>
+                    {idea.difficulty}
+                 </span>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
