@@ -139,7 +139,7 @@ ${recentVideos.slice(0, 10).map(v => `- ${v.snippet.title}`).join('\n')}
 Do not generate generic queries. Generate specific, trend-focused queries.`;
 
           const { object } = await generateObject({
-            model: groq('openai/gpt-oss-120b'),
+            model: groq('llama-3.3-70b-versatile'),
             schema: searchQueriesSchema,
             prompt,
             temperature: 0.7,
@@ -299,7 +299,7 @@ INSTRUCTIONS:
 7. CRITICAL: Return ONLY a raw JSON object with the exact structure requested. Do NOT include "$schema", "properties", or any schema definitions in your output.`;
 
         const { object } = await generateObject({
-          model: groq('openai/gpt-oss-120b'),
+          model: groq('llama-3.3-70b-versatile'),
           schema: trendSchema,
           prompt,
           temperature: 0.7,
