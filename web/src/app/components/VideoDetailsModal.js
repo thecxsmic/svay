@@ -7,7 +7,7 @@ import { Save, Edit3, CheckCircle2 } from "lucide-react";
 import ResearchNotesModal from "./ResearchNotesModal";
 import { useEffect } from "react";
 
-export default function VideoDetailsModal({ selectedVideo, setSelectedVideo, filters, formatNumber }) {
+export default function VideoDetailsModal({ selectedVideo, setSelectedVideo, filters, formatNumber, channelSubs }) {
   const [activeTab, setActiveTab] = useState("stats");
   const [copying, setCopying] = useState(false);
   const [copyStates, setCopyStates] = useState({});
@@ -207,9 +207,9 @@ ${item.snippet?.description || item.description || "No description found."}
               <div className="flex flex-col justify-center items-center text-center space-y-4 p-8 bg-[#050505] rounded-3xl border border-white/5">
                 <label className="text-[10px] uppercase tracking-widest font-bold text-[#666666] block">Estimated Earnings</label>
                 <div className="flex flex-col items-center">
-                    {parseInt(selectedVideo.item.statistics?.viewCount || 0) < 10000 ? (
+                    {parseInt(selectedVideo.item.statistics?.viewCount || 0) < 10000 || (channelSubs && parseInt(channelSubs) < 1000) ? (
                       <div className="text-4xl md:text-5xl font-black text-[#444444] tracking-tighter uppercase">
-                        No Data
+                        {channelSubs && parseInt(channelSubs) < 1000 ? "Pending" : "No Data"}
                       </div>
                     ) : (
                       <>
@@ -227,7 +227,9 @@ ${item.snippet?.description || item.description || "No description found."}
                 <p className="text-[10px] text-[#444444] uppercase font-black tracking-[0.2em]">Est. Earnings ({filters?.region || 'US'})</p>
                 <div className="pt-4 border-t border-white/5 w-full">
                     <p className="text-[9px] text-[#666666] leading-relaxed uppercase tracking-widest">
-                      {parseInt(selectedVideo.item.statistics?.viewCount || 0) < 10000 
+                      {channelSubs && parseInt(channelSubs) < 1000 
+                        ? "Revenue only available for channels with 1,000+ subscribers."
+                        : parseInt(selectedVideo.item.statistics?.viewCount || 0) < 10000 
                         ? "Data is statistically insignificant for videos under 10k views."
                         : `Rough guess based on ${filters?.region || 'US'} rates and current exchange.`}
                     </p>

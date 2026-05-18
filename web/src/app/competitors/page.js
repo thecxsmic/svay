@@ -302,7 +302,9 @@ function CompetitorsContent() {
                   <img src={baseChannel.thumbnail} className="w-20 h-20 rounded-full border border-zinc-800" alt="" />
                   <div>
                     <h1 className="text-4xl font-black tracking-tight uppercase italic">{baseChannel.title}</h1>
-                    <p className="text-zinc-500 text-xs font-medium uppercase tracking-widest mt-1">{baseChannel.custom_url} • {formatNumber(baseChannel.statistics.subscriberCount)} Subscribers</p>
+                    <p className="text-zinc-500 text-xs font-medium uppercase tracking-widest mt-1">
+                      {baseChannel.custom_url ? `${baseChannel.custom_url} • ` : ''}{formatNumber(baseChannel.statistics.subscriberCount)} Subscribers
+                    </p>
                   </div>
                </div>
                <div className="flex gap-2">
@@ -394,9 +396,8 @@ function CompetitorsContent() {
                               <img src={baseChannel.thumbnail} className="w-10 h-10 rounded-full border border-zinc-700" alt="" />
                               <div>
                                 <p className="font-bold text-white uppercase italic">SUBJECT</p>
-                                <p className="text-[10px] text-zinc-500">{baseChannel.custom_url}</p>
-                              </div>
-                            </td>
+                                {baseChannel.custom_url && <p className="text-[10px] text-zinc-500">{baseChannel.custom_url}</p>}
+                              </div>                            </td>
                             <td className="px-6 py-6">
                               <span className="px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 text-[9px] font-bold border border-zinc-700 uppercase tracking-widest">CONTROL</span>
                             </td>
@@ -411,9 +412,8 @@ function CompetitorsContent() {
                                 <img src={comp.thumbnail} className="w-10 h-10 rounded-full border border-zinc-800 grayscale group-hover:grayscale-0 transition-all" alt="" />
                                 <div>
                                   <p className="font-bold text-white uppercase italic truncate max-w-[150px]">{comp.title}</p>
-                                  <p className="text-[10px] text-zinc-500 truncate max-w-[150px]">{comp.custom_url}</p>
-                                </div>
-                              </td>
+                                  {comp.custom_url && <p className="text-[10px] text-zinc-500 truncate max-w-[150px]">{comp.custom_url}</p>}
+                                </div>                              </td>
                               <td className="px-6 py-6">
                                 <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border uppercase tracking-widest ${
                                   comp.matchType === 'Market Leader' ? 'bg-orange-500/10 text-orange-500 border-orange-500/20' :

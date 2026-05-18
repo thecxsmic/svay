@@ -25,9 +25,10 @@ export function generateChannelHistory(statistics, days = 14) {
     const subChange = Math.floor((totalSubs * subGrowthRate / days) * dayFactor);
     const viewChange = Math.floor((totalViews * viewGrowthRate / days) * dayFactor);
 
-    // Revenue Range (using $2 - $6 CPM estimate)
-    const revMin = (viewChange / 1000) * 2;
-    const revMax = (viewChange / 1000) * 6;
+    // Revenue Range (using $3 - $10 CPM estimate, only if 1000+ subs)
+    const isMonetized = totalSubs >= 1000;
+    const revMin = isMonetized ? (viewChange / 1000) * 3 : 0;
+    const revMax = isMonetized ? (viewChange / 1000) * 10 : 0;
 
     history.push({
       date: date.toLocaleDateString('en-US', { weekday: 'short', month: '2-digit', day: '2-digit', year: 'numeric' }),
