@@ -1,5 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
-import { saveLibraryItem, getLibraryItems, deleteLibraryItem, getLibraryItemByReference } from "@/lib/cache/turso";
+import { saveLibraryItem, getLibraryItems, deleteLibraryItem, getLibraryItemByReference, getLibraryItemById } from "@/lib/cache/turso";
 import { apiSuccess, apiError } from "@/lib/utils/response";
 
 export async function GET(req) {
@@ -8,8 +8,14 @@ export async function GET(req) {
     if (!userId) return apiError(new Error("Unauthorized"), 401);
 
     const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
     const type = searchParams.get("type");
     const referenceId = searchParams.get("reference_id");
+
+    if (id) {
+      const item = await getLibraryItemById(userId, id);
+      return apiSuccess({ item });
+    }
 
     if (referenceId) {
       const item = await getLibraryItemByReference(userId, referenceId);

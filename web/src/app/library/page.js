@@ -4,10 +4,12 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Filter, Video, User, Lightbulb, BarChart3, Trash2, Edit3, ExternalLink, Calendar, Plus, BookOpen, Clock, ChevronRight, Eye, Zap, Target, Activity } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import ResearchNotesModal from '../components/ResearchNotesModal';
 import VideoDetailsModal from '../components/VideoDetailsModal';
 
 export default function LibraryPage() {
+  const router = useRouter();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -105,12 +107,7 @@ export default function LibraryPage() {
   };
 
   const handleEdit = (item) => {
-    setSelectedItem({
-      ...item,
-      dbId: item.id,
-      id: item.reference_id
-    });
-    setIsEditModalOpen(true);
+    router.push(`/library/${item.id}`);
   };
 
   const handleOpenVideoDetails = (item) => {

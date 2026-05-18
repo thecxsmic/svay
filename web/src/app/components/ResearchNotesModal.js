@@ -2,15 +2,17 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Save, FileText, Video, User, Lightbulb, BarChart3, Loader2, Eye, Users, TrendingUp, Calendar, Target, Zap, Activity } from 'lucide-react';
+import { X, Save, FileText, Video, User, Lightbulb, BarChart3, Loader2, Eye, Users, TrendingUp, Calendar, Target, Zap, Activity, Maximize2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { createPortal } from 'react-dom';
+import { useRouter } from 'next/navigation';
 import 'react-quill-new/dist/quill.snow.css';
 
 // Dynamically import ReactQuill to avoid SSR issues
 const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
 
 export default function ResearchNotesModal({ isOpen, onClose, item, onSave, onViewDetails }) {
+  const router = useRouter();
   const [content, setContent] = useState('');
   const [dbId, setDbId] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -279,6 +281,18 @@ export default function ResearchNotesModal({ isOpen, onClose, item, onSave, onVi
 
             {/* Footer */}
             <div className="p-6 border-t border-zinc-800 flex justify-end gap-3 shrink-0">
+              {dbId && (
+                <button
+                  onClick={() => {
+                    onClose();
+                    router.push(`/library/${dbId}`);
+                  }}
+                  className="mr-auto px-4 py-2.5 rounded-xl text-xs font-bold text-zinc-500 hover:text-white hover:bg-zinc-800 transition-all flex items-center gap-2"
+                >
+                  <Maximize2 className="w-4 h-4" />
+                  Full Page
+                </button>
+              )}
               <button
                 onClick={onClose}
                 className="px-6 py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-colors"

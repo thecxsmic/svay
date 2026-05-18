@@ -602,6 +602,31 @@ export async function deleteLibraryItem(userId, itemId) {
 }
 
 /**
+ * Get a specific library item by id
+ */
+export async function getLibraryItemById(userId, itemId) {
+  if (!process.env.TURSO_DATABASE_URL || !itemId) return null;
+
+  try {
+    const rs = await client.execute({
+      sql: "SELECT * FROM library_items WHERE user_id = ? AND id = ? LIMIT 1",
+      args: [userId, itemId],
+    });
+
+    if (rs.rows.length === 0) return null;
+
+    const row = rs.rows[0];
+    return {
+      ...row,
+      metadata: JSON.parse(row.metadata)
+    };
+  } catch (error) {
+    console.error("[Turso] Get Library Item By Id Error:", error);
+    return null;
+  }
+}
+
+/**
  * Unset the primary user channel
  */
 export async function unsetUserChannel(userId) {
