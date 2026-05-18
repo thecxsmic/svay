@@ -2,7 +2,33 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, Video, User, Lightbulb, BarChart3, Trash2, Edit3, ExternalLink, Calendar, Plus, BookOpen, Clock, ChevronRight, Eye, Zap, Target, Activity } from 'lucide-react';
+import { 
+  Search, 
+  Filter, 
+  Video, 
+  User, 
+  Lightbulb, 
+  BarChart3, 
+  Trash2, 
+  Edit3, 
+  ExternalLink, 
+  Calendar, 
+  Plus, 
+  BookOpen, 
+  Clock, 
+  ChevronRight, 
+  Eye, 
+  Zap, 
+  Target, 
+  Activity, 
+  Check, 
+  Loader2,
+  Archive,
+  Layers,
+  SearchCode,
+  Sparkles,
+  LayoutGrid
+} from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import ResearchNotesModal from '../components/ResearchNotesModal';
@@ -34,40 +60,37 @@ export default function LibraryPage() {
     if (item.type !== 'idea') return null;
     const m = item.metadata || {};
     
-    // Idea could come from Quick Wins, Trends, or Video Ideas
     const rationale = m.why || m.opportunity || m.rationale || m.predictedViews;
     const effort = m.effort || m.difficulty || (m.viralScore ? `${m.viralScore} Viral Score` : null);
     const timing = m.timing || m.momentum || m.topic;
 
     return (
-      <div className="bg-zinc-900/30 border border-zinc-900 rounded-2xl p-4 mb-6 space-y-4">
+      <div className="bg-black/40 border border-white/5 rounded-2xl p-5 mb-6 space-y-5">
         {rationale && (
-          <div className="space-y-1">
-            <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest flex items-center gap-1.5">
-               <Target className="w-2.5 h-2.5" />
-               Strategy / Opportunity
+          <div className="space-y-2">
+            <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] flex items-center gap-2">
+               <Target className="w-3.5 h-3.5" />
+               Strategic Focus
             </p>
-            <p className="text-[11px] text-zinc-400 leading-relaxed line-clamp-3">{rationale}</p>
+            <p className="text-xs text-zinc-400 leading-relaxed line-clamp-2">{rationale}</p>
           </div>
         )}
         
-        <div className="flex gap-4">
+        <div className="flex gap-6 border-t border-white/5 pt-4">
            {effort && (
              <div className="space-y-1">
-               <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest flex items-center gap-1.5">
-                  <Zap className="w-2.5 h-2.5 text-yellow-500" />
-                  Effort / Potential
+               <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.2em]">
+                  Complexity
                </p>
-               <p className="text-[10px] font-bold text-zinc-300 uppercase">{effort}</p>
+               <p className="text-[11px] font-bold text-zinc-300">{effort}</p>
              </div>
            )}
            {timing && (
              <div className="space-y-1">
-               <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest flex items-center gap-1.5">
-                  <Activity className="w-2.5 h-2.5 text-blue-500" />
-                  Momentum
+               <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.2em]">
+                  Velocity
                </p>
-               <p className="text-[10px] font-bold text-zinc-300 uppercase">{timing}</p>
+               <p className="text-[11px] font-bold text-zinc-300">{timing}</p>
              </div>
            )}
         </div>
@@ -90,7 +113,7 @@ export default function LibraryPage() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this research item?')) return;
+    if (!confirm('Are you sure you want to delete this research?')) return;
     try {
       const res = await fetch('/api/library', {
         method: 'POST',
@@ -173,107 +196,141 @@ export default function LibraryPage() {
     }
   };
 
+  const TABS = [
+    { id: 'all', label: 'Vault', icon: Archive },
+    { id: 'video', label: 'Videos', icon: Video },
+    { id: 'channel', label: 'Channels', icon: User },
+    { id: 'idea', label: 'Ideas', icon: Lightbulb },
+    { id: 'analysis', label: 'Market DNA', icon: BarChart3 }
+  ];
+
   return (
-    <div className="min-h-screen bg-black text-white p-6 sm:p-12 pb-32">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <header className="mb-16">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
-            <div>
-               <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-                    <div className="w-0 h-0 border-t-[6px] border-t-transparent border-l-[10px] border-l-black border-b-[6px] border-b-transparent ml-0.5"></div>
-                  </div>
-                  <h1 className="text-3xl font-black uppercase italic tracking-tighter">Research Hub</h1>
-               </div>
-               <p className="text-zinc-500 text-sm font-medium max-w-md leading-relaxed">Your centralized intelligence repository. All your inter-linked videos, channels, and ideas from the Vyp ecosystem.</p>
+    <div className="min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black">
+      {/* Sticky Header Navigation */}
+      <nav className="sticky top-0 z-50 border-b border-zinc-800 bg-black/80 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
+              <Layers className="w-5 h-5 text-black" />
             </div>
-            
-            <div className="flex items-center gap-4">
-               <div className="relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search your notes..."
-                    className="bg-zinc-900 border border-zinc-800 rounded-2xl py-3 pl-12 pr-6 text-sm focus:outline-none focus:ring-1 focus:ring-white/20 transition-all w-64 md:w-80"
+            <h1 className="text-lg font-medium tracking-tight">Research Hub</h1>
+          </div>
+          
+          <div className="flex items-center gap-4">
+             <div className="relative hidden md:block group">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500 group-focus-within:text-white transition-colors" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search vault..."
+                  className="bg-zinc-900/50 border border-zinc-800 rounded-full h-9 pl-9 pr-4 text-xs focus:outline-none focus:border-zinc-700 transition-all w-64 placeholder:text-zinc-600"
+                />
+             </div>
+             <button
+               onClick={fetchItems}
+               className="h-9 px-4 rounded-full bg-zinc-900 border border-zinc-800 text-xs font-bold uppercase tracking-widest text-zinc-400 hover:text-white hover:border-zinc-700 transition-all flex items-center gap-2"
+             >
+               <Activity className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+               <span className="hidden sm:inline">Refresh</span>
+             </button>
+          </div>
+        </div>
+
+        {/* Tab Filters */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex gap-8 overflow-x-auto no-scrollbar">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setFilter(tab.id)}
+              className={`flex items-center gap-2 pb-3 pt-4 text-[10px] uppercase font-bold tracking-[0.2em] transition-all relative whitespace-nowrap ${
+                filter === tab.id ? "text-white" : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              <tab.icon className="w-3.5 h-3.5" />
+              {tab.label}
+              {filter === tab.id && (
+                <motion.div 
+                  layoutId="library-tab-underline"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-white rounded-full" 
+                />
+              )}
+            </button>
+          ))}
+        </div>
+      </nav>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-12 pb-32">
+        <AnimatePresence mode="wait">
+          {loading ? (
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center justify-center py-40"
+            >
+              <div className="w-64 space-y-4">
+                <div className="flex justify-between text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-600">
+                  <span>Accessing Vault</span>
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                </div>
+                <div className="h-px w-full bg-zinc-900 overflow-hidden">
+                  <motion.div 
+                    initial={{ x: '-100%' }}
+                    animate={{ x: '100%' }}
+                    transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+                    className="h-full w-full bg-white/20"
                   />
-               </div>
-            </div>
-          </div>
-
-          {/* Filters */}
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2">
-            {[
-              { id: 'all', label: 'All Items' },
-              { id: 'video', label: 'Saved Videos' },
-              { id: 'channel', label: 'Channels' },
-              { id: 'idea', label: 'Viral Ideas' },
-              { id: 'analysis', label: 'Analyses' }
-            ].map(f => (
-              <button
-                key={f.id}
-                onClick={() => setFilter(f.id)}
-                className={`px-6 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border ${
-                  filter === f.id ? 'bg-white text-black border-white' : 'bg-zinc-900 text-zinc-500 border-zinc-800 hover:border-zinc-700'
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-        </header>
-
-        {/* Grid */}
-        {loading ? (
-          <div className="py-32 flex flex-col items-center justify-center gap-4">
-             <div className="w-8 h-8 border-2 border-zinc-800 border-t-white rounded-full animate-spin"></div>
-             <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Accessing Hub...</p>
-          </div>
-        ) : filteredItems.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredItems.map((item, idx) => (
-              <motion.div
-                key={item.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 }}
-                className="group bg-zinc-950 border border-zinc-900 rounded-[2rem] overflow-hidden flex flex-col hover:border-zinc-700 transition-all shadow-2xl"
-              >
-                <div className="p-8 flex-1 flex flex-col">
-                  {/* Item Header */}
-                  <div className="flex justify-between items-start mb-6">
+                </div>
+              </div>
+            </motion.div>
+          ) : filteredItems.length > 0 ? (
+            <motion.div
+              key="grid"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+            >
+              {filteredItems.map((item, idx) => (
+                <motion.div
+                  key={item.id}
+                  layout
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                  className="group p-8 rounded-[2rem] bg-zinc-900/30 border border-zinc-800 hover:bg-zinc-900/50 hover:border-zinc-700 transition-all flex flex-col relative overflow-hidden"
+                >
+                  {/* Item Type Badge */}
+                  <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-3">
-                       <div className="p-2 bg-zinc-900 border border-zinc-800 rounded-xl group-hover:bg-zinc-800 transition-colors">
+                       <div className="p-2 bg-black/40 border border-white/5 rounded-xl text-zinc-400 group-hover:text-white transition-colors">
                           {getIcon(item.type)}
                        </div>
-                       <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{item.type}</span>
+                       <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em]">{item.type}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <button 
-                        onClick={() => handleDelete(item.id)}
-                        className="p-2 opacity-0 group-hover:opacity-100 hover:bg-red-500/10 rounded-lg transition-all"
-                      >
-                        <Trash2 className="w-4 h-4 text-zinc-600 hover:text-red-500" />
-                      </button>
-                    </div>
+                    <button 
+                      onClick={() => handleDelete(item.id)}
+                      className="p-2 opacity-0 group-hover:opacity-100 bg-red-500/10 rounded-xl transition-all text-red-500 hover:bg-red-500 hover:text-white"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
 
                   {/* Visual Context */}
                   {getThumbnail(item) && (
-                    <div className="relative h-40 mb-6 rounded-2xl overflow-hidden border border-zinc-900 group-hover:border-zinc-700 transition-all">
-                       <img src={getThumbnail(item)} className="w-full h-full object-cover" alt="" />
-                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                    <div className="relative aspect-video mb-8 rounded-2xl overflow-hidden border border-white/5 bg-black">
+                       <img src={getThumbnail(item)} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-all duration-700 scale-105 group-hover:scale-100" alt="" />
+                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                        {item.metadata.channelTitle && (
-                         <div className="absolute bottom-3 left-4 right-4 flex justify-between items-end">
-                            <p className="text-[10px] font-black text-white/60 uppercase tracking-widest truncate flex-1">{item.metadata.channelTitle}</p>
+                         <div className="absolute bottom-4 left-5 right-5 flex justify-between items-center">
+                            <p className="text-[10px] font-black text-white/50 uppercase tracking-[0.2em] truncate flex-1">{item.metadata.channelTitle}</p>
                             {item.type === 'video' && (
                               <button 
                                 onClick={(e) => { e.preventDefault(); handleOpenVideoDetails(item); }}
-                                className="bg-white/10 hover:bg-white/20 backdrop-blur-md p-1.5 rounded-lg border border-white/5 transition-colors shrink-0 ml-2"
+                                className="bg-white/10 hover:bg-white backdrop-blur-md p-2 rounded-xl border border-white/10 hover:text-black transition-all"
                               >
-                                <Eye className="w-3 h-3 text-white" />
+                                <Eye className="w-4 h-4" />
                               </button>
                             )}
                          </div>
@@ -281,83 +338,100 @@ export default function LibraryPage() {
                     </div>
                   )}
 
-                  {/* Title & Content */}
-                  <h3 className="text-xl font-bold text-white mb-4 line-clamp-2 tracking-tight group-hover:text-white/90 transition-colors">{item.title}</h3>
+                  {/* Title */}
+                  <h3 className="text-xl font-bold text-zinc-100 mb-6 line-clamp-2 leading-tight tracking-tight group-hover:text-white transition-colors">{item.title}</h3>
                   
-                  {item.type === 'idea' && getIdeaDetails(item)}
-
-                  {item.content && (
-                    <div className="bg-zinc-900/50 border border-zinc-900 rounded-2xl p-4 mb-6 flex-1 overflow-hidden">
-                       <div 
-                        className="text-xs text-zinc-400 line-clamp-6 leading-relaxed prose prose-invert prose-sm max-w-none"
-                        dangerouslySetInnerHTML={{ __html: item.content }}
-                       />
-                    </div>
+                  {/* Dynamic Content Details */}
+                  {item.type === 'idea' ? getIdeaDetails(item) : (
+                    item.content && (
+                      <div className="bg-black/40 border border-white/5 rounded-2xl p-5 mb-8 flex-1 overflow-hidden">
+                         <div 
+                          className="text-[13px] text-zinc-500 line-clamp-4 leading-relaxed prose prose-invert prose-sm max-w-none prose-p:my-0"
+                          dangerouslySetInnerHTML={{ __html: item.content }}
+                         />
+                      </div>
+                    )
                   )}
 
-                  {!item.content && (
-                    <div className="flex-1 flex items-center justify-center p-8 border border-dashed border-zinc-900 rounded-2xl mb-6">
-                       <p className="text-[10px] text-zinc-700 font-bold uppercase tracking-widest">No Research Notes</p>
+                  {/* Fallback for items with no content/thumbnail */}
+                  {!item.content && !getThumbnail(item) && (
+                    <div className="flex-1 flex flex-col items-center justify-center p-10 border border-dashed border-zinc-800 rounded-3xl mb-8 opacity-40">
+                       <Database className="w-6 h-6 text-zinc-700 mb-3" />
+                       <p className="text-[10px] text-zinc-700 font-bold uppercase tracking-[0.2em]">Data Pending</p>
                     </div>
                   )}
 
                   {/* Actions */}
-                  <div className="flex items-center gap-3 mb-6">
+                  <div className="flex items-center gap-3 mt-auto">
                     <button 
                       onClick={() => handleEdit(item)}
-                      className="flex-1 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                      className="flex-1 bg-white text-black hover:bg-zinc-200 h-12 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 shadow-xl shadow-white/5"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
-                      Edit Note
+                      View Research
                     </button>
                     <div className="flex gap-2">
                        {item.type === 'channel' && (
                          <Link 
                             href={getChannelLink(item)}
-                            className="p-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl transition-all"
-                            title="Analyze Channel"
+                            className="w-12 h-12 bg-zinc-900 hover:bg-white hover:text-black border border-zinc-800 rounded-2xl transition-all flex items-center justify-center group/btn"
+                            title="Analyze"
                           >
-                            <BarChart3 className="w-3.5 h-3.5 text-zinc-500" />
+                            <BarChart3 className="w-4 h-4 text-zinc-500 group-hover/btn:text-black" />
                           </Link>
                        )}
                        <a 
                         href={getYouTubeLink(item)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl transition-all"
-                        title="View on YouTube"
+                        className="w-12 h-12 bg-zinc-900 hover:bg-white hover:text-black border border-zinc-800 rounded-2xl transition-all flex items-center justify-center group/btn"
+                        title="YouTube"
                        >
-                         <ExternalLink className="w-3.5 h-3.5 text-zinc-500" />
+                         <ExternalLink className="w-4 h-4 text-zinc-500 group-hover/btn:text-black" />
                        </a>
                     </div>
                   </div>
 
-                  {/* Footer Stats */}
-                  <div className="mt-auto pt-6 border-t border-zinc-900 flex items-center justify-between">
-                     <div className="flex items-center gap-2 text-[10px] text-zinc-600 font-bold uppercase tracking-widest">
+                  {/* Meta Footer */}
+                  <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between">
+                     <div className="flex items-center gap-2 text-[10px] text-zinc-600 font-bold uppercase tracking-[0.2em]">
                         <Clock className="w-3 h-3" />
                         <span>{new Date(item.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
                      </div>
                      {item.metadata?.vScore && (
-                       <div className="flex items-center gap-2">
-                          <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-tighter">Virality</span>
-                          <span className="text-xs font-black text-blue-500">{item.metadata.vScore}%</span>
+                       <div className="flex items-center gap-2 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full">
+                          <span className="text-[9px] font-black text-blue-500 uppercase tracking-tighter">VIRALITY</span>
+                          <span className="text-[11px] font-black text-blue-400">{item.metadata.vScore}%</span>
                        </div>
                      )}
                   </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        ) : (
-          <div className="py-48 flex flex-col items-center text-center">
-             <div className="w-20 h-20 bg-zinc-900 border border-zinc-800 rounded-full flex items-center justify-center mb-8">
-                <BookOpen className="w-8 h-8 text-zinc-700" />
-             </div>
-             <h2 className="text-xl font-bold uppercase italic tracking-tighter mb-4">No Research Found</h2>
-             <p className="text-zinc-500 text-sm max-w-xs mx-auto leading-relaxed font-medium">Start exploring Trend Radar or search for videos to build your inter-linked intelligence repository.</p>
-          </div>
-        )}
+                </motion.div>
+              ))}
+            </motion.div>
+          ) : (
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="py-48 flex flex-col items-center text-center"
+            >
+              <div className="w-24 h-24 bg-zinc-900/50 border border-zinc-800 rounded-full flex items-center justify-center mb-10 group overflow-hidden relative">
+                 <div className="absolute inset-0 bg-white/5 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+                 <BookOpen className="w-10 h-10 text-zinc-700 group-hover:text-white transition-colors relative z-10" />
+              </div>
+              <h2 className="text-2xl font-bold tracking-tight mb-4 text-zinc-300">Vault is empty</h2>
+              <p className="text-zinc-600 text-sm max-w-sm mx-auto leading-relaxed font-medium">
+                Save analyzed channels, viral patterns, or custom research ideas to build your competitive edge.
+              </p>
+              <Link 
+                href="/radar"
+                className="mt-10 px-8 py-3 bg-white text-black text-xs font-black uppercase tracking-[0.2em] rounded-full hover:bg-zinc-200 transition-all inline-block"
+              >
+                Scan for Trends
+              </Link>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <ResearchNotesModal 
           isOpen={isEditModalOpen}
@@ -379,14 +453,7 @@ export default function LibraryPage() {
           formatNumber={formatNumber}
           filters={{ region: 'US' }}
         />
-      </div>
-
-      <style jsx global>{`
-        .prose p { margin-bottom: 0.5rem; }
-        .prose p:last-child { margin-bottom: 0; }
-        .prose ul, .prose ol { margin-bottom: 0.5rem; padding-left: 1rem; }
-        .prose li { margin-bottom: 0.25rem; }
-      `}</style>
+      </main>
     </div>
   );
 }
