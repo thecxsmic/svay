@@ -314,7 +314,7 @@ function ChannelsContent() {
         channelSubs={analysisData?.channel?.statistics?.subscriberCount}
       />
 
-      <div className={`transition-all duration-700 ease-in-out ${hasSearched ? 'pt-6' : 'pt-20 md:pt-32'}`}>
+      <div className={`transition-all duration-700 ease-in-out ${hasSearched ? 'pt-0' : 'pt-20 md:pt-32'}`}>
         <header className={`max-w-5xl mx-auto text-center transition-all duration-700 ${hasSearched ? 'opacity-0 h-0 overflow-hidden mb-0' : 'opacity-100 mb-16'}`}>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -342,8 +342,8 @@ function ChannelsContent() {
           </motion.p>
         </header>
 
-        <section className={`sticky top-4 z-[60] transition-all duration-700 px-6 ${hasSearched ? 'max-w-4xl mx-auto' : 'max-w-2xl mx-auto'}`}>
-          <form onSubmit={handleSearch} className="relative group">
+        <section className={`sticky top-0 z-[45] transition-all duration-700 border-b ${hasSearched ? 'w-full bg-black/80 backdrop-blur-md border-white/5 py-4 px-6 md:px-10' : 'max-w-2xl mx-auto px-6 border-transparent'}`}>
+          <form onSubmit={handleSearch} className={`relative group mx-auto transition-all duration-700 ${hasSearched ? 'max-w-[1600px]' : 'w-full'}`}>
             <div className="relative flex items-center bg-black border border-white/10 rounded-2xl overflow-hidden focus-within:border-white/20 transition-all duration-300 shadow-2xl">
               <div className="absolute inset-0 opacity-[0.03] group-focus-within:opacity-[0.08] transition-opacity bg-gradient-to-r from-geist-success via-[#00dfd8] to-geist-success animate-logo-gradient pointer-events-none" />
               <div className="pl-6 text-accents-4 shrink-0 relative z-10"><Search className="w-5 h-5" /></div>
@@ -383,7 +383,7 @@ function ChannelsContent() {
           </form>
         </section>
 
-        <main className="max-w-5xl mx-auto px-6 md:px-10 mt-12">
+        <main className="max-w-[1600px] mx-auto px-6 md:px-10 mt-12">
           {/* Search Results */}
           <AnimatePresence mode="wait">
             {searchResults && (

@@ -38,7 +38,7 @@ export default function LayoutContent({ children }) {
 
       <nav className="flex-1 px-3 space-y-0.5 mt-2 overflow-y-auto no-scrollbar">
         <div className="pb-2 px-3">
-          <p className="text-[10px] font-bold text-accents-4 uppercase tracking-widest">Intelligence</p>
+          <p className="font-display text-[10px] font-bold text-accents-4 uppercase tracking-widest">Intelligence</p>
         </div>
         {navItems.map((item) => {
           const isActive = pathname === item.href;
@@ -65,7 +65,7 @@ export default function LayoutContent({ children }) {
         })}
 
         <div className="pt-8 pb-2 px-3">
-          <p className="text-[10px] font-bold text-accents-4 uppercase tracking-wider">Research</p>
+          <p className="font-display text-[10px] font-bold text-accents-4 uppercase tracking-wider">Research</p>
         </div>
         
         <button 
@@ -77,13 +77,13 @@ export default function LayoutContent({ children }) {
         </button>
 
         <div className="pt-8 pb-4 px-3">
-          <p className="text-[10px] font-bold text-accents-4 uppercase tracking-wider">Pinned</p>
+          <p className="font-display text-[10px] font-bold text-accents-4 uppercase tracking-wider">Pinned</p>
         </div>
         <PinnedChannels />
       </nav>
 
-      <div className="p-4 border-t border-accents-2 mt-auto">
-        <div className="bg-accents-1 border border-accents-2 rounded-lg p-3 flex items-center gap-3 hover:bg-white/[0.02] transition-colors cursor-pointer">
+      <div className="h-[88px] p-4 border-t border-accents-2 mt-auto flex items-center">
+        <div className="w-full bg-accents-1 border border-accents-2 rounded-lg p-3 flex items-center gap-3 hover:bg-white/[0.02] transition-colors cursor-pointer">
             <UserButton appearance={{ 
               elements: { 
                 userButtonAvatarBox: "w-8 h-8 border border-white/10" 
@@ -152,13 +152,13 @@ export default function LayoutContent({ children }) {
               </button>
               <div className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-geist-success shadow-[0_0_8px_rgba(0,112,243,0.5)]"></div>
-                <span className="text-xs font-medium text-accents-5">System Online</span>
+                <span className="font-display text-xs font-bold text-accents-5 uppercase tracking-tighter">System Online</span>
               </div>
           </div>
           <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 bg-white/5 px-2.5 py-1 rounded-full border border-white/10">
                 <Zap className="w-3 h-3 text-geist-success" fill="currentColor" />
-                <span className="text-[10px] font-bold text-white uppercase tracking-tight">Pro</span>
+                <span className="font-display text-[10px] font-bold text-white uppercase tracking-tight">Pro</span>
               </div>
           </div>
         </header>
@@ -169,8 +169,8 @@ export default function LayoutContent({ children }) {
               {children}
             </div>
             
-            <footer className="border-t border-accents-2 py-10 px-8 mt-auto">
-              <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+            <footer className="h-[88px] border-t border-accents-2 px-8 mt-auto flex items-center">
+              <div className="w-full flex flex-col md:flex-row justify-between items-center gap-6">
                 <div className="flex items-center gap-2.5">
                     <div className="w-4 h-4 bg-white/10 rounded-full flex items-center justify-center">
                       <div className="w-0 h-0 border-t-[2.5px] border-t-transparent border-l-[4px] border-l-white/40 border-b-[2.5px] border-b-transparent ml-0.5"></div>
