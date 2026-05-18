@@ -353,7 +353,8 @@ export default function LibraryPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.05 }}
-                  className="group p-8 rounded-[2rem] bg-zinc-900/30 border border-zinc-800 hover:bg-zinc-900/50 hover:border-zinc-700 transition-all flex flex-col relative overflow-hidden"
+                  onClick={() => handleEdit(item)}
+                  className="group p-8 rounded-[2rem] bg-zinc-900/30 border border-zinc-800 hover:bg-zinc-900/50 hover:border-zinc-700 transition-all flex flex-col relative overflow-hidden cursor-pointer"
                 >
                   {/* Item Type Badge */}
                   <div className="flex items-center justify-between mb-8">
@@ -364,7 +365,7 @@ export default function LibraryPage() {
                        <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em]">{item.type}</span>
                     </div>
                     <button 
-                      onClick={() => handleDelete(item.id)}
+                      onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}
                       className="p-2 opacity-0 group-hover:opacity-100 bg-red-500/10 rounded-xl transition-all text-red-500 hover:bg-red-500 hover:text-white"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -381,7 +382,11 @@ export default function LibraryPage() {
                             <p className="text-[10px] font-black text-white/50 uppercase tracking-[0.2em] truncate flex-1">{item.metadata.channelTitle}</p>
                             {item.type === 'video' && (
                               <button 
-                                onClick={(e) => { e.preventDefault(); handleOpenVideoDetails(item); }}
+                                onClick={(e) => { 
+                                  e.preventDefault(); 
+                                  e.stopPropagation();
+                                  handleOpenVideoDetails(item); 
+                                }}
                                 className="bg-white/10 hover:bg-white backdrop-blur-md p-2 rounded-xl border border-white/10 hover:text-black transition-all"
                               >
                                 <Eye className="w-4 h-4" />
@@ -417,33 +422,30 @@ export default function LibraryPage() {
 
                   {/* Actions */}
                   <div className="flex items-center gap-3 mt-auto">
-                    <button 
-                      onClick={() => handleEdit(item)}
-                      className="flex-1 bg-white text-black hover:bg-zinc-200 h-12 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 shadow-xl shadow-white/5"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" />
-                      View Research
-                    </button>
-                    <div className="flex gap-2">
-                       {(item.type === 'channel' || item.type === 'analysis') && (
-                         <Link 
-                            href={getAnalyzeLink(item)}
-                            className="w-12 h-12 bg-zinc-900 hover:bg-white hover:text-black border border-zinc-800 rounded-2xl transition-all flex items-center justify-center group/btn"
-                            title="Analyze"
-                          >
-                            <BarChart3 className="w-4 h-4 text-zinc-500 group-hover/btn:text-black" />
-                          </Link>
-                       )}
+                    {(item.type === 'channel' || item.type === 'analysis') && (
+                      <Link 
+                        href={getAnalyzeLink(item)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex-1 h-12 bg-white text-black hover:bg-zinc-200 border border-white rounded-2xl transition-all flex items-center justify-center gap-2 group/btn shadow-xl shadow-white/5"
+                        title="Analyze"
+                      >
+                        <BarChart3 className="w-4 h-4" />
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">Deep Analysis</span>
+                      </Link>
+                    )}
+                    {(item.type === 'video' || item.type === 'channel') && (
                        <a 
                         href={getYouTubeLink(item)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-12 h-12 bg-zinc-900 hover:bg-white hover:text-black border border-zinc-800 rounded-2xl transition-all flex items-center justify-center group/btn"
+                        onClick={(e) => e.stopPropagation()}
+                        className={`h-12 bg-zinc-900 hover:bg-white hover:text-black border border-zinc-800 rounded-2xl transition-all flex items-center justify-center group/btn ${item.type === 'video' ? 'flex-1 gap-2' : 'w-12'}`}
                         title="YouTube"
                        >
                          <ExternalLink className="w-4 h-4 text-zinc-500 group-hover/btn:text-black" />
+                         {item.type === 'video' && <span className="text-[10px] font-black uppercase tracking-[0.2em] group-hover/btn:text-black">Watch on YouTube</span>}
                        </a>
-                    </div>
+                    )}
                   </div>
 
                   {/* Meta Footer */}
