@@ -16,7 +16,11 @@ export default function ResearchNotesModal({ isOpen, onClose, item, onSave, onVi
   const [content, setContent] = useState('');
   const [dbId, setDbId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [mounted, setMounted] = useState(false);
+  // Quill key is only set after content is ready, preventing premature mount
+  const [quillReady, setQuillReady] = useState(false);
+  const [quillKey, setQuillKey] = useState('quill-init');
 
   const formatNumber = (num) => {
     if (isNaN(num) || num === null || num === undefined) return "0";
@@ -38,32 +42,31 @@ export default function ResearchNotesModal({ isOpen, onClose, item, onSave, onVi
         {rationale && (
           <div className="space-y-1">
             <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest flex items-center gap-1.5">
-               <Target className="w-2.5 h-2.5" />
-               Strategy / Opportunity
+              <Target className="w-2.5 h-2.5" />
+              Strategy / Opportunity
             </p>
             <p className="text-[11px] text-zinc-400 leading-relaxed line-clamp-2 italic">{rationale}</p>
           </div>
         )}
-        
         <div className="flex gap-4">
-           {effort && (
-             <div className="space-y-1">
-               <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest flex items-center gap-1.5">
-                  <Zap className="w-2.5 h-2.5 text-yellow-500" />
-                  Effort
-               </p>
-               <p className="text-[10px] font-bold text-zinc-300 uppercase">{effort}</p>
-             </div>
-           )}
-           {timing && (
-             <div className="space-y-1">
-               <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest flex items-center gap-1.5">
-                  <Activity className="w-2.5 h-2.5 text-blue-500" />
-                  Momentum
-               </p>
-               <p className="text-[10px] font-bold text-zinc-300 uppercase">{timing}</p>
-             </div>
-           )}
+          {effort && (
+            <div className="space-y-1">
+              <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest flex items-center gap-1.5">
+                <Zap className="w-2.5 h-2.5 text-yellow-500" />
+                Effort
+              </p>
+              <p className="text-[10px] font-bold text-zinc-300 uppercase">{effort}</p>
+            </div>
+          )}
+          {timing && (
+            <div className="space-y-1">
+              <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest flex items-center gap-1.5">
+                <Activity className="w-2.5 h-2.5 text-blue-500" />
+                Momentum
+              </p>
+              <p className="text-[10px] font-bold text-zinc-300 uppercase">{timing}</p>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -74,35 +77,76 @@ export default function ResearchNotesModal({ isOpen, onClose, item, onSave, onVi
   }, []);
 
   useEffect(() => {
-    if (isOpen && item) {
-      // Clear before loading new
-      const initialContent = item.content || '';
-      const initialDbId = item.dbId || null;
-      
+    let isMounted = true;
+
+    if (!isOpen || !item) {
+      // Reset state when modal closes, with a short delay for exit animation
+      const timer = setTimeout(() => {
+        if (isMounted) {
+          setContent('');
+          setDbId(null);
+          setLoading(false);
+          setQuillReady(false);
+        }
+      }, 300);
+      return () => {
+        isMounted = false;
+        clearTimeout(timer);
+      };
+    }
+
+    // Modal is opening — reset quill so it doesn't show stale content
+    setQuillReady(false);
+    setContent('');
+
+    const initialContent = item.content || '';
+    const initialDbId = item.dbId || (item.hasOwnProperty('content') ? item.id : null);
+    const refId = item.reference_id || item.id || item.channelId;
+
+    if (initialContent) {
+      // We already have content — set it and mount Quill immediately
       setContent(initialContent);
       setDbId(initialDbId);
+      // Use a unique key so Quill mounts fresh with the correct value
+      setQuillKey(`quill-${refId || Date.now()}`);
+      setQuillReady(true);
+    } else if (refId) {
+      // Fetch first, then mount Quill only after content is known
+      setDbId(initialDbId);
+      setLoading(true);
 
-      // If we have a reference but no content/id yet, try to fetch it
-      if (!initialContent && !initialDbId && (item.id || item.reference_id)) {
-        const refId = item.id || item.reference_id;
-        fetch(`/api/library?reference_id=${refId}`)
-          .then(res => res.json())
-          .then(data => {
-            if (data.success && data.item) {
-              // Only update if we haven't typed anything yet or if it was empty
-              setContent(prev => prev === '' ? (data.item.content || '') : prev);
-              setDbId(data.item.id);
-            }
-          })
-          .catch(err => {
-            console.error('Failed to fetch existing note:', err);
-          });
-      }
-    } else if (!isOpen) {
-      // Clean up when closed to avoid stale data on next open
+      fetch(`/api/library?reference_id=${refId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (!isMounted) return;
+          if (data.success && data.item) {
+            setContent(data.item.content || '');
+            setDbId(data.item.id);
+          } else {
+            setContent('');
+          }
+        })
+        .catch(err => {
+          console.error('Failed to fetch existing note:', err);
+          if (isMounted) setContent('');
+        })
+        .finally(() => {
+          if (!isMounted) return;
+          setLoading(false);
+          // Now that content state is set, give Quill its stable key and mount
+          setQuillKey(`quill-${refId}-${Date.now()}`);
+          setQuillReady(true);
+        });
+    } else {
+      // No refId, no existing content — mount empty Quill
       setContent('');
-      setDbId(null);
+      setQuillKey(`quill-new-${Date.now()}`);
+      setQuillReady(true);
     }
+
+    return () => {
+      isMounted = false;
+    };
   }, [isOpen, item]);
 
   // Quill modules configuration
@@ -116,7 +160,8 @@ export default function ResearchNotesModal({ isOpen, onClose, item, onSave, onVi
   }), []);
 
   const handleSave = async () => {
-    setLoading(true);
+    if (!content || content === '<p><br></p>') return;
+    setSaving(true);
     try {
       const res = await fetch('/api/library', {
         method: 'POST',
@@ -132,13 +177,13 @@ export default function ResearchNotesModal({ isOpen, onClose, item, onSave, onVi
       });
       const data = await res.json();
       if (data.success) {
-        if (onSave) onSave(data.id);
+        if (onSave) onSave(data.id || dbId);
         onClose();
       }
     } catch (err) {
       console.error('Failed to save research note:', err);
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -153,205 +198,256 @@ export default function ResearchNotesModal({ isOpen, onClose, item, onSave, onVi
   };
 
   const modalContent = (
-    <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-6">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-          />
-          
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-zinc-800 shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-zinc-800 rounded-xl">
-                  {getIcon()}
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-white uppercase tracking-tighter italic">
-                    {dbId ? 'Edit Research Note' : 'Save to Research Hub'}
-                  </h3>
-                  {item?.title && <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest truncate max-w-[400px]">{item.title}</p>}
-                </div>
-              </div>
-              <button onClick={onClose} className="p-2 hover:bg-zinc-800 rounded-full transition-colors">
-                <X className="w-5 h-5 text-zinc-500" />
-              </button>
-            </div>
+    <>
+      <style jsx global>{`
+        .quill-dark .ql-toolbar {
+          background: #18181b;
+          border-color: #27272a !important;
+          border-top-left-radius: 1rem;
+          border-top-right-radius: 1rem;
+        }
+        .quill-dark .ql-container {
+          border-color: #27272a !important;
+          border-bottom-left-radius: 1rem;
+          border-bottom-right-radius: 1rem;
+          height: 250px;
+          font-family: inherit;
+          font-size: 0.875rem;
+          background: transparent;
+        }
+        .quill-dark .ql-stroke {
+          stroke: #71717a !important;
+        }
+        .quill-dark .ql-fill {
+          fill: #71717a !important;
+        }
+        .quill-dark .ql-picker {
+          color: #71717a !important;
+        }
+        .quill-dark .ql-editor.ql-blank::before {
+          color: #3f3f46 !important;
+          font-style: normal;
+        }
+        .quill-dark .ql-editor {
+          color: #e4e4e7;
+        }
+        .quill-dark .ql-active .ql-stroke {
+          stroke: #fff !important;
+        }
+        .quill-dark .ql-active .ql-fill {
+          fill: #fff !important;
+        }
+      `}</style>
 
-            {/* Scrollable Content */}
-            <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
-              {/* Reference Preview */}
-              {item && (
-                <div className="bg-black/40 border border-zinc-800 rounded-2xl overflow-hidden flex flex-col md:flex-row min-h-[8rem]">
-                  {(item.thumbnail || item.metadata?.thumbnail || (item.type === 'video' && item.reference_id)) && (
-                    <div className="w-full md:w-48 h-32 md:h-auto shrink-0 bg-zinc-800 relative">
-                       <img 
-                        src={item.thumbnail || item.metadata?.thumbnail || (item.type === 'video' ? `https://i.ytimg.com/vi/${item.reference_id}/mqdefault.jpg` : null)} 
-                        className="w-full h-full object-cover" 
-                        alt="" 
-                       />
-                       <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded text-[8px] font-black uppercase tracking-widest text-white border border-white/10">
+      <AnimatePresence>
+        {isOpen && (
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={onClose}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            />
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-zinc-800 shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-zinc-800 rounded-xl">
+                    {getIcon()}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-white uppercase tracking-tighter italic">
+                      {dbId ? 'Edit Research Note' : 'Save to Research Hub'}
+                    </h3>
+                    {item?.title && (
+                      <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest truncate max-w-[400px]">
+                        {item.title}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <button onClick={onClose} className="p-2 hover:bg-zinc-800 rounded-full transition-colors">
+                  <X className="w-5 h-5 text-zinc-500" />
+                </button>
+              </div>
+
+              {/* Scrollable Content */}
+              <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
+                {/* Reference Preview */}
+                {item && (
+                  <div className="bg-black/40 border border-zinc-800 rounded-2xl overflow-hidden flex flex-col md:flex-row min-h-[8rem]">
+                    {(item.thumbnail || item.metadata?.thumbnail || (item.type === 'video' && item.reference_id)) && (
+                      <div className="w-full md:w-48 h-32 md:h-auto shrink-0 bg-zinc-800 relative">
+                        <img
+                          src={
+                            item.thumbnail ||
+                            item.metadata?.thumbnail ||
+                            (item.type === 'video' ? `https://i.ytimg.com/vi/${item.reference_id}/mqdefault.jpg` : null)
+                          }
+                          className="w-full h-full object-cover"
+                          alt=""
+                        />
+                        <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded text-[8px] font-black uppercase tracking-widest text-white border border-white/10">
                           {item.type}
-                       </div>
-                       {item.type === 'video' && onViewDetails && (
-                          <button 
+                        </div>
+                        {item.type === 'video' && onViewDetails && (
+                          <button
                             onClick={() => onViewDetails(item)}
                             className="absolute bottom-2 right-2 bg-white/10 hover:bg-white/20 backdrop-blur-md p-1.5 rounded-lg border border-white/5 transition-all group"
                             title="View Full Analytics"
                           >
                             <Eye className="w-3.5 h-3.5 text-white" />
                           </button>
-                       )}
-                    </div>
-                  )}
-                  <div className="p-4 flex-1 flex flex-col justify-center min-w-0">
-                     <div className="flex items-center gap-2 mb-1">
+                        )}
+                      </div>
+                    )}
+                    <div className="p-4 flex-1 flex flex-col justify-center min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
                         {!item.thumbnail && !item.metadata?.thumbnail && item.type !== 'video' && (
                           <div className="p-1.5 bg-zinc-800 rounded-lg">
                             {getIcon()}
                           </div>
                         )}
                         <h4 className="text-sm font-bold text-white line-clamp-2">{item.title}</h4>
-                     </div>
-                     
-                     {item.type === 'idea' ? (
+                      </div>
+
+                      {item.type === 'idea' ? (
                         getIdeaPreview()
-                     ) : (
-                       <>
-                         <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-3">
+                      ) : (
+                        <>
+                          <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-3">
                             {item.metadata?.channelTitle || item.metadata?.customUrl || 'Linked Reference'}
-                         </p>
-                         
-                         <div className="flex flex-wrap gap-4">
+                          </p>
+                          <div className="flex flex-wrap gap-4">
                             {item.metadata?.statistics?.viewCount && (
                               <div className="flex items-center gap-1.5">
-                                 <Eye className="w-3 h-3 text-zinc-600" />
-                                 <span className="text-[10px] font-black text-zinc-400">{formatNumber(item.metadata.statistics.viewCount)}</span>
+                                <Eye className="w-3 h-3 text-zinc-600" />
+                                <span className="text-[10px] font-black text-zinc-400">
+                                  {formatNumber(item.metadata.statistics.viewCount)}
+                                </span>
                               </div>
                             )}
                             {item.metadata?.statistics?.subscriberCount && (
                               <div className="flex items-center gap-1.5">
-                                 <Users className="w-3 h-3 text-zinc-600" />
-                                 <span className="text-[10px] font-black text-zinc-400">{formatNumber(item.metadata.statistics.subscriberCount)}</span>
+                                <Users className="w-3 h-3 text-zinc-600" />
+                                <span className="text-[10px] font-black text-zinc-400">
+                                  {formatNumber(item.metadata.statistics.subscriberCount)}
+                                </span>
                               </div>
                             )}
                             {item.metadata?.vScore && (
                               <div className="flex items-center gap-1.5">
-                                 <TrendingUp className="w-3 h-3 text-blue-500" />
-                                 <span className="text-[10px] font-black text-blue-500">{item.metadata.vScore}% VIRAL</span>
+                                <TrendingUp className="w-3 h-3 text-blue-500" />
+                                <span className="text-[10px] font-black text-blue-500">
+                                  {item.metadata.vScore}% VIRAL
+                                </span>
                               </div>
                             )}
                             {item.metadata?.publishedAt && (
                               <div className="flex items-center gap-1.5">
-                                 <Calendar className="w-3 h-3 text-zinc-600" />
-                                 <span className="text-[10px] font-black text-zinc-400">{new Date(item.metadata.publishedAt).toLocaleDateString()}</span>
+                                <Calendar className="w-3 h-3 text-zinc-600" />
+                                <span className="text-[10px] font-black text-zinc-400">
+                                  {new Date(item.metadata.publishedAt).toLocaleDateString()}
+                                </span>
                               </div>
                             )}
-                         </div>
-                       </>
-                     )}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Editor */}
+                <div className="space-y-2 rich-text-editor">
+                  <div className="flex items-center justify-between px-1">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em]">
+                      Research Observations & Strategies
+                    </label>
+                    {loading && (
+                      <span className="text-[9px] font-black text-blue-500 uppercase animate-pulse">
+                        Syncing Intelligence...
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="bg-black/40 border border-zinc-800 rounded-2xl overflow-hidden relative">
+                    {/* Loading overlay — shown while fetching, Quill is NOT mounted yet */}
+                    {loading && (
+                      <div className="h-[calc(250px+42px)] flex items-center justify-center">
+                        <Loader2 className="w-6 h-6 text-zinc-700 animate-spin" />
+                      </div>
+                    )}
+
+                    {/*
+                      KEY FIX:
+                      - quillReady is only set to true AFTER content state is finalized
+                        (either from item.content directly, or after the fetch completes).
+                      - This prevents Quill from mounting with '' and ignoring
+                        the subsequent content state update.
+                      - quillKey changes with each modal open so Quill always
+                        re-initializes cleanly with the correct value prop.
+                    */}
+                    {!loading && quillReady && (
+                      <ReactQuill
+                        key={quillKey}
+                        theme="snow"
+                        value={content}
+                        onChange={setContent}
+                        modules={modules}
+                        placeholder="Write your observations, viral hooks, or strategy notes here..."
+                        className="quill-dark"
+                      />
+                    )}
                   </div>
                 </div>
-              )}
-
-              <div className="space-y-2 rich-text-editor">
-                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] px-1">Research Observations & Strategies</label>
-                <div className="bg-black/40 border border-zinc-800 rounded-2xl overflow-hidden">
-                  <ReactQuill 
-                    theme="snow"
-                    value={content}
-                    onChange={setContent}
-                    modules={modules}
-                    placeholder="Write your observations, viral hooks, or strategy notes here..."
-                    className="quill-dark"
-                  />
-                </div>
               </div>
-            </div>
 
-            {/* Footer */}
-            <div className="p-6 border-t border-zinc-800 flex justify-end gap-3 shrink-0">
-              {dbId && (
+              {/* Footer */}
+              <div className="p-6 border-t border-zinc-800 flex justify-end gap-3 shrink-0">
+                {dbId && (
+                  <button
+                    onClick={() => {
+                      onClose();
+                      router.push(`/library/${dbId}`);
+                    }}
+                    className="mr-auto px-4 py-2.5 rounded-xl text-xs font-bold text-zinc-500 hover:text-white hover:bg-zinc-800 transition-all flex items-center gap-2"
+                  >
+                    <Maximize2 className="w-4 h-4" />
+                    Full Page
+                  </button>
+                )}
                 <button
-                  onClick={() => {
-                    onClose();
-                    router.push(`/library/${dbId}`);
-                  }}
-                  className="mr-auto px-4 py-2.5 rounded-xl text-xs font-bold text-zinc-500 hover:text-white hover:bg-zinc-800 transition-all flex items-center gap-2"
+                  onClick={onClose}
+                  className="px-6 py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-colors"
                 >
-                  <Maximize2 className="w-4 h-4" />
-                  Full Page
+                  Cancel
                 </button>
-              )}
-              <button
-                onClick={onClose}
-                className="px-6 py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={loading}
-                className="px-6 py-2.5 bg-white text-black rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-zinc-200 transition-all disabled:opacity-50"
-              >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                {dbId ? 'Update Research' : 'Save to Hub'}
-              </button>
-            </div>
-          </motion.div>
-
-          <style jsx global>{`
-            .quill-dark .ql-toolbar {
-              background: #18181b;
-              border-color: #27272a !important;
-              border-top-left-radius: 1rem;
-              border-top-right-radius: 1rem;
-            }
-            .quill-dark .ql-container {
-              border-color: #27272a !important;
-              border-bottom-left-radius: 1rem;
-              border-bottom-right-radius: 1rem;
-              height: 250px;
-              font-family: inherit;
-              font-size: 0.875rem;
-              background: transparent;
-            }
-            .quill-dark .ql-stroke {
-              stroke: #71717a !important;
-            }
-            .quill-dark .ql-fill {
-              fill: #71717a !important;
-            }
-            .quill-dark .ql-picker {
-              color: #71717a !important;
-            }
-            .quill-dark .ql-editor.ql-blank::before {
-              color: #3f3f46 !important;
-              font-style: normal;
-            }
-            .quill-dark .ql-editor {
-              color: #e4e4e7;
-            }
-            .quill-dark .ql-active .ql-stroke {
-              stroke: #fff !important;
-            }
-            .quill-dark .ql-active .ql-fill {
-              fill: #fff !important;
-            }
-          `}</style>
-        </div>
-      )}
-    </AnimatePresence>
+                <button
+                  onClick={handleSave}
+                  disabled={loading || saving}
+                  className="px-6 py-2.5 bg-white text-black rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-zinc-200 transition-all disabled:opacity-50"
+                >
+                  {(loading || saving) ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
+                  {dbId ? 'Update Research' : 'Save to Hub'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </>
   );
 
   if (!mounted) return null;
