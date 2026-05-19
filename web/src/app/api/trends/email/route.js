@@ -48,9 +48,6 @@ export async function POST(req) {
       return apiError(new Error("Radar data not found"), 404);
     }
 
-    const targetEmail = user.emailAddresses[0]?.emailAddress;
-    if (!targetEmail) return apiError(new Error("No recipient email found"), 400);
-
     const data = radar.data;
     const insights = data.insights;
 
@@ -67,18 +64,18 @@ export async function POST(req) {
         <div style="padding: 30px;">
           <div style="background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 20px; padding: 24px; margin-bottom: 30px; text-align: center;">
             <p style="font-size: 10px; font-weight: 900; text-transform: uppercase; color: #666; margin-bottom: 10px; letter-spacing: 2px;">Market Momentum</p>
-            <h2 style="font-size: 32px; font-weight: 900; margin: 0; color: #ff0055; text-transform: uppercase; letter-spacing: -1px;">${insights.overview.marketMomentum}</h2>
-            <p style="font-size: 14px; color: #888; margin-top: 10px; line-height: 1.5;">Viral potential is currently <strong style="color: #fff;">${insights.overview.viralPotential}</strong>. ${insights.overview.summary}</p>
+            <h2 style="font-size: 32px; font-weight: 900; margin: 0; color: #ff0055; text-transform: uppercase; letter-spacing: -1px;">\${insights.overview.marketMomentum}</h2>
+            <p style="font-size: 14px; color: #888; margin-top: 10px; line-height: 1.5;">Viral potential is currently <strong style="color: #fff;">\${insights.overview.viralPotential}</strong>. \${insights.overview.summary}</p>
           </div>
 
           <h2 style="font-size: 14px; font-weight: 900; text-transform: uppercase; color: #00dfd8; margin-bottom: 20px; border-bottom: 1px solid #222; padding-bottom: 10px;">High-Impact Ideas</h2>
-          ${insights.videoIdeas.map(idea => `
+          \${insights.videoIdeas.map(idea => `
             <div style="background: rgba(255,255,255,0.02); border: 1px solid #111; padding: 20px; border-radius: 16px; margin-bottom: 15px;">
-              <p style="font-weight: 900; margin: 0; font-size: 17px; color: #fff;">${idea.title}</p>
-              <p style="font-size: 13px; color: #aaa; margin-top: 8px; line-height: 1.4;">${idea.description}</p>
+              <p style="font-weight: 900; margin: 0; font-size: 17px; color: #fff;">\${idea.title}</p>
+              <p style="font-size: 13px; color: #aaa; margin-top: 8px; line-height: 1.4;">\${idea.description}</p>
               <div style="display: flex; gap: 10px; margin-top: 15px;">
-                <span style="background: rgba(0, 223, 216, 0.1); color: #00dfd8; padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 900; text-transform: uppercase;">${idea.difficulty}</span>
-                <span style="background: rgba(255, 0, 85, 0.1); color: #ff0055; padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 900; text-transform: uppercase;">${idea.predictedViews} Views</span>
+                <span style="background: rgba(0, 223, 216, 0.1); color: #00dfd8; padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 900; text-transform: uppercase;">\${idea.difficulty}</span>
+                <span style="background: rgba(255, 0, 85, 0.1); color: #ff0055; padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 900; text-transform: uppercase;">\${idea.predictedViews} Views</span>
               </div>
             </div>
           `).join('')}
@@ -86,10 +83,10 @@ export async function POST(req) {
           <div style="margin-top: 40px; display: grid; grid-template-columns: 1fr; gap: 20px;">
             <div style="background: #0a0a0a; border: 1px solid #111; padding: 24px; border-radius: 20px;">
               <h3 style="font-size: 12px; font-weight: 900; text-transform: uppercase; color: #00dfd8; margin: 0 0 15px 0;">Quick Wins</h3>
-              ${insights.quickWins.map(win => `
+              \${insights.quickWins.map(win => `
                 <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #111;">
-                  <p style="font-size: 14px; font-weight: bold; margin: 0; color: #fff;">${win.idea}</p>
-                  <p style="font-size: 12px; color: #666; margin: 5px 0 0 0;">${win.why} • ${win.timing}</p>
+                  <p style="font-size: 14px; font-weight: bold; margin: 0; color: #fff;">\${win.idea}</p>
+                  <p style="font-size: 12px; color: #666; margin: 5px 0 0 0;">\${win.why} • \${win.timing}</p>
                 </div>
               `).join('')}
             </div>
@@ -97,15 +94,15 @@ export async function POST(req) {
             <div style="background: #0a0a0a; border: 1px solid #111; padding: 24px; border-radius: 20px;">
               <h3 style="font-size: 12px; font-weight: 900; text-transform: uppercase; color: #ff0055; margin: 0 0 15px 0;">Winning Patterns</h3>
               <p style="font-size: 11px; font-weight: bold; color: #444; text-transform: uppercase; margin-bottom: 10px;">Psychological Hooks</p>
-              ${insights.viralPatterns.titleHooks.map(hook => `
+              \${insights.viralPatterns.titleHooks.map(hook => `
                 <div style="font-size: 13px; color: #ccc; margin-bottom: 8px; padding-left: 10px; border-left: 2px solid #ff0055;">
-                  ${hook}
+                  \${hook}
                 </div>
               `).join('')}
             </div>
           </div>
 
-          <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://updates.vyron.space'}/radar" style="display: block; background: #ffffff; color: #000000; text-decoration: none; padding: 18px; border-radius: 12px; font-weight: 900; font-size: 13px; text-transform: uppercase; text-align: center; letter-spacing: 1px; margin-top: 40px;">Launch Full Intelligence Radar</a>
+          <a href="\${process.env.NEXT_PUBLIC_APP_URL || 'https://updates.vyron.space'}/radar" style="display: block; background: #ffffff; color: #000000; text-decoration: none; padding: 18px; border-radius: 12px; font-weight: 900; font-size: 13px; text-transform: uppercase; text-align: center; letter-spacing: 1px; margin-top: 40px;">Launch Full Intelligence Radar</a>
         </div>
 
         <div style="padding: 30px; border-top: 1px solid #1a1a1a; text-align: center; background: #050505;">
