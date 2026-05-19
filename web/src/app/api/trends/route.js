@@ -74,15 +74,15 @@ export async function POST(req) {
               // Get last email time
               const lastEmail = await getLastEmail(userId, 'trend_radar', channelId);
               
-              // Trigger email report in background if not sent in last 24h
-              const origin = req.headers.get('origin') || req.nextUrl.origin;
-              fetch(`${origin}/api/trends/email`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ channelId })
-              }).catch(err => {
-                console.error("[Trends API] Error triggering cached email:", err);
-              });
+          // Trigger email report in background if not sent in last 24h
+          const origin = req.headers.get('origin') || req.nextUrl.origin;
+          fetch(`${origin}/api/trends/email`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ channelId, userId })
+          }).catch(err => {
+            console.error("[Trends API] Error triggering cached email:", err);
+          });
 
               send({ type: 'step', progress: 100, message: 'Loading current radar...' });
               send({ type: 'complete', data: { ...cachedRadar.data, lastEmailSentAt: lastEmail } });
@@ -337,7 +337,7 @@ INSTRUCTIONS:
           fetch(`${origin}/api/trends/email`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ channelId })
+            body: JSON.stringify({ channelId, userId })
           }).catch(err => {
             console.error("[Trends API] Error triggering email:", err);
           });

@@ -260,7 +260,10 @@ export default function CompetitorsPage() {
             const emailRes = await fetch('/api/competitors/email', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ analysisId: saveResult.id })
+              body: JSON.stringify({ 
+                analysisId: saveResult.id,
+                userId: user?.id
+              })
             });
             const emailResult = await emailRes.json();
             if (emailResult.success) {

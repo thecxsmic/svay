@@ -1,4 +1,4 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { auth, currentUser, createClerkClient } from "@clerk/nextjs/server";
 import { getTrendRadar, logEmail, getLastEmail, getUserChannel } from "@/lib/cache/turso";
 import { sendEmail } from "@/lib/email/resend";
 import { apiSuccess, apiError } from "@/lib/utils/response";
@@ -6,15 +6,28 @@ import { apiSuccess, apiError } from "@/lib/utils/response";
 export async function POST(req) {
   try {
     console.log("[Trend Email API] Received request");
-    const { userId } = await auth();
-    const user = await currentUser();
+    const body = await req.json();
+    const { channelId, userId: providedUserId } = body;
     
-    if (!userId || !user) {
-      console.error("[Trend Email API] Unauthorized");
+    let userId = (await auth()).userId;
+    let userEmail = null;
+
+    if (!userId && providedUserId) {
+      console.log("[Trend Email API] Using background userId:", providedUserId);
+      userId = providedUserId;
+      const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
+      const user = await clerk.users.getUser(userId);
+      userEmail = user.emailAddresses[0]?.emailAddress;
+    } else if (userId) {
+      const user = await currentUser();
+      userEmail = user.emailAddresses[0]?.emailAddress;
+    }
+    
+    if (!userId || !userEmail) {
+      console.error("[Trend Email API] Unauthorized: No valid user session or ID");
       return apiError(new Error("Unauthorized"), 401);
     }
 
-    const { channelId } = await req.json();
     if (!channelId) return apiError(new Error("Channel ID is required"), 400);
 
     // 1. Check 24h limit for trend radar emails for this channel
@@ -103,7 +116,7 @@ export async function POST(req) {
 
     console.log("[Trend Email API] Sending via Resend...");
     const result = await sendEmail({
-      to: targetEmail,
+      to: userEmail,
       subject,
       html
     });
