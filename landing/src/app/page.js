@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from 'react';
+import DemoDashboard from '../components/DemoDashboard';
 
 export default function LandingPage() {
   useEffect(() => {
@@ -558,7 +559,7 @@ export default function LandingPage() {
         .m-dot { font-family:'Syne',sans-serif;font-size:1rem;color:var(--accent);opacity:.4; }
 
         /* ── HOW IT WORKS ── */
-        .how-wrap { display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:start; }
+        .how-wrap { display:grid;grid-template-columns:1fr;max-width:800px;margin:0 auto;gap:72px;align-items:start; }
 
         .steps { display:flex;flex-direction:column; }
         .step {
@@ -846,6 +847,14 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── DEMO DASHBOARD ── */}
+      <div className="section" style={{ paddingTop: '40px', paddingBottom: '40px' }}>
+        <div className="section-eyebrow sr">Live Preview</div>
+        <h2 className="section-h sr sr-d1">See Vyron in <em>Action</em></h2>
+        <p className="section-sub sr sr-d2" style={{ marginBottom: '40px' }}>Explore the dashboard features directly in your browser with live demo data.</p>
+        <DemoDashboard />
+      </div>
+
       {/* ── TICKER ── */}
       <div className="ticker">
         <div className="ticker-track">
@@ -949,29 +958,6 @@ export default function LandingPage() {
             <div className="step"><div className="step-line"></div><div className="step-n">02</div><div><div className="step-name">Scan your niche</div><p className="step-desc">Trend Radar continuously monitors your niche for viral momentum, identifying content patterns before they peak.</p></div></div>
             <div className="step"><div className="step-line"></div><div className="step-n">03</div><div><div className="step-name">Map the competition</div><p className="step-desc">Competitor Matrix identifies rivals and analyzes their Content DNA, growth velocity, and efficiency metrics vs yours.</p></div></div>
             <div className="step"><div className="step-line"></div><div className="step-n">04</div><div><div className="step-name">Act on insights</div><p className="step-desc">Save ideas to Library, receive automated email reports, and act on AI Quick Wins before competitors do.</p></div></div>
-          </div>
-
-          <div className="terminal" id="term">
-            <div className="term-head"><div className="d d1"></div><div className="d d2"></div><div className="d d3"></div><span className="term-lbl">vyron — trend-radar · live</span></div>
-            <div className="term-body">
-              <div className="tl"><span className="p">$</span><span className="c">vyron scan --niche="tech reviews" --depth=deep</span></div>
-              <div className="tl"><span className="i">→ Scanning 2,400 videos in niche...</span></div>
-              <div className="tl"><span className="i">→ Building virality index...</span></div>
-              <div className="tl">&nbsp;</div>
-              <div className="tl"><span className="g">✓ Trend detected:</span></div>
-              <div className="tl"><span className="v">&nbsp;&nbsp;"AI laptop comparisons" — score: 94/100</span></div>
-              <div className="tl"><span className="h">&nbsp;&nbsp;momentum: HOT (↑ 340% this week)</span></div>
-              <div className="tl">&nbsp;</div>
-              <div className="tl"><span className="g">✓ Quick Win identified:</span></div>
-              <div className="tl"><span className="v">&nbsp;&nbsp;"M4 vs Snapdragon X: Real-World Test"</span></div>
-              <div className="tl"><span className="i">&nbsp;&nbsp;projected CTR boost: +28%</span></div>
-              <div className="tl">&nbsp;</div>
-              <div className="tl"><span className="g">✓ Competitor gap found:</span></div>
-              <div className="tl"><span className="v">&nbsp;&nbsp;3 rivals haven't covered this yet</span></div>
-              <div className="tl"><span className="i">&nbsp;&nbsp;opportunity window: ~4 days</span></div>
-              <div className="tl">&nbsp;</div>
-              <div className="tl"><span className="i">Report saved to library.</span><span className="blink"></span></div>
-            </div>
           </div>
         </div>
       </div>
