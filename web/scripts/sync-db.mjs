@@ -153,6 +153,17 @@ async function syncSchema() {
     `);
     console.log("✓ Table 'channel_snapshots' created or already exists.");
 
+    await client.execute(`
+      CREATE TABLE IF NOT EXISTS email_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT,
+        type TEXT,
+        reference_id TEXT,
+        timestamp INTEGER
+      )
+    `);
+    console.log("✓ Table 'email_logs' created or already exists.");
+
     console.log("Schema sync complete!");  } catch (error) {
     console.error("Error syncing schema:", error);
     process.exit(1);

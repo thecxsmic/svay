@@ -24,7 +24,8 @@ import {
   History,
   Activity,
   MousePointer2,
-  PieChart
+  PieChart,
+  Mail
 } from 'lucide-react';
 import { useTitle } from '@/lib/hooks/titles';
 import ResearchNotesModal from '../components/ResearchNotesModal';
@@ -52,9 +53,37 @@ export default function CompetitorsPage() {
   const [activeTab, setActiveTab] = useState('market');
   const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
   const [selectedNoteItem, setSelectedNoteItem] = useState(null);
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   const selectedChannel = channels.data.find(c => c.id === channels.selectedId);
   const getCacheKey = () => `${CACHE_KEY_PREFIX}${selectedChannel?.id || 'default'}`;
+
+  const sendEmailReport = async () => {
+    const analysisId = searchParams.get('analysisId');
+    if (!analysisId) {
+      alert("Please save this analysis first to send it via email.");
+      return;
+    }
+
+    setSendingEmail(true);
+    try {
+      const res = await fetch('/api/competitors/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ analysisId })
+      });
+      const result = await res.json();
+      if (result.success) {
+        alert("Success! The competitor analysis report has been sent to your email.");
+      } else {
+        throw new Error(result.error || "Failed to send email");
+      }
+    } catch (err) {
+      alert("Error: " + err.message);
+    } finally {
+      setSendingEmail(false);
+    }
+  };
 
   const loadAnalysisById = useCallback(async (id) => {
     setLoading(true);
@@ -300,6 +329,17 @@ export default function CompetitorsPage() {
           </div>
           
           <div className="flex items-center gap-4">
+            {searchParams.get('analysisId') && data && !loading && (
+              <button
+                onClick={sendEmailReport}
+                disabled={sendingEmail}
+                className="h-9 px-4 rounded-full bg-zinc-900 border border-zinc-800 text-white text-sm font-medium hover:bg-zinc-800 transition-colors flex items-center gap-2"
+                title="Email Report"
+              >
+                {sendingEmail ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+                <span className="hidden sm:inline">Email Report</span>
+              </button>
+            )}
             {lastScanTime && !loading && (
               <span className="text-xs text-zinc-500 hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap">
                 <History className="w-3 h-3" />

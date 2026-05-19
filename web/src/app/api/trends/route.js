@@ -69,7 +69,7 @@ export async function POST(req) {
             const oneDay = 24 * 60 * 60;
             if (now - cachedRadar.last_updated < oneDay) {
               console.log(`[Trends API] Using fresh backend cache for ${channelId}`);
-              send({ type: 'step', progress: 100, message: 'Loading from cache...' });
+              send({ type: 'step', progress: 100, message: 'Loading current radar...' });
               send({ type: 'complete', data: cachedRadar.data });
               controller.close();
               return;

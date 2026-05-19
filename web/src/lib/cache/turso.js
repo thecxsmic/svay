@@ -717,3 +717,46 @@ export async function getChannelSnapshots(channelId) {
     return [];
   }
 }
+
+/**
+ * Log an email sent to a user
+ */
+export async function logEmail(userId, type, referenceId = null) {
+  if (!process.env.TURSO_DATABASE_URL) return;
+
+  try {
+    await client.execute({
+      sql: "INSERT INTO email_logs (user_id, type, reference_id, timestamp) VALUES (?, ?, ?, ?)",
+      args: [userId, type, referenceId, Date.now()],
+    });
+  } catch (error) {
+    console.error("[Turso] Log Email Error:", error);
+  }
+}
+
+/**
+ * Get the last email of a certain type for a user
+ */
+export async function getLastEmail(userId, type, referenceId = null) {
+  if (!process.env.TURSO_DATABASE_URL) return null;
+
+  try {
+    let sql = "SELECT timestamp FROM email_logs WHERE user_id = ? AND type = ? ";
+    let args = [userId, type];
+
+    if (referenceId) {
+      sql += "AND reference_id = ? ";
+      args.push(referenceId);
+    }
+
+    sql += "ORDER BY timestamp DESC LIMIT 1";
+
+    const rs = await client.execute({ sql, args });
+    
+    if (rs.rows.length === 0) return null;
+    return rs.rows[0].timestamp;
+  } catch (error) {
+    console.error("[Turso] Get Last Email Error:", error);
+    return null;
+  }
+}
