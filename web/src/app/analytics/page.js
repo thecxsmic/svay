@@ -280,17 +280,7 @@ export default function AnalyticsPage() {
             Analytics <span className="text-accents-2 font-normal not-italic">/ {data.channel.title}</span>
           </h1>
         </div>
-        
-        <div className="flex items-center gap-4">
-          <button
-            onClick={syncSnapshot}
-            disabled={syncing}
-            className="bg-white text-black px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-accents-1 transition-all flex items-center gap-2 disabled:opacity-50"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
-            {syncing ? 'Syncing...' : 'Sync Now'}
-          </button>
-        </div>      </header>
+      </header>
 
       {/* Main Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
