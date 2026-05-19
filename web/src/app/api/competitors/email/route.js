@@ -94,7 +94,7 @@ export async function POST(req) {
         <div style="padding: 30px;">
           <h2 style="font-size: 16px; font-weight: 900; text-transform: uppercase; color: #00dfd8; margin-bottom: 20px; border-bottom: 1px solid #222; padding-bottom: 10px;">Market Rivals</h2>
           
-          \${validData.map(({ channel, videos }) => {
+          ${validData.map(({ channel, videos }) => {
             const subCount = parseInt(channel.statistics.subscriberCount);
             const viewCount = parseInt(channel.statistics.viewCount);
             const videoCount = parseInt(channel.statistics.videoCount);
@@ -103,14 +103,14 @@ export async function POST(req) {
             if (subCount > 1000000) badge = { label: 'Market Leader', color: '#ff0055', bg: 'rgba(255,0,85,0.1)' };
             else if (subCount > 100000) badge = { label: 'Rising Star', color: '#00dfd8', bg: 'rgba(0,223,216,0.1)' };
 
-            return \`
+            return `
               <div style="background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 20px; padding: 20px; margin-bottom: 20px;">
                 <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
-                  <img src="\${channel.snippet.thumbnails.default.url}" style="width: 48px; height: 48px; border-radius: 50%; border: 2px solid #333;" />
+                  <img src="${channel.snippet.thumbnails.default.url}" style="width: 48px; height: 48px; border-radius: 50%; border: 2px solid #333;" />
                   <div style="flex: 1;">
-                    <p style="font-weight: 900; margin: 0; font-size: 18px; color: #fff;">\${channel.snippet.title}</p>
-                    <div style="display: inline-block; background: \${badge.bg}; color: \${badge.color}; padding: 3px 8px; border-radius: 6px; font-size: 9px; font-weight: 900; text-transform: uppercase; margin-top: 4px;">
-                      \${badge.label}
+                    <p style="font-weight: 900; margin: 0; font-size: 18px; color: #fff;">${channel.snippet.title}</p>
+                    <div style="display: inline-block; background: ${badge.bg}; color: ${badge.color}; padding: 3px 8px; border-radius: 6px; font-size: 9px; font-weight: 900; text-transform: uppercase; margin-top: 4px;">
+                      ${badge.label}
                     </div>
                   </div>
                 </div>
@@ -118,22 +118,22 @@ export async function POST(req) {
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; background: rgba(255,255,255,0.02); border-radius: 12px; padding: 15px;">
                   <div>
                     <p style="font-size: 10px; color: #666; font-weight: bold; text-transform: uppercase; margin: 0 0 5px 0;">Subscribers</p>
-                    <p style="font-size: 16px; font-weight: 900; margin: 0; color: #fff;">\${subCount.toLocaleString()}</p>
+                    <p style="font-size: 16px; font-weight: 900; margin: 0; color: #fff;">${subCount.toLocaleString()}</p>
                   </div>
                   <div>
                     <p style="font-size: 10px; color: #666; font-weight: bold; text-transform: uppercase; margin: 0 0 5px 0;">Total Reach</p>
-                    <p style="font-size: 16px; font-weight: 900; margin: 0; color: #fff;">\${viewCount.toLocaleString()}</p>
+                    <p style="font-size: 16px; font-weight: 900; margin: 0; color: #fff;">${viewCount.toLocaleString()}</p>
                   </div>
                 </div>
                 
                 <p style="font-size: 10px; font-weight: 900; text-transform: uppercase; color: #444; margin-bottom: 12px; letter-spacing: 1px; border-left: 3px solid #00dfd8; padding-left: 10px;">Recent Breakthroughs</p>
-                \${videos.length > 0 ? videos.map(v => \`
+                ${videos.length > 0 ? videos.map(v => `
                   <div style="font-size: 13px; color: #ccc; margin-bottom: 8px; line-height: 1.4; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 8px;">
-                    \${v.snippet.title}
+                    ${v.snippet.title}
                   </div>
-                \`).join('') : '<p style="font-size: 12px; color: #444; font-style: italic;">No recent uploads found.</p>'}
+                `).join('') : '<p style="font-size: 12px; color: #444; font-style: italic;">No recent uploads found.</p>'}
               </div>
-            \`;
+            `;
           }).join('')}
 
           <div style="background: linear-gradient(135deg, rgba(255,0,85,0.1) 0%, rgba(0,112,243,0.1) 100%); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); margin-top: 40px;">
@@ -141,7 +141,7 @@ export async function POST(req) {
             <p style="font-size: 14px; color: #aaa; line-height: 1.6; margin-bottom: 20px;">
               Your rivals are currently dominating with the titles shown above. To gain an edge, we recommend focusing on <strong>higher-velocity content</strong> that targets their engagement gaps. Use their "Recent Wins" as a blueprint for your next upload.
             </p>
-            <a href="\${process.env.NEXT_PUBLIC_APP_URL || 'https://updates.vyron.space'}/competitors?analysisId=\${analysisId}" style="display: block; background: #ffffff; color: #000000; text-decoration: none; padding: 15px; border-radius: 12px; font-weight: 900; font-size: 13px; text-transform: uppercase; text-align: center; letter-spacing: 1px;">Open Full interactive Matrix</a>
+            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://updates.vyron.space'}/competitors?analysisId=${analysisId}" style="display: block; background: #ffffff; color: #000000; text-decoration: none; padding: 15px; border-radius: 12px; font-weight: 900; font-size: 13px; text-transform: uppercase; text-align: center; letter-spacing: 1px;">Open Full interactive Matrix</a>
           </div>
         </div>
 
@@ -149,7 +149,7 @@ export async function POST(req) {
           <p style="font-size: 11px; font-weight: bold; color: #444; margin: 0; text-transform: uppercase; letter-spacing: 2px;">Powered by Vyron Intelligence</p>
         </div>
       </div>
-    \`;
+    `;
 
     console.log("[Competitor Email API] Sending via Resend...");
     const result = await sendEmail({
