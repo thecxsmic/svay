@@ -1,9 +1,14 @@
 import { auth } from "@clerk/nextjs/server";
 import { setUserChannel, getUserChannel, unsetUserChannel } from "@/lib/cache/turso";
 import { apiSuccess, apiError } from "@/lib/utils/response";
+import { getIsDemoMode, MOCK_CHANNELS } from "@/lib/utils/demoMock";
 
 export async function GET(req) {
   try {
+    if (await getIsDemoMode()) {
+      return apiSuccess({ channel: MOCK_CHANNELS["UC-techvibeai123"] });
+    }
+
     const { userId } = await auth();
     if (!userId) return apiError(new Error("Unauthorized"), 401);
 
@@ -16,6 +21,10 @@ export async function GET(req) {
 
 export async function POST(req) {
   try {
+    if (await getIsDemoMode()) {
+      return apiSuccess({ success: true });
+    }
+
     const { userId } = await auth();
     if (!userId) return apiError(new Error("Unauthorized"), 401);
 
@@ -34,3 +43,4 @@ export async function POST(req) {
     return apiError(error);
   }
 }
+

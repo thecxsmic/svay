@@ -74,7 +74,7 @@ export default function DemoDashboard() {
   useEffect(() => {
     if (activeTab === "radar") {
       setIsLoadingRadar(true);
-      fetch('/api/trends?niche=SaaS & Tech')
+      fetch('/api/landing/trends?niche=SaaS & Tech')
         .then(res => res.json())
         .then(data => {
           setTrendData(data.insights.emergingTrends);
@@ -95,7 +95,7 @@ export default function DemoDashboard() {
     if (e) e.preventDefault();
     setIsSearching(true);
     
-    fetch(`/api/youtube-search?q=${encodeURIComponent(searchQuery)}&sort=${searchSort}`)
+    fetch(`/api/landing/youtube-search?q=${encodeURIComponent(searchQuery)}&sort=${searchSort}`)
       .then(res => res.json())
       .then(data => {
         setSearchResults(data);
@@ -115,7 +115,7 @@ export default function DemoDashboard() {
 
   // 3. Load Competitors from Backend API
   const loadCompetitors = () => {
-    fetch('/api/competitors')
+    fetch('/api/landing/competitors')
       .then(res => res.json())
       .then(data => setCompetitors(data))
       .catch(err => console.error("Error loading competitors", err));
@@ -131,7 +131,7 @@ export default function DemoDashboard() {
     e.preventDefault();
     if (!newCompName.trim()) return;
     
-    fetch('/api/competitors', {
+    fetch('/api/landing/competitors', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: newCompName })
@@ -149,7 +149,7 @@ export default function DemoDashboard() {
   useEffect(() => {
     if (activeTab === "analytics") {
       setIsLoadingAnalytics(true);
-      fetch('/api/analytics')
+      fetch('/api/landing/analytics')
         .then(res => res.json())
         .then(data => {
           setAnalyticsData(data);
@@ -164,7 +164,7 @@ export default function DemoDashboard() {
 
   // 5. Load Library Notes from Backend API
   const loadNotes = () => {
-    fetch('/api/library')
+    fetch('/api/landing/library')
       .then(res => res.json())
       .then(data => setNotes(data))
       .catch(err => console.error("Error loading notes from API", err));
@@ -178,7 +178,7 @@ export default function DemoDashboard() {
 
   const saveNotesToServer = (updatedNotes) => {
     setSaveStatus("Saving...");
-    fetch('/api/library', {
+    fetch('/api/landing/library', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updatedNotes)

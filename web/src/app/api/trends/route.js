@@ -4,6 +4,7 @@ import { groq } from "@ai-sdk/groq";
 import { z } from "zod";
 import { calculateViralityScore } from "@/lib/ranking/virality";
 import { getTrendRadar, saveTrendRadar, getLastEmail } from "@/lib/cache/turso";
+import { getIsDemoMode, MOCK_TREND_RADAR } from "@/lib/utils/demoMock";
 
 const trendSchema = z.object({
   summary: z.object({
@@ -50,7 +51,12 @@ const searchQueriesSchema = z.object({
 });
 
 export async function POST(req) {
-  const { userId } = await auth();
+  const isDemo = await getIsDemoMode();
+  let userId = null;
+  if (!isDemo) {
+    const authResult = await auth();
+    userId = authResult.userId;
+  }
   const body = await req.json();
   const { channelId, channelTitle, channelBased } = body;
 
@@ -62,6 +68,27 @@ export async function POST(req) {
       };
 
       try {
+        if (isDemo) {
+          send({ type: 'step', progress: 10, message: 'Fetching channel context (Demo)...' });
+          await new Promise(r => setTimeout(r, 450));
+          
+          send({ type: 'step', progress: 30, message: 'AI generating targeted search queries (Demo)...' });
+          await new Promise(r => setTimeout(r, 500));
+          
+          send({ type: 'step', progress: 45, message: 'Scanning market for competitors (Demo)...' });
+          await new Promise(r => setTimeout(r, 450));
+          
+          send({ type: 'step', progress: 60, message: 'Analyzing competitor strategies (Demo)...' });
+          await new Promise(r => setTimeout(r, 500));
+          
+          send({ type: 'step', progress: 80, message: 'AI synthesizing customized Trend Radar (Demo)...' });
+          await new Promise(r => setTimeout(r, 450));
+          
+          send({ type: 'complete', data: MOCK_TREND_RADAR });
+          controller.close();
+          return;
+        }
+
         // 0. Check Backend Cache (24 hours)
         if (channelBased && channelId) {
           const cachedRadar = await getTrendRadar(channelId);

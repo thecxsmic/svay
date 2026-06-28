@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 
-const dbPath = path.join(process.cwd(), 'src/app/api/competitors/competitors.json');
+const dbPath = path.join(process.cwd(), 'src/app/api/landing/competitors/competitors.json');
 
 const defaultCompetitors = [
   { name: "Creator Lab", subs: "320K", avgViews: "85K", dna: ["Faceless", "Tutorials", "Voiceover"], velocity: "Surging (+12%)", efficiency: "0.26" },

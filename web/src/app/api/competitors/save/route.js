@@ -1,14 +1,22 @@
 import { auth } from "@clerk/nextjs/server";
 import { saveAnalysis, getSavedAnalyses, getAnalysisById, getUserChannel, getLastEmail } from "@/lib/cache/turso";
 import { apiSuccess, apiError } from "@/lib/utils/response";
+import { getIsDemoMode, MOCK_COMPETITORS_ANALYSIS } from "@/lib/utils/demoMock";
 
 export async function GET(req) {
   try {
-    const { userId } = await auth();
-    if (!userId) return apiError(new Error("Unauthorized"), 401);
-
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
+
+    if (await getIsDemoMode()) {
+      if (id) {
+        return apiSuccess({ item: MOCK_COMPETITORS_ANALYSIS });
+      }
+      return apiSuccess({ items: [MOCK_COMPETITORS_ANALYSIS] });
+    }
+
+    const { userId } = await auth();
+    if (!userId) return apiError(new Error("Unauthorized"), 401);
 
     if (id) {
       const analysis = await getAnalysisById(userId, id);
@@ -28,6 +36,10 @@ export async function GET(req) {
 
 export async function POST(req) {
   try {
+    if (await getIsDemoMode()) {
+      return apiSuccess({ success: true });
+    }
+
     const { userId } = await auth();
     if (!userId) return apiError(new Error("Unauthorized"), 401);
 
@@ -45,3 +57,4 @@ export async function POST(req) {
     return apiError(error);
   }
 }
+

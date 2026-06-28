@@ -91,10 +91,20 @@ function parseFilters(req) {
 
 export async function GET(req) {
   try {
+    const { getIsDemoMode, generateMockSearch } = await import("@/lib/utils/demoMock");
     const filters = parseFilters(req);
     
     if (!filters.query) {
       return NextResponse.json({ error: "Query parameter 'q' is required" }, { status: 400 });
+    }
+
+    if (await getIsDemoMode()) {
+      const mockItems = generateMockSearch(filters.query);
+      const items = mockItems.map(item => ({
+        id: typeof item.id === 'string' ? { videoId: item.id } : item.id,
+        snippet: item.snippet
+      }));
+      return NextResponse.json({ items });
     }
 
     const url = buildYouTubeSearchURL(filters);
@@ -110,3 +120,4 @@ export async function GET(req) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+

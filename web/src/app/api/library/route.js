@@ -1,16 +1,29 @@
 import { auth } from "@clerk/nextjs/server";
 import { saveLibraryItem, getLibraryItems, deleteLibraryItem, getLibraryItemByReference, getLibraryItemById } from "@/lib/cache/turso";
 import { apiSuccess, apiError } from "@/lib/utils/response";
+import { getIsDemoMode, MOCK_LIBRARY_ITEMS } from "@/lib/utils/demoMock";
 
 export async function GET(req) {
   try {
-    const { userId } = await auth();
-    if (!userId) return apiError(new Error("Unauthorized"), 401);
-
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     const type = searchParams.get("type");
     const referenceId = searchParams.get("reference_id");
+
+    if (await getIsDemoMode()) {
+      if (id) {
+        const item = MOCK_LIBRARY_ITEMS.find(n => n.id === id);
+        return apiSuccess({ item });
+      }
+      if (referenceId) {
+        const item = MOCK_LIBRARY_ITEMS.find(n => n.reference_id === referenceId);
+        return apiSuccess({ item });
+      }
+      return apiSuccess({ items: MOCK_LIBRARY_ITEMS });
+    }
+
+    const { userId } = await auth();
+    if (!userId) return apiError(new Error("Unauthorized"), 401);
 
     if (id) {
       const item = await getLibraryItemById(userId, id);
@@ -31,6 +44,11 @@ export async function GET(req) {
 
 export async function POST(req) {
   try {
+    if (await getIsDemoMode()) {
+      const body = await req.json();
+      return apiSuccess({ success: true, item: body });
+    }
+
     const { userId } = await auth();
     if (!userId) return apiError(new Error("Unauthorized"), 401);
 
@@ -52,3 +70,4 @@ export async function POST(req) {
     return apiError(error);
   }
 }
+

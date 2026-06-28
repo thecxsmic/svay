@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 
-const dbPath = path.join(process.cwd(), 'src/app/api/library/notes.json');
+const dbPath = path.join(process.cwd(), 'src/app/api/landing/library/notes.json');
 
 const defaultNotes = [
   { title: "2026 Video Ideas Blueprint", content: "Focus on AI Agent team builds and low-code integrations. Competitor analysis shows high search spikes but low-quality explanations.\n\nHooks:\n- 'I let an AI run my SaaS business for 30 days...'\n- 'AI Agents just killed standard web dev...'", date: "2026-06-25" },

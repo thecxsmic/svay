@@ -4,12 +4,20 @@ import { useState, useEffect, useRef } from 'react';
 import { 
   Zap, Target, TrendingUp, Search, Cpu, ArrowRight, Check, Play, Sparkles, 
   Clock, Star, ArrowUpRight, HelpCircle, ChevronDown, Monitor, 
-  BarChart3, Users, BookOpen, RefreshCw, Terminal, Eye, AlertCircle,
+  BarChart3, Users, BookOpen, 
   Menu, X
 } from 'lucide-react';
-import DemoDashboard from '../components/DemoDashboard';
+import { SignIn } from '@clerk/nextjs';
+import DemoLoginButton from './DemoLoginButton';
 
 export default function LandingPage() {
+  
+  const enterDemo = (e) => {
+    if (e) e.preventDefault();
+    document.cookie = "demo_mode=true; path=/; max-age=31536000;"; // 1 year
+    window.location.reload();
+  };
+
   // Navigation scroll state
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -27,13 +35,6 @@ export default function LandingPage() {
   
   // FAQ state
   const [openFaq, setOpenFaq] = useState(null);
-
-  // Terminal scanner states
-  const [terminalNiche, setTerminalNiche] = useState('SaaS & Tech');
-  const [terminalLogs, setTerminalLogs] = useState([]);
-  const [isScanning, setIsScanning] = useState(false);
-  const [scanResultReady, setScanResultReady] = useState(false);
-  const [scanResultData, setScanResultData] = useState(null);
   
   // Countdown Timer states
   const [timeLeft, setTimeLeft] = useState({ hours: 23, minutes: 47, seconds: 12 });
@@ -253,74 +254,6 @@ export default function LandingPage() {
     setCardTransform('perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)');
   };
 
-  // Niche Scanner simulator calling backend API
-  const runNicheScanner = () => {
-    if (isScanning) return;
-    
-    setIsScanning(true);
-    setScanResultReady(false);
-    setTerminalLogs([]);
-    
-    const rawLogs = [
-      { msg: `Initializing scan parameters for niche: "${terminalNiche}"...`, delay: 100 },
-      { msg: "Connecting to global YouTube API node cluster...", delay: 600 },
-      { msg: "Scraping competitor channels within database segment [v3.0.4]...", delay: 1100 },
-      { msg: "Analyzing Content DNA and calculating subscriber growth vectors...", delay: 1700 },
-      { msg: "Parsing vector database (Zilliz/Milvus) for semantic matching...", delay: 2400 },
-      { msg: "Applying AI virality ranking algorithm (@/lib/ranking/virality)...", delay: 3100 },
-      { msg: "Finalizing content blueprints and growth vectors...", delay: 3800 }
-    ];
-    
-    rawLogs.forEach((log) => {
-      setTimeout(() => {
-        setTerminalLogs(prev => [...prev, log.msg]);
-      }, log.delay);
-    });
-
-    // Call REST API
-    fetch(`/api/trends?niche=${encodeURIComponent(terminalNiche)}`)
-      .then(res => res.json())
-      .then(data => {
-        setTimeout(() => {
-          setIsScanning(false);
-          setScanResultReady(true);
-          
-          // Format API response into UI data shape
-          const trends = data.insights.emergingTrends.map(item => ({
-            topic: item.topic,
-            score: item.viralScore,
-            estViews: item.estimatedViews,
-            difficulty: item.difficulty
-          }));
-          const wins = data.insights.quickWins.map(item => ({
-            title: item.idea,
-            why: item.why,
-            effort: item.effort
-          }));
-          
-          setScanResultData({ trends, wins });
-        }, 4300);
-      })
-      .catch(err => {
-        console.error("Scraper API Error", err);
-        setTimeout(() => {
-          setIsScanning(false);
-          setTerminalLogs(prev => [
-            ...prev, 
-            "[ERROR] Scraping pipeline failed to reach backend API node cluster."
-          ]);
-        }, 4300);
-      });
-  };
-
-  // Pre-load default terminal log on mount
-  useEffect(() => {
-    setTerminalLogs([
-      "System idle. Select niche and click 'Scan Niche' to initiate scraping pipeline...",
-      "Ready to scrape video benchmarks, tags, and psychological hooks."
-    ]);
-  }, []);
-
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden">
       {/* Custom Pointer following ring (hidden on mobile) */}
@@ -356,15 +289,11 @@ export default function LandingPage() {
 
       {/* ── HEADER (GLASSMORPHIC FLOATING ISLAND) ── */}
       <header className="fixed top-0 left-0 right-0 w-full max-w-[100vw] z-50 px-3 sm:px-4 md:px-8 py-4 transition-all duration-300">
-        <div className={`max-w-5xl w-full mx-auto px-4 sm:px-6 py-3 flex flex-col lg:flex-row lg:items-center justify-between gap-0 lg:gap-4 rounded-2xl bg-black/85 border ${scrolled ? 'border-brand-volt/20 shadow-[0_8px_32px_rgba(200,241,53,0.05)]' : 'border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.8)]'} backdrop-blur-md transition-[border-color,background-color,box-shadow] duration-200`}>
+        <div className={`max-w-5xl w-full mx-auto px-4 sm:px-6 py-3 flex flex-col lg:flex-row lg:items-center justify-between gap-0 lg:gap-4 rounded-2xl bg-black/85 border ${scrolled ? 'border-brand-volt/20 shadow-[0_8px_32px_rgba(0,240,255,0.05)]' : 'border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.8)]'} backdrop-blur-md transition-[border-color,background-color,box-shadow] duration-200`}>
           <div className="flex items-center justify-between w-full lg:w-auto py-1">
             {/* Logo */}
-            <a href="#" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 group">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-brand-volt via-[#dff453] to-brand-mint p-[1.5px] shadow-[0_0_15px_rgba(200,241,53,0.2)] group-hover:shadow-[0_0_25px_rgba(200,241,53,0.4)] transition-all">
-                <div className="w-full h-full bg-black rounded-[6px] flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-brand-volt group-hover:rotate-12 transition-transform duration-300" />
-                </div>
-              </div>
+            <a href="#" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2.5 group">
+              <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-brand-volt via-[#00b0ff] to-brand-mint shadow-[0_0_15px_rgba(0,240,255,0.25)] group-hover:shadow-[0_0_25px_rgba(0,240,255,0.45)] transition-all" />
               <span className="font-display font-extrabold text-lg text-white tracking-tight">VYRON</span>
             </a>
 
@@ -378,32 +307,41 @@ export default function LandingPage() {
           </div>
 
           {/* Links */}
-          <nav className={`${mobileMenuOpen ? 'flex' : 'hidden'} lg:flex flex-col lg:flex-row items-start lg:items-center gap-4 lg:gap-8 text-[11px] font-bold uppercase tracking-wider text-zinc-400 w-full lg:w-auto pt-4 pb-2 lg:py-0 border-t border-zinc-900 lg:border-t-0`}>
-            <a href="#features" onClick={() => setMobileMenuOpen(false)} className="hover:text-white transition-colors relative group py-1 w-full lg:w-auto">
+          <nav className={`${mobileMenuOpen ? 'flex' : 'hidden lg:flex'} flex-col lg:flex-row items-start lg:items-center gap-1.5 lg:gap-8 text-[11px] font-bold uppercase tracking-wider text-zinc-400 w-full lg:w-auto pt-4 pb-2 lg:py-0 border-t border-zinc-900/80 lg:border-t-0 mt-3 lg:mt-0`}>
+            <a href="#features" onClick={() => setMobileMenuOpen(false)} className="hover:text-white transition-colors py-2 px-3 lg:py-1 lg:px-0 w-full lg:w-auto rounded-xl hover:bg-white/5 lg:hover:bg-transparent relative group flex items-center">
               Features
               <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-brand-volt transition-all group-hover:w-full hidden lg:block" />
             </a>
-            <a href="#demo" onClick={() => setMobileMenuOpen(false)} className="hover:text-white transition-colors relative group py-1 w-full lg:w-auto">
-              Live Demo
+            <button onClick={(e) => { setMobileMenuOpen(false); enterDemo(e); }} className="hover:text-white text-left transition-colors py-2 px-3 lg:py-1 lg:px-0 w-full lg:w-auto rounded-xl hover:bg-white/5 lg:hover:bg-transparent relative group flex items-center font-bold uppercase tracking-wider text-zinc-400 text-[11px] cursor-pointer">
+              Launch Demo
               <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-brand-volt transition-all group-hover:w-full hidden lg:block" />
-            </a>
-            <a href="#scanner" onClick={() => setMobileMenuOpen(false)} className="hover:text-white transition-colors relative group py-1 w-full lg:w-auto">
-              Radar Terminal
-              <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-brand-volt transition-all group-hover:w-full hidden lg:block" />
-            </a>
-            <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="hover:text-white transition-colors relative group py-1 w-full lg:w-auto">
+            </button>
+            <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="hover:text-white transition-colors py-2 px-3 lg:py-1 lg:px-0 w-full lg:w-auto rounded-xl hover:bg-white/5 lg:hover:bg-transparent relative group flex items-center">
               Pricing
+              <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-brand-volt transition-all group-hover:w-full hidden lg:block" />
+            </a>
+            <a href="/docs" onClick={() => setMobileMenuOpen(false)} className="hover:text-white transition-colors py-2 px-3 lg:py-1 lg:px-0 w-full lg:w-auto rounded-xl hover:bg-white/5 lg:hover:bg-transparent relative group flex items-center">
+              Docs
               <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-brand-volt transition-all group-hover:w-full hidden lg:block" />
             </a>
           </nav>
 
           {/* Action Button */}
-          <div className={`${mobileMenuOpen ? 'block' : 'hidden'} lg:block w-full lg:w-auto pt-2 pb-1 lg:py-0`}>
-            <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="relative inline-flex items-center justify-center p-0.5 overflow-hidden text-[11px] font-bold uppercase tracking-wider text-black rounded-full group bg-gradient-to-br from-brand-volt to-brand-mint group-hover:from-brand-volt group-hover:to-brand-mint hover:text-black dark:text-white focus:ring-4 focus:outline-none focus:ring-lime-800 transition-all duration-300 w-full lg:w-auto">
-              <span className="relative px-5 py-2 transition-all ease-in duration-75 bg-brand-volt rounded-full group-hover:bg-opacity-0 group-hover:text-white text-black font-extrabold flex items-center justify-center gap-1.5 w-full lg:w-auto">
+          <div className={`${mobileMenuOpen ? 'flex' : 'hidden lg:flex'} flex-col lg:flex-row items-stretch lg:items-center gap-3 w-full lg:w-auto pt-3 pb-1 lg:py-0 border-t border-zinc-900/80 lg:border-t-0 mt-2 lg:mt-0`}>
+            <button 
+              onClick={() => { setMobileMenuOpen(false); window.location.href = "/sign-in"; }} 
+              className="px-5 py-3 lg:py-2.5 rounded-xl border border-zinc-800 text-zinc-300 hover:text-white text-[11px] font-extrabold uppercase tracking-wider hover:bg-zinc-900 transition-all cursor-pointer text-center"
+            >
+              Sign In
+            </button>
+            <button 
+              onClick={() => { setMobileMenuOpen(false); window.location.href = "/sign-in"; }} 
+              className="relative inline-flex items-center justify-center p-0.5 overflow-hidden text-[11px] font-bold uppercase tracking-wider text-black rounded-xl group bg-gradient-to-br from-brand-volt to-brand-mint group-hover:from-brand-volt group-hover:to-brand-mint hover:text-black focus:ring-4 focus:outline-none focus:ring-lime-800 transition-all duration-300 w-full lg:w-auto cursor-pointer"
+            >
+              <span className="relative px-5 py-2.5 lg:py-2 transition-all ease-in duration-75 bg-brand-volt rounded-xl group-hover:bg-opacity-0 group-hover:text-white text-black font-extrabold flex items-center justify-center gap-1.5 w-full lg:w-auto">
                 Start Trial <ArrowRight className="w-3.5 h-3.5" />
               </span>
-            </a>
+            </button>
           </div>
         </div>
       </header>
@@ -413,57 +351,57 @@ export default function LandingPage() {
         {/* Hero Info */}
         <div className="md:col-span-6 lg:col-span-7 flex flex-col items-start text-left">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 bg-brand-volt/10 border border-brand-volt/20 px-3.5 py-1.5 rounded-full mb-8 shadow-[0_0_15px_rgba(200,241,53,0.03)]">
+          <div className="inline-flex items-center gap-2 bg-brand-volt/10 border border-brand-volt/20 px-3.5 py-1.5 rounded-full mb-8 shadow-[0_0_15px_rgba(0,240,255,0.03)]">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-volt opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-volt"></span>
             </span>
-            <span className="text-[10px] font-black uppercase tracking-widest text-brand-volt">v3.0 Live Intelligence</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-brand-volt">Real-Time Creator Intelligence</span>
           </div>
 
           {/* Main Title */}
           <h1 className="font-display font-extrabold text-5xl md:text-4xl lg:text-5xl xl:text-7xl leading-[1.0] tracking-tight text-white mb-4 md:mb-6">
-            Outrank.<br/>
-            Outsmart.<br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-volt via-[#d8f553] to-brand-mint drop-shadow-[0_0_15px_rgba(200,241,53,0.1)] text-glow-volt">
-              Outgrow.
+            Know what performs.<br/>
+            Before you hit<br/>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0052ff] via-[#00d2ff] to-[#7c3aed] drop-shadow-[0_0_15px_rgba(0,240,255,0.1)] text-glow-volt">
+              record.
             </span>
           </h1>
 
           {/* Description */}
           <p className="text-zinc-400 text-base md:text-xs lg:text-sm xl:text-base leading-relaxed max-w-xl mb-6 md:mb-8 xl:mb-10 font-normal">
-            Vyron continuously scans competitor channels, scores emerging trends, and parses custom YouTube data via semantic vector structures. Master your niche before competitors realize the trend exists.
+            Stop guessing what your audience wants. Vyron tracks your competitors' top-performing formats, catches breakout topics as they begin to spike, and helps you structure video ideas backed by real demand data.
           </p>
 
           {/* Action Buttons */}
           <div className="flex flex-wrap items-center gap-4 w-full sm:w-auto">
-            <a 
-              href="#pricing"
-              className="w-full sm:w-auto px-6 md:px-5 lg:px-8 py-3 md:py-2.5 lg:py-4 bg-brand-volt hover:bg-[#d6fb3a] text-black font-extrabold text-sm md:text-xs lg:text-sm uppercase tracking-wider rounded-xl transition-all shadow-[0_0_30px_rgba(200,241,53,0.25)] hover:shadow-[0_0_40px_rgba(200,241,53,0.45)] hover:-translate-y-0.5 text-center flex items-center justify-center gap-2"
+            <button 
+              onClick={() => { window.location.href = "/sign-in"; }}
+              className="w-full sm:w-auto px-6 md:px-5 lg:px-8 py-3 md:py-2.5 lg:py-4 bg-brand-volt hover:bg-[#33f3ff] text-black font-extrabold text-sm md:text-xs lg:text-sm uppercase tracking-wider rounded-xl transition-all shadow-[0_0_30px_rgba(0,240,255,0.25)] hover:shadow-[0_0_40px_rgba(0,240,255,0.45)] hover:-translate-y-0.5 text-center flex items-center justify-center gap-2 cursor-pointer"
             >
-              Get Started Free <ArrowRight className="w-4 h-4" />
-            </a>
-            <a 
-              href="#demo"
-              className="w-full sm:w-auto px-6 md:px-5 lg:px-8 py-3 md:py-2.5 lg:py-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-white font-extrabold text-sm md:text-xs lg:text-sm uppercase tracking-wider rounded-xl transition-all text-center flex items-center justify-center gap-2 hover:-translate-y-0.5"
+              Get Started <ArrowRight className="w-4 h-4" />
+            </button>
+            <button 
+              onClick={enterDemo}
+              className="w-full sm:w-auto px-6 md:px-5 lg:px-8 py-3 md:py-2.5 lg:py-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-white font-extrabold text-sm md:text-xs lg:text-sm uppercase tracking-wider rounded-xl transition-all text-center flex items-center justify-center gap-2 hover:-translate-y-0.5 cursor-pointer"
             >
-              <Play className="w-4 h-4 fill-white" /> Watch Demo
-            </a>
+              <Play className="w-4 h-4 fill-white" /> See Demo
+            </button>
           </div>
 
           {/* Quick Stats banner */}
           <div className="mt-8 md:mt-4 lg:mt-6 xl:mt-12 pt-6 md:pt-3 lg:pt-4 xl:pt-8 border-t border-zinc-900 w-full grid grid-cols-3 gap-4 md:gap-2 lg:gap-3 xl:gap-6 text-left">
             <div>
               <p className="font-mono text-xl md:text-base lg:text-lg xl:text-2xl font-bold text-white tracking-tight">48K+</p>
-              <p className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Channels Scraped</p>
+              <p className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider font-bold">High-Growth Channels Monitored</p>
             </div>
             <div>
-              <p className="font-mono text-xl md:text-base lg:text-lg xl:text-2xl font-bold text-white tracking-tight">1.5 hr</p>
-              <p className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Trend Scan Cycle</p>
+              <p className="font-mono text-xl md:text-base lg:text-lg xl:text-2xl font-bold text-white tracking-tight">Hourly</p>
+              <p className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Breakout Trend Scans</p>
             </div>
             <div>
-              <p className="font-mono text-xl md:text-base lg:text-lg xl:text-2xl font-bold text-white tracking-tight">94.8%</p>
-              <p className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Score Accuracy</p>
+              <p className="font-mono text-xl md:text-base lg:text-lg xl:text-2xl font-bold text-white tracking-tight">50+</p>
+              <p className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Content Niches Tracked</p>
             </div>
           </div>
         </div>
@@ -477,7 +415,7 @@ export default function LandingPage() {
             className="w-full max-w-[360px] lg:max-w-[420px] rounded-3xl p-4 lg:p-6 glass-panel-glow relative overflow-hidden transition-all duration-200"
             style={{ 
               transform: cardTransform,
-              boxShadow: '0 25px 60px rgba(0,0,0,0.8), 0 0 40px rgba(200,241,53,0.06)'
+              boxShadow: '0 25px 60px rgba(0,0,0,0.8), 0 0 40px rgba(0,240,255,0.06)'
             }}
           >
             {/* Top decorative accent bar */}
@@ -602,204 +540,130 @@ export default function LandingPage() {
       <section className="border-y border-zinc-900 bg-black/40 backdrop-blur-sm py-4 overflow-hidden relative z-10">
         <div className="marquee-track flex gap-16 whitespace-nowrap flex-row w-max">
           <div className="flex gap-16 text-zinc-500 font-mono text-[11px] font-bold uppercase tracking-wider">
-            <span>🚀 <strong className="text-brand-volt">48.2K</strong> channels scanned daily</span>
+            <span>🚀 <strong className="text-brand-volt">48,200+</strong> channels analyzed today</span>
             <span>✦</span>
-            <span>⚡ <strong className="text-white">Trend Radar</strong> cycle runs hourly</span>
+            <span>⚡ <strong className="text-white">Breakout Alerts</strong> updated hourly</span>
             <span>✦</span>
-            <span>📊 <strong className="text-brand-mint">3.4M+</strong> data points processed</span>
+            <span>📊 <strong className="text-brand-mint">3.4M+</strong> performance metrics tracked</span>
             <span>✦</span>
-            <span>🔥 <strong className="text-brand-rose">Competitor Matrix</strong> 50+ key niches mapped</span>
+            <span>🔥 <strong className="text-brand-rose">Competitor Matrix</strong> 50+ content verticals decoded</span>
             <span>✦</span>
-            <span>🎯 <strong className="text-white">Milvus Integration</strong> semantic search</span>
+            <span>🎯 <strong className="text-white">Semantic search</strong> active</span>
           </div>
           <div className="flex gap-16 text-zinc-500 font-mono text-[11px] font-bold uppercase tracking-wider">
-            <span>🚀 <strong className="text-brand-volt">48.2K</strong> channels scanned daily</span>
+            <span>🚀 <strong className="text-brand-volt">48,200+</strong> channels analyzed today</span>
             <span>✦</span>
-            <span>⚡ <strong className="text-white">Trend Radar</strong> cycle runs hourly</span>
+            <span>⚡ <strong className="text-white">Breakout Alerts</strong> updated hourly</span>
             <span>✦</span>
-            <span>📊 <strong className="text-brand-mint">3.4M+</strong> data points processed</span>
+            <span>📊 <strong className="text-brand-mint">3.4M+</strong> performance metrics tracked</span>
             <span>✦</span>
-            <span>🔥 <strong className="text-brand-rose">Competitor Matrix</strong> 50+ key niches mapped</span>
+            <span>🔥 <strong className="text-brand-rose">Competitor Matrix</strong> 50+ content verticals decoded</span>
             <span>✦</span>
-            <span>🎯 <strong className="text-white">Milvus Integration</strong> semantic search</span>
+            <span>🎯 <strong className="text-white">Semantic search</strong> active</span>
           </div>
         </div>
       </section>
 
-      {/* ── LIVE DEMO PREVIEW (INTEGRATED INTERACTIVE COMPONENT) ── */}
-      <section id="demo" className="relative z-10 py-20 px-4 md:px-8 max-w-7xl mx-auto scroll-mt-20">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <div className="inline-flex items-center gap-2 bg-brand-mint/10 border border-brand-mint/20 px-3.5 py-1.5 rounded-full mb-4">
-            <Sparkles className="w-3.5 h-3.5 text-brand-mint" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-brand-mint">Dynamic Simulator</span>
-          </div>
-          <h2 className="font-display font-extrabold text-3.5xl md:text-5xl tracking-tight text-white mb-4">
-            Explore the Vyron Intelligence Console
-          </h2>
-          <p className="text-zinc-400 text-sm leading-relaxed max-w-md mx-auto">
-            Interact with our simulated live interface. Explore trends, check competitor data, and see how our vector ranking model scores content.
-          </p>
-        </div>
-
-        {/* Browser wrapper mockup */}
-        <div className="w-full rounded-2xl border border-zinc-800/80 bg-zinc-950/80 shadow-[0_30px_70px_rgba(0,0,0,0.8)] overflow-hidden">
-          <DemoDashboard />
-        </div>
-      </section>
-
-      {/* ── INTERACTIVE NICHE RADAR TERMINAL ── */}
-      <section id="scanner" className="relative z-10 py-16 px-4 md:px-8 max-w-7xl mx-auto scroll-mt-20">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          {/* Info Column */}
-          <div className="lg:col-span-5 text-left">
-            <div className="inline-flex items-center gap-2 bg-brand-volt/10 border border-brand-volt/20 px-3.5 py-1.5 rounded-full mb-4">
-              <Terminal className="w-3.5 h-3.5 text-brand-volt" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-brand-volt">Automated Scraper</span>
-            </div>
-            <h2 className="font-display font-extrabold text-3.5xl md:text-4.5xl tracking-tight text-white mb-4">
-              Trigger a Live Niche Analysis
-            </h2>
-            <p className="text-zinc-400 text-sm leading-relaxed mb-6 font-normal">
-              Select a content vertical and trigger our simulated automated analysis engine. Watch how Vyron maps keywords, scores virality metrics, and produces content recommendations in real time.
-            </p>
-
-            {/* Niche selectors */}
-            <div className="space-y-3 mb-8">
-              <label className="text-[10px] font-extrabold uppercase text-zinc-500 tracking-wider">Choose target niche:</label>
-              <div className="grid grid-cols-2 gap-2">
-                {['SaaS & Tech', 'Finance & Crypto', 'Gaming & Tech', 'Fitness & Lifestyle'].map((niche) => (
-                  <button
-                    key={niche}
-                    onClick={() => {
-                      setTerminalNiche(niche);
-                      setScanResultReady(false);
-                      setTerminalLogs([`Niche changed to "${niche}". Ready to scan.`]);
-                    }}
-                    className={`px-4 py-2.5 rounded-xl font-bold text-[11px] uppercase tracking-wider text-left transition-all border ${
-                      terminalNiche === niche
-                        ? 'bg-brand-volt text-black border-brand-volt shadow-[0_0_15px_rgba(200,241,53,0.15)] font-black'
-                        : 'bg-zinc-950/40 text-zinc-400 border-zinc-800/60 hover:border-zinc-700 hover:text-white'
-                    }`}
-                  >
-                    {niche}
-                  </button>
-                ))}
+      {/* ── LIVE DEMO PREVIEW (ENTER DEMO ACCOUNT CONSOLE) ── */}
+      <section id="demo" className="relative z-10 py-24 px-4 md:px-8 max-w-5xl mx-auto scroll-mt-20">
+        <div className="rounded-[2.5rem] border border-white/[0.08] bg-zinc-950/60 shadow-[0_24px_80px_rgba(0,0,0,0.9)] overflow-hidden p-8 md:p-14 relative group">
+          {/* Accent lighting */}
+          <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-brand-volt to-transparent opacity-70" />
+          <div className="absolute -top-48 left-1/2 -translate-x-1/2 w-96 h-96 bg-brand-volt/5 rounded-full filter blur-[80px] pointer-events-none group-hover:bg-brand-volt/10 transition-colors duration-700" />
+          
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 items-center">
+            {/* Info side */}
+            <div className="md:col-span-7 text-left space-y-6">
+              <div className="inline-flex items-center gap-2 bg-brand-volt/10 border border-brand-volt/20 px-3.5 py-1.5 rounded-full">
+                <Zap className="w-3.5 h-3.5 text-brand-volt" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-brand-volt">Zero-friction preview</span>
               </div>
-            </div>
-
-            {/* Run Button */}
-            <button
-              onClick={runNicheScanner}
-              disabled={isScanning}
-              className={`w-full py-4 rounded-xl text-sm font-extrabold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
-                isScanning
-                  ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-transparent'
-                  : 'bg-white text-black hover:bg-zinc-200 shadow-xl hover:-translate-y-0.5'
-              }`}
-            >
-              {isScanning ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" /> Scanning Database...
-                </>
-              ) : (
-                <>
-                  <Play className="w-4 h-4 fill-black" /> Run Scraper Command
-                </>
-              )}
-            </button>
-          </div>
-
-          {/* Terminal Console Column */}
-          <div className="lg:col-span-7">
-            <div className="w-full rounded-2xl border border-zinc-800/70 bg-zinc-950/90 shadow-[0_20px_50px_rgba(0,0,0,0.7)] font-mono overflow-hidden">
-              {/* Console header */}
-              <div className="flex items-center justify-between bg-zinc-900 px-4 py-3 border-b border-zinc-800">
-                <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
-                </div>
-                <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider flex items-center gap-1.5">
-                  vyron-scraper-v3.0.sh
+              
+              <h2 className="font-display font-extrabold text-3.5xl md:text-5.5xl tracking-tight text-white leading-none uppercase">
+                Test-drive the<br/>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0052ff] via-[#00d2ff] to-[#7c3aed] text-glow-volt">
+                  Vyron Workspace.
                 </span>
-                <div className="w-8" />
-              </div>
+              </h2>
+              
+              <p className="text-zinc-400 text-sm leading-relaxed max-w-lg font-normal">
+                See the intelligence engine in action without sharing credentials or linking your account. Launch our interactive sandbox instantly to explore competitor insights, query real-time trend scoring, and see how reports are structured.
+              </p>
 
-              {/* Console logs */}
-              <div className="p-5 h-[230px] overflow-y-auto text-[11px] leading-relaxed text-zinc-400 space-y-1.5 scroll-smooth border-b border-zinc-900">
-                {terminalLogs.map((log, index) => {
-                  let colorClass = "text-zinc-400";
-                  if (log.includes("[SUCCESS]")) colorClass = "text-brand-mint font-bold";
-                  if (log.includes("[ERROR]")) colorClass = "text-brand-rose font-bold";
-                  if (log.includes("Initializing")) colorClass = "text-brand-volt font-bold";
-                  
-                  return (
-                    <div key={index} className="flex gap-2 items-start">
-                      <span className="text-zinc-600 select-none">$</span>
-                      <span className={colorClass}>{log}</span>
-                    </div>
-                  );
-                })}
-                {isScanning && (
-                  <div className="flex items-center gap-2 text-brand-volt font-bold">
-                    <span className="text-zinc-600 select-none">$</span>
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    <span>Processing parameters...</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Scan Results Panel */}
-              <div className="p-5 bg-black/40 min-h-[140px] flex items-center justify-center text-center">
-                {!scanResultReady && !isScanning && (
-                  <div className="text-zinc-600 flex flex-col items-center gap-2">
-                    <AlertCircle className="w-7 h-7 stroke-1" />
-                    <p className="text-xs uppercase font-extrabold tracking-wider">No active scan logs</p>
-                  </div>
-                )}
-                
-                {isScanning && (
-                  <div className="text-brand-volt flex flex-col items-center gap-2 animate-pulse">
-                    <RefreshCw className="w-7 h-7 animate-spin" />
-                    <p className="text-xs uppercase font-extrabold tracking-wider">Compiling metrics...</p>
-                  </div>
-                )}
-
-                {scanResultReady && scanResultData && (
-                  <div className="w-full text-left space-y-4">
-                    <div className="flex justify-between items-center">
-                      <h4 className="text-[10px] font-black uppercase text-brand-mint tracking-wider flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-brand-mint" /> Scraper Scan Complete
-                      </h4>
-                      <span className="text-[9px] font-mono text-zinc-500">Emerging trends parsed</span>
-                    </div>
-                    
-                    {/* Rendered trends */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px]">
-                      {scanResultData.trends && scanResultData.trends.map((tr, i) => (
-                        <div key={i} className="bg-zinc-900/60 border border-zinc-800 p-3 rounded-xl">
-                          <p className="font-bold text-white mb-1 truncate">{tr.topic}</p>
-                          <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500 pt-1">
-                            <span>Viral Score: <strong className="text-brand-volt font-bold">{tr.score}</strong></span>
-                            <span>Views: <strong className="text-white">{tr.estViews}</strong></span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Quick win suggestion */}
-                    {scanResultData.wins && scanResultData.wins.length > 0 && (
-                      <div className="border-t border-zinc-900 pt-3 flex gap-2 items-start bg-brand-volt/[0.02] p-2.5 rounded-lg border border-brand-volt/10">
-                        <div className="text-brand-volt shrink-0 mt-0.5">🏆</div>
-                        <div>
-                          <p className="text-[10px] font-extrabold uppercase text-brand-volt tracking-wider">Quick Win blueprint</p>
-                          <p className="text-xs text-zinc-300 font-medium mb-0.5">{scanResultData.wins[0].title}</p>
-                          <p className="text-[10px] text-zinc-500 italic">"{scanResultData.wins[0].why}"</p>
-                        </div>
+              <div className="space-y-3 pt-2">
+                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">What's in the sandbox:</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {[
+                    "Live radar & breakout alerts",
+                    "Simulated channel benchmarks",
+                    "Semantic search sandbox",
+                    "Competitor performance grids"
+                  ].map((feat, i) => (
+                    <div key={i} className="flex items-center gap-2.5 text-xs text-zinc-350">
+                      <div className="w-4 h-4 rounded-full bg-brand-volt/10 flex items-center justify-center flex-shrink-0">
+                        <Check className="w-3 h-3 text-brand-volt" />
                       </div>
-                    )}
+                      <span className="font-medium">{feat}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+                <button
+                  onClick={enterDemo}
+                  className="px-8 py-4 bg-brand-volt hover:bg-[#33f3ff] text-black font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-[0_0_30px_rgba(0,240,255,0.15)] hover:shadow-[0_0_40px_rgba(0,240,255,0.35)] hover:-translate-y-0.5 text-center flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Monitor className="w-4 h-4" /> Enter Sandbox
+                </button>
+                <a
+                  href="#pricing"
+                  className="px-8 py-4 bg-zinc-900/60 hover:bg-zinc-900 border border-zinc-800/80 hover:border-zinc-700 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all text-center flex items-center justify-center gap-2 hover:-translate-y-0.5"
+                >
+                  Pro Plans
+                </a>
+              </div>
+            </div>
+
+            {/* Graphic side */}
+            <div className="md:col-span-5 relative flex items-center justify-center">
+              <div className="w-full aspect-[4/3] rounded-2xl border border-zinc-800/60 bg-zinc-900/10 p-5 flex flex-col justify-between relative overflow-hidden group/console">
+                {/* Embedded console mockup illustration */}
+                <div className="flex items-center justify-between border-b border-zinc-900 pb-3 mb-4">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-brand-volt" />
+                    <span className="font-mono text-[9px] text-zinc-500 font-bold uppercase tracking-wider">demo@vyron.ai</span>
                   </div>
-                )}
+                  <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest">Console V3.0</span>
+                </div>
+
+                <div className="flex-1 space-y-3.5 text-left">
+                  <div className="p-3 rounded-xl bg-zinc-950/60 border border-white/[0.02] flex items-center justify-between">
+                    <div>
+                      <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-wider">Subscriber count</p>
+                      <p className="font-mono text-base font-extrabold text-white">124,500</p>
+                    </div>
+                    <span className="text-[8px] font-mono font-bold text-brand-mint">+1.8K today</span>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-zinc-950/60 border border-white/[0.02] space-y-2">
+                    <div className="flex justify-between items-center">
+                      <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-wider">Active Scans</p>
+                      <span className="w-1.5 h-1.5 rounded-full bg-brand-volt animate-ping" />
+                    </div>
+                    <div className="h-1 bg-zinc-900 rounded-full overflow-hidden">
+                      <div className="h-full bg-brand-volt rounded-full animate-pulse" style={{ width: '75%' }} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-zinc-900 flex items-center justify-between text-[8px] font-mono text-zinc-500 uppercase tracking-wider">
+                  <span>Connection: Demo Mode</span>
+                  <span>Session: Active</span>
+                </div>
+
+                {/* Decorative glow */}
+                <div className="absolute inset-0 border border-brand-volt/0 group-hover/console:border-brand-volt/20 rounded-2xl transition-colors duration-500 pointer-events-none" />
               </div>
             </div>
           </div>
@@ -812,13 +676,13 @@ export default function LandingPage() {
         <div className="max-w-3xl mb-16 text-left">
           <div className="inline-flex items-center gap-2 bg-brand-volt/10 border border-brand-volt/20 px-3.5 py-1.5 rounded-full mb-4">
             <Cpu className="w-3.5 h-3.5 text-brand-volt" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-brand-volt">Power Capabilities</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-brand-volt">Core Capabilities</span>
           </div>
           <h2 className="font-display font-extrabold text-4xl md:text-5xl tracking-tight text-white mb-6">
-            Engineered for channels<br/>that play to <em className="text-brand-volt not-italic text-glow-volt">win</em>
+            Find your next viral topic.<br/>Backed by <em className="text-brand-volt not-italic text-glow-volt">performance data</em>.
           </h2>
           <p className="text-zinc-400 text-sm md:text-base leading-relaxed max-w-lg">
-            Vyron provides advanced metrics and machine-learning scoring mechanisms to filter high-velocity content, track rival matrices, and maintain your growth speed.
+            Move past basic view counters. Vyron maps the actual momentum, formatting, and keyword relationships driving successful channels in your space.
           </p>
         </div>
 
@@ -827,16 +691,16 @@ export default function LandingPage() {
           {/* Card 1 */}
           <div className="interactive-card group relative p-8 rounded-3xl bg-zinc-950/60 border border-zinc-900 hover:border-zinc-800 transition-all duration-300 hover:-translate-y-1">
             <div className="absolute top-0 right-0 w-32 h-32 bg-brand-volt/2 rounded-bl-full pointer-events-none group-hover:bg-brand-volt/5 transition-all duration-500" />
-            <span className="font-mono text-[9px] font-extrabold text-zinc-600 group-hover:text-brand-volt transition-colors uppercase tracking-widest block mb-4">01 // TRACKING</span>
+            <span className="font-mono text-[9px] font-extrabold text-zinc-600 group-hover:text-brand-volt transition-colors uppercase tracking-widest block mb-4">01 // VELOCITY TRACKING</span>
             <div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xl mb-6 group-hover:border-brand-volt/30 group-hover:bg-zinc-950 transition-colors">
               <BarChart3 className="w-5 h-5 text-brand-volt" />
             </div>
             <h3 className="font-display font-bold text-lg text-white mb-3">Analytics & Tracking</h3>
             <p className="text-zinc-400 text-xs leading-relaxed mb-6 font-normal">
-              Capture automated daily snapshots of subscribers, view velocity, and uploading ratios. Run predictive scaling formulas to project milestones.
+              Monitor views and upload habits across your niche. Receive clear insights on subscriber growth trends and channel milestones without constantly checking analytics.
             </p>
             <div className="flex flex-wrap gap-2">
-              {['Historical', 'Predictions', 'Milestones'].map(t => (
+              {['Growth trends', 'Projections', 'Milestones'].map(t => (
                 <span key={t} className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 border border-zinc-800/80 px-2 py-0.5 rounded bg-zinc-950/40 group-hover:border-zinc-800">{t}</span>
               ))}
             </div>
@@ -845,16 +709,16 @@ export default function LandingPage() {
           {/* Card 2 */}
           <div className="interactive-card group relative p-8 rounded-3xl bg-zinc-950/60 border border-zinc-900 hover:border-zinc-800 transition-all duration-300 hover:-translate-y-1">
             <div className="absolute top-0 right-0 w-32 h-32 bg-brand-mint/2 rounded-bl-full pointer-events-none group-hover:bg-brand-mint/5 transition-all duration-500" />
-            <span className="font-mono text-[9px] font-extrabold text-zinc-600 group-hover:text-brand-mint transition-colors uppercase tracking-widest block mb-4">02 // DISCOVERY</span>
+            <span className="font-mono text-[9px] font-extrabold text-zinc-600 group-hover:text-brand-mint transition-colors uppercase tracking-widest block mb-4">02 // EARLY DETECTION</span>
             <div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xl mb-6 group-hover:border-brand-mint/30 group-hover:bg-zinc-950 transition-colors">
               <Zap className="w-5 h-5 text-brand-mint" />
             </div>
             <h3 className="font-display font-bold text-lg text-white mb-3">Trend Radar</h3>
             <p className="text-zinc-400 text-xs leading-relaxed mb-6 font-normal">
-              Scours niche tags, queries, and titles every hour. Identifies search metrics spikes and prompts you with actionable Quick Wins content scripts.
+              Detect rising search queries and tags early. Spot spikes in audience demand so you can outline videos and draft script hooks before the topic becomes saturated.
             </p>
             <div className="flex flex-wrap gap-2">
-              {['Real-time', 'AI Prompts', 'Viral Hooks'].map(t => (
+              {['Spike alerts', 'Breakout tags', 'Video outlines'].map(t => (
                 <span key={t} className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 border border-zinc-800/80 px-2 py-0.5 rounded bg-zinc-950/40 group-hover:border-zinc-800">{t}</span>
               ))}
             </div>
@@ -869,10 +733,10 @@ export default function LandingPage() {
             </div>
             <h3 className="font-display font-bold text-lg text-white mb-3">Competitor Matrix</h3>
             <p className="text-zinc-400 text-xs leading-relaxed mb-6 font-normal">
-              Profile direct rivals and sector speed leaders. Deep-dive into competitor upload frequency, view efficiency ratios, and content tags.
+              Compare your channel with direct competitors and rising creators. Benchmark upload frequency, identify format types, and see which formats drive views.
             </p>
             <div className="flex flex-wrap gap-2">
-              {['Content DNA', 'Speed Matrix', 'Benchmarks'].map(t => (
+              {['Format mapping', 'Benchmarks', 'Performance ratios'].map(t => (
                 <span key={t} className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 border border-zinc-800/80 px-2 py-0.5 rounded bg-zinc-950/40 group-hover:border-zinc-800">{t}</span>
               ))}
             </div>
@@ -881,16 +745,16 @@ export default function LandingPage() {
           {/* Card 4 */}
           <div className="interactive-card group relative p-8 rounded-3xl bg-zinc-950/60 border border-zinc-900 hover:border-zinc-800 transition-all duration-300 hover:-translate-y-1">
             <div className="absolute top-0 right-0 w-32 h-32 bg-brand-rose/2 rounded-bl-full pointer-events-none group-hover:bg-brand-rose/5 transition-all duration-500" />
-            <span className="font-mono text-[9px] font-extrabold text-zinc-600 group-hover:text-brand-rose transition-colors uppercase tracking-widest block mb-4">04 // PARSING</span>
+            <span className="font-mono text-[9px] font-extrabold text-zinc-600 group-hover:text-brand-rose transition-colors uppercase tracking-widest block mb-4">04 // FILTERING</span>
             <div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xl mb-6 group-hover:border-brand-rose/30 group-hover:bg-zinc-950 transition-colors">
               <Search className="w-5 h-5 text-brand-rose" />
             </div>
             <h3 className="font-display font-bold text-lg text-white mb-3">Advanced Search</h3>
             <p className="text-zinc-400 text-xs leading-relaxed mb-6 font-normal">
-              Filters video uploads by locale, length, and timestamp. Sort directly by our custom virality score to separate core content patterns from anomalies.
+              Search and filter competitor uploads by duration, location, and date. Sort by our performance-adjusted virality score to find videos that resonated with audiences.
             </p>
             <div className="flex flex-wrap gap-2">
-              {['Virality Rank', 'Growth Factor', 'Precision'].map(t => (
+              {['Virality factor', 'Format filter', 'Precision search'].map(t => (
                 <span key={t} className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 border border-zinc-800/80 px-2 py-0.5 rounded bg-zinc-950/40 group-hover:border-zinc-800">{t}</span>
               ))}
             </div>
@@ -899,16 +763,16 @@ export default function LandingPage() {
           {/* Card 5 */}
           <div className="interactive-card group relative p-8 rounded-3xl bg-zinc-950/60 border border-zinc-900 hover:border-zinc-800 transition-all duration-300 hover:-translate-y-1">
             <div className="absolute top-0 right-0 w-32 h-32 bg-brand-volt/2 rounded-bl-full pointer-events-none group-hover:bg-brand-volt/5 transition-all duration-500" />
-            <span className="font-mono text-[9px] font-extrabold text-zinc-600 group-hover:text-brand-volt transition-colors uppercase tracking-widest block mb-4">05 // ARCHIVE</span>
+            <span className="font-mono text-[9px] font-extrabold text-zinc-600 group-hover:text-brand-volt transition-colors uppercase tracking-widest block mb-4">05 // WORKSPACE</span>
             <div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xl mb-6 group-hover:border-brand-volt/30 group-hover:bg-zinc-950 transition-colors">
               <BookOpen className="w-5 h-5 text-brand-volt" />
             </div>
-            <h3 className="font-display font-bold text-lg text-white mb-3">Research Library</h3>
+            <h3 className="font-display font-bold text-lg text-white mb-3">Research Notebook</h3>
             <p className="text-zinc-400 text-xs leading-relaxed mb-6 font-normal">
-              Save trends, competitor logs, and keyword groupings. Write script structures and scripts inside our markdown editor module.
+              Save key insights, high-momentum topics, and competitor references. Draft video hooks and store outlines in a dedicated markdown notebook.
             </p>
             <div className="flex flex-wrap gap-2">
-              {['Saved Notes', 'Blueprints', 'Editor Mode'].map(t => (
+              {['Topic folders', 'Markdown notes', 'Title drafts'].map(t => (
                 <span key={t} className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 border border-zinc-800/80 px-2 py-0.5 rounded bg-zinc-950/40 group-hover:border-zinc-800">{t}</span>
               ))}
             </div>
@@ -917,16 +781,16 @@ export default function LandingPage() {
           {/* Card 6 */}
           <div className="interactive-card group relative p-8 rounded-3xl bg-zinc-950/60 border border-zinc-900 hover:border-zinc-800 transition-all duration-300 hover:-translate-y-1">
             <div className="absolute top-0 right-0 w-32 h-32 bg-brand-mint/2 rounded-bl-full pointer-events-none group-hover:bg-brand-mint/5 transition-all duration-500" />
-            <span className="font-mono text-[9px] font-extrabold text-zinc-600 group-hover:text-brand-mint transition-colors uppercase tracking-widest block mb-4">06 // INFRA</span>
+            <span className="font-mono text-[9px] font-extrabold text-zinc-600 group-hover:text-brand-mint transition-colors uppercase tracking-widest block mb-4">06 // DIGESTS</span>
             <div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xl mb-6 group-hover:border-brand-mint/30 group-hover:bg-zinc-950 transition-colors">
               <Cpu className="w-5 h-5 text-brand-mint" />
             </div>
-            <h3 className="font-display font-bold text-lg text-white mb-3">AI Infrastructure</h3>
+            <h3 className="font-display font-bold text-lg text-white mb-3">Smart Notifications</h3>
             <p className="text-zinc-400 text-xs leading-relaxed mb-6 font-normal">
-              Utilizes semantic indexing inside Zilliz/Milvus vector databases. Runs background cron indexing and triggers automated digests to your email inbox via Resend.
+              Get competitor digests and tag updates sent directly to your inbox. Stay updated on market changes without needing to open the workspace.
             </p>
             <div className="flex flex-wrap gap-2">
-              {['Vector Search', 'Cron indexing', 'Email Reports'].map(t => (
+              {['Email updates', 'Breakout summaries', 'Custom timing'].map(t => (
                 <span key={t} className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 border border-zinc-800/80 px-2 py-0.5 rounded bg-zinc-950/40 group-hover:border-zinc-800">{t}</span>
               ))}
             </div>
@@ -939,32 +803,30 @@ export default function LandingPage() {
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 bg-brand-volt/10 border border-brand-volt/20 px-3.5 py-1.5 rounded-full mb-4">
             <Star className="w-3.5 h-3.5 text-brand-volt fill-brand-volt" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-brand-volt">Early Pricing</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-brand-volt">Simple Pricing</span>
           </div>
           <h2 className="font-display font-extrabold text-4xl md:text-5xl tracking-tight text-white mb-4">
-            Get Complete Access. Locked Pricing.
+            One simple plan. Full access.
           </h2>
           <p className="text-zinc-400 text-sm leading-relaxed max-w-sm mx-auto">
-            7 days trial. Razorpay integration for billing setups. Cancel subscription anytime with one click.
+            Try it free for 7 days. Cancel with a single click at any time.
           </p>
-
-
         </div>
 
         {/* early adopter banner */}
         <div className="rounded-3xl border border-zinc-800/80 bg-zinc-950/40 backdrop-blur-md overflow-hidden relative mb-6">
           <div className="p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div className="flex items-start md:items-center gap-4">
-              <span className="bg-brand-rose text-white text-[9px] font-black tracking-widest px-2.5 py-1 rounded">VERSION 3 OFFER</span>
+              <span className="bg-brand-rose text-white text-[9px] font-black tracking-widest px-2.5 py-1 rounded">LAUNCH OFFER</span>
               <div>
-                <h3 className="font-display font-extrabold text-lg text-white">50% off for life for first 500 members</h3>
-                <p className="text-xs text-zinc-500 mt-0.5">Secure early adopter status. Price will never raise for your account.</p>
+                <h3 className="font-display font-extrabold text-lg text-white">Lock in early adopter pricing for life</h3>
+                <p className="text-xs text-zinc-500 mt-0.5">Secure your monthly rate before we introduce multi-tier pricing. Your rate will never increase.</p>
               </div>
             </div>
 
             {/* Countdown timer */}
             <div className="flex items-center gap-3 bg-zinc-950 border border-zinc-900 p-3 rounded-2xl shrink-0">
-              <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Ends in:</span>
+              <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Offer ends in:</span>
               <div className="flex items-center gap-1 font-mono font-bold text-sm text-brand-volt">
                 <span>{String(timeLeft.hours).padStart(2, '0')}</span>
                 <span className="opacity-40 animate-pulse">:</span>
@@ -977,7 +839,7 @@ export default function LandingPage() {
         </div>
 
         {/* Pricing Card */}
-        <div className="rounded-3xl border border-brand-volt/20 bg-zinc-950/70 backdrop-blur-md overflow-hidden relative grid grid-cols-1 md:grid-cols-12 gap-8 p-8 md:p-12 shadow-[0_30px_60px_rgba(0,0,0,0.8),0_0_50px_rgba(200,241,53,0.02)]">
+        <div className="rounded-3xl border border-brand-volt/20 bg-zinc-950/70 backdrop-blur-md overflow-hidden relative grid grid-cols-1 md:grid-cols-12 gap-8 p-8 md:p-12 shadow-[0_30px_60px_rgba(0,0,0,0.8),0_0_50px_rgba(0,240,255,0.02)]">
           {/* Top highlight bar */}
           <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-brand-volt to-brand-mint" />
           
@@ -985,7 +847,7 @@ export default function LandingPage() {
           <div className="md:col-span-6 flex flex-col justify-between">
             <div>
               <div className="flex items-center gap-2 text-brand-volt font-black uppercase text-[10px] tracking-widest mb-6">
-                <span className="w-1.5 h-1.5 rounded-full bg-brand-volt" /> Pro Tier Plan
+                <span className="w-1.5 h-1.5 rounded-full bg-brand-volt" /> Vyron Pro
               </div>
               
               <div className="flex items-baseline gap-1.5 mb-2">
@@ -1003,16 +865,19 @@ export default function LandingPage() {
               </div>
 
               <div className="flex items-center gap-2 text-xs font-extrabold text-brand-mint mb-8">
-                <Check className="w-4 h-4" /> 7 days free trial · no payment card required
+                <Check className="w-4 h-4" /> Start your 7-day free trial · Cancel anytime
               </div>
             </div>
 
             <div>
-              <button className="w-full py-4.5 bg-brand-volt hover:bg-[#d6fb3a] text-black font-extrabold text-sm uppercase tracking-wider rounded-2xl transition-all shadow-[0_0_35px_rgba(200,241,53,0.3)] hover:shadow-[0_0_50px_rgba(200,241,53,0.55)] hover:-translate-y-0.5">
-                Start 7-Day Free Trial
+              <button 
+                onClick={() => { window.location.href = "/sign-in"; }}
+                className="w-full py-4.5 bg-brand-volt hover:bg-[#33f3ff] text-black font-extrabold text-sm uppercase tracking-wider rounded-2xl transition-all shadow-[0_0_35px_rgba(0,240,255,0.3)] hover:shadow-[0_0_50px_rgba(0,240,255,0.55)] hover:-translate-y-0.5 cursor-pointer"
+              >
+                Start Trial
               </button>
               <p className="text-[10px] text-zinc-500 text-center mt-3 font-semibold tracking-wide">
-                Then ₹499/mo · Cancel subscription anytime · Powered by Razorpay secure checkout
+                Thereafter ₹499/month · Cancel at any time · Secure checkout powered by Razorpay
               </p>
             </div>
           </div>
@@ -1021,15 +886,15 @@ export default function LandingPage() {
           <div className="md:col-span-6 border-t md:border-t-0 md:border-l border-zinc-900 pt-8 md:pt-0 md:pl-8 flex flex-col justify-center">
             <ul className="space-y-3.5 text-xs text-zinc-300">
               {[
-                "Real-time Trend Radar + Quick Wins prompts",
-                "Competitor Matrix & Content DNA tracking profiles",
-                "Growth vector projections & milestone calculations",
-                "YouTube search sorts by custom Virality Score",
-                "Daily stats snapshot tracking & historical log archives",
-                "Unlimited research notebook slots & strategy blueprints",
-                "Background scraper indexing & automated Resend digests",
-                "Vector database semantic scanning (Zilliz/Milvus)",
-                "Support for all futuras additions without cost increases"
+                "Real-time Trend Radar & breakout alerts",
+                "Competitor analysis & format benchmarks",
+                "Subscriber velocity and milestone tracking",
+                "Advanced search sorted by custom Virality Score",
+                "Daily stats snapshot history & archived reports",
+                "Unlimited research notebook slots & outlining workspace",
+                "Smart notifications & digests sent to your inbox",
+                "Semantic content clustering & relationship mapping",
+                "Includes all upcoming features with no pricing increases"
               ].map((feat, idx) => (
                 <li key={idx} className="flex items-start gap-3">
                   <span className="text-brand-volt font-bold shrink-0 mt-0.5">→</span>
@@ -1049,10 +914,10 @@ export default function LandingPage() {
             <span className="text-[10px] font-black uppercase tracking-widest text-brand-mint">Common Questions</span>
           </div>
           <h2 className="font-display font-extrabold text-3.5xl md:text-4.5xl tracking-tight text-white mb-4">
-            Frequently Asked Queries
+            Frequently Asked Questions
           </h2>
           <p className="text-zinc-400 text-sm leading-relaxed max-w-sm mx-auto">
-            Everything you need to know about the Vyron system, indexes, and account configs.
+            Clear answers to how Vyron helps you grow your channel.
           </p>
         </div>
 
@@ -1060,20 +925,20 @@ export default function LandingPage() {
         <div className="space-y-3">
           {[
             {
-              q: "What is Vyron Intelligence and how does it function?",
-              a: "Vyron is a multi-parameter channel analysis dashboard. It tracks channel data, indexes competitor videos in vector spaces via Zilliz/Milvus databases, and runs scoring formulas to isolate real content patterns from search noise."
+              q: "How does Vyron help me grow my channel?",
+              a: "Vyron continuously tracks high-performing channels in your space. By indexing topic relationships and calculating how well videos perform relative to a channel's size, Vyron flags high-potential video concepts so you publish content people are already looking for."
             },
             {
-              q: "Must I link my YouTube/Google account to use it?",
-              a: "Linking is entirely optional. You can connect your channel via read-only APIs to unlock automated growth projection tools, or run the system isolated for market trends research and rival channel tracking."
+              q: "Do I need to connect my YouTube channel?",
+              a: "No, connecting your channel is completely optional. You can use Vyron strictly for competitor tracking and trend discovery. If you choose to link your channel, we use secure, read-only API access to generate custom growth benchmarks."
             },
             {
               q: "What is the Trend Radar?",
-              a: "The Trend Radar is our hourly scraping cron job. It scans targeted keywords, metrics, and tags across your vertical to record early keyword spikes, then translates them into video ideas and hook recommendations."
+              a: "The Trend Radar constantly monitors tags and topics across your content vertical. When it spots an unusual spike in search volume or view velocity, it alerts you with the exact hooks and formats that triggered the spike."
             },
             {
-              q: "How does the 7-day trial and billing cancelation behave?",
-              a: "Your trial lasts 7 days with zero initial credit card billing. If you proceed, Razorpay billing triggers at ₹499/mo (or ₹399/mo yearly). You can cancel from your billing portal with one click anytime."
+              q: "How does the free trial and cancellation work?",
+              a: "Your trial runs for 7 days with full features unlocked. No credit card is required upfront. If you choose to continue after your trial, billing starts at ₹499/month. You can cancel with a single click in your settings at any time."
             }
           ].map((faq, idx) => {
             const isOpen = openFaq === idx;
@@ -1116,26 +981,26 @@ export default function LandingPage() {
           </div>
 
           <div className="relative z-10 max-w-xl mx-auto">
-            <span className="text-[10px] font-black uppercase tracking-widest text-brand-volt mb-4 block">DOMINATE YOUR VERTICAL</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-brand-volt mb-4 block">Publish with confidence</span>
             <h2 className="font-display font-extrabold text-3.5xl md:text-5xl tracking-tight text-white mb-6">
-              Your niche is moving.<br/>Stop lagging.
+              Build a content library<br/>that stands out.
             </h2>
             <p className="text-zinc-400 text-sm leading-relaxed mb-10 font-normal">
-              Every hour without trend scraping is another hour competitors gain margins. Start tracking today.
+              Stop leaving your content strategy to chance. Get real-time competitor insights and trend alerts today.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <a 
                 href="#pricing"
-                className="w-full sm:w-auto px-8 py-4 bg-brand-volt hover:bg-[#d6fb3a] text-black font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-[0_0_25px_rgba(200,241,53,0.15)] text-center"
+                className="w-full sm:w-auto px-8 py-4 bg-brand-volt hover:bg-[#33f3ff] text-black font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-[0_0_25px_rgba(0,240,255,0.15)] text-center"
               >
-                Start 7-Day Trial Free
+                Start Trial
               </a>
               <a 
                 href="#features"
                 className="w-full sm:w-auto px-8 py-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all text-center"
               >
-                Read Capabilities list
+                Features
               </a>
             </div>
           </div>
@@ -1149,16 +1014,12 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-12 gap-10 pb-12">
             {/* Brand Column */}
             <div className="md:col-span-7 flex flex-col items-start gap-4">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-brand-volt via-[#dff453] to-brand-mint p-[1px] shadow-[0_0_15px_rgba(200,241,53,0.15)]">
-                  <div className="w-full h-full bg-black rounded-[7px] flex items-center justify-center">
-                    <Sparkles className="w-3.5 h-3.5 text-brand-volt" />
-                  </div>
-                </div>
+              <div className="flex items-center gap-2.5">
+                <div className="w-5.5 h-5.5 rounded-full bg-gradient-to-tr from-brand-volt via-[#00b0ff] to-brand-mint shadow-[0_0_12px_rgba(0,240,255,0.2)]" />
                 <span className="font-display font-extrabold text-base text-white tracking-tight">VYRON</span>
               </div>
               <p className="text-zinc-500 text-xs leading-relaxed max-w-sm">
-                Continuously scanning competitor content, scoring emerging velocity indicators, and parsing vector data to secure your channel's growth.
+                Decoding YouTube performance data in real-time so you can focus on building a sustainable channel.
               </p>
               {/* Status Indicator */}
               <div className="inline-flex items-center gap-2 bg-zinc-900/50 border border-zinc-800/80 px-3 py-1 rounded-full text-[9px] font-mono font-bold text-brand-mint mt-2">
@@ -1172,7 +1033,6 @@ export default function LandingPage() {
               <div className="flex flex-wrap md:justify-end gap-x-8 gap-y-4 text-[10px] font-black uppercase tracking-widest text-zinc-500">
                 <a href="#features" className="hover:text-brand-volt transition-colors">Features</a>
                 <a href="#demo" className="hover:text-brand-volt transition-colors">Live Demo</a>
-                <a href="#scanner" className="hover:text-brand-volt transition-colors">Radar Terminal</a>
                 <a href="#pricing" className="hover:text-brand-volt transition-colors">Pricing</a>
               </div>
             </div>

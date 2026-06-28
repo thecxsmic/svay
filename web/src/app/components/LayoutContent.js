@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserButton } from "@clerk/nextjs";
-import { Plus, Menu, X, Search, Zap, Users, Trophy, BookOpen, BarChart3, Activity, Radio } from 'lucide-react';
+import { Plus, Menu, X, Search, Zap, Users, Trophy, BookOpen, BarChart3, Activity, Radio, HelpCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useChannel } from '@/contexts/channel';
+import { useUser } from '@/contexts/user';
 import PinnedChannels from "./PinnedChannels";
 import ResearchNotesModal from "./ResearchNotesModal";
 import SetupUserChannelModal from "./SetupUserChannelModal";
@@ -18,6 +19,7 @@ const navItems = [
   { name: 'Competitors', href: '/competitors', icon: Trophy },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Library', href: '/library', icon: BookOpen },
+  { name: 'Docs', href: '/docs', icon: HelpCircle },
 ];
 
 export default function LayoutContent({ children }) {
@@ -25,18 +27,30 @@ export default function LayoutContent({ children }) {
   const [isSetupModalOpen, setIsSetupModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { channels, userChannel, selectChannel, refreshChannels } = useChannel();
+  const { user } = useUser();
+  const [isDemo, setIsDemo] = useState(false);
   const pathname = usePathname();
+
+  useEffect(() => {
+    setIsDemo(document.cookie.includes("demo_mode=true"));
+  }, []);
+
+  const toggleDemoMode = () => {
+    document.cookie = "demo_mode=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+    window.location.reload();
+  };
 
   // Close mobile menu on route change
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
+
   const SidebarContent = () => (
     <>
       <div className="p-6">
         <Link href="/" className="flex items-center gap-3 transition-opacity hover:opacity-80 group">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-geist-success via-[#00dfd8] to-geist-success animate-logo-gradient shadow-[0_0_15px_rgba(0,112,243,0.3)] group-hover:shadow-[0_0_20px_rgba(0,112,243,0.5)] transition-shadow" />
+          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-geist-success via-[#00f0ff] to-geist-success animate-logo-gradient shadow-[0_0_15px_rgba(0,112,243,0.3)] group-hover:shadow-[0_0_20px_rgba(0,112,243,0.5)] transition-shadow" />
           <span className="font-logo text-xl tracking-tight text-white uppercase">Vyron</span>
         </Link>
       </div>
@@ -123,17 +137,34 @@ export default function LayoutContent({ children }) {
       </nav>
 
       <div className="h-[88px] p-4 border-t border-accents-2 mt-auto flex items-center">
-        <div className="w-full bg-accents-1 border border-accents-2 rounded-lg p-3 flex items-center gap-3 hover:bg-white/[0.02] transition-colors cursor-pointer">
-            <UserButton appearance={{ 
-              elements: { 
-                userButtonAvatarBox: "w-8 h-8 border border-white/10" 
-              } 
-            }} />
-            <div className="min-w-0">
-              <p className="text-[10px] font-bold text-white uppercase tracking-tight truncate">Pro Account</p>
-              <p className="text-[8px] text-accents-4 font-bold uppercase tracking-widest">Status: Active</p>
+        {isDemo ? (
+          <div 
+            onClick={toggleDemoMode}
+            className="w-full bg-yellow-500/5 border border-yellow-500/10 rounded-lg p-3 flex items-center gap-3 hover:bg-yellow-500/10 transition-colors cursor-pointer"
+            title="Click to Exit Demo Mode"
+          >
+            <div className="relative shrink-0">
+              <img src={user?.imageUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80"} className="w-8 h-8 rounded-full border border-yellow-500/30 object-cover" alt="" />
+              <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-yellow-500 border border-black animate-pulse"></span>
             </div>
-        </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold text-white uppercase tracking-tight truncate">{user?.name || "Demo Account"}</p>
+              <p className="text-[8px] text-yellow-500 font-bold uppercase tracking-widest">Exit Demo Mode</p>
+            </div>
+          </div>
+        ) : (
+          <div className="w-full bg-accents-1 border border-accents-2 rounded-lg p-3 flex items-center gap-3 hover:bg-white/[0.02] transition-colors cursor-pointer">
+              <UserButton appearance={{ 
+                elements: { 
+                  userButtonAvatarBox: "w-8 h-8 border border-white/10" 
+                } 
+              }} />
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold text-white uppercase tracking-tight truncate">Pro Account</p>
+                <p className="text-[8px] text-accents-4 font-bold uppercase tracking-widest">Status: Active</p>
+              </div>
+          </div>
+        )}
       </div>
     </>
   );
@@ -204,7 +235,17 @@ export default function LayoutContent({ children }) {
                 <span className="font-display text-xs font-bold text-accents-5 uppercase tracking-tighter">System Online</span>
               </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+              {isDemo && (
+                <button 
+                  onClick={toggleDemoMode}
+                  className="flex items-center gap-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/20 px-2.5 py-1 rounded-full text-yellow-500 transition-colors cursor-pointer"
+                  title="Click to Exit Demo Mode"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse"></span>
+                  <span className="font-display text-[10px] font-bold uppercase tracking-tight">Demo Mode</span>
+                </button>
+              )}
               <div className="flex items-center gap-2 bg-white/5 px-2.5 py-1 rounded-full border border-white/10">
                 <Zap className="w-3 h-3 text-geist-success" fill="currentColor" />
                 <span className="font-display text-[10px] font-bold text-white uppercase tracking-tight">Pro</span>

@@ -151,7 +151,7 @@ export default function Home() {
         <section className={`sticky top-0 z-[45] transition-all duration-700 border-b ${hasSearched ? 'w-full bg-black/80 backdrop-blur-md border-white/5 py-4 px-6 md:px-10' : 'max-w-2xl mx-auto px-6 border-transparent'}`}>
           <form onSubmit={handleSearch} className={`relative group mx-auto transition-all duration-700 ${hasSearched ? 'max-w-[1600px]' : 'w-full'}`}>
             <div className="relative flex items-center bg-black border border-white/10 rounded-2xl overflow-hidden focus-within:border-white/20 transition-all duration-300 shadow-2xl">
-              <div className="absolute inset-0 opacity-[0.03] group-focus-within:opacity-[0.08] transition-opacity bg-gradient-to-r from-geist-success via-[#00dfd8] to-geist-success animate-logo-gradient pointer-events-none" />
+              <div className="absolute inset-0 opacity-[0.03] group-focus-within:opacity-[0.08] transition-opacity bg-gradient-to-r from-geist-success via-[#00f0ff] to-geist-success animate-logo-gradient pointer-events-none" />
               <div className="pl-6 text-accents-4 shrink-0 relative z-10"><Search className="w-5 h-5" /></div>
               <input 
                 type="text" 
@@ -190,7 +190,7 @@ export default function Home() {
                   <motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: `${loadingStage}%` }}
-                    className="h-full bg-gradient-to-r from-geist-success to-[#00dfd8] animate-logo-gradient"
+                    className="h-full bg-gradient-to-r from-geist-success to-[#00f0ff] animate-logo-gradient"
                   />
                 </motion.div>
               )}
@@ -246,7 +246,7 @@ export default function Home() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {[
                     { label: 'Market Volume', value: formatNumber(results.reduce((acc, item) => acc + parseInt(item.statistics?.viewCount || 0), 0)), sub: 'Total views in niche', icon: BarChart3, color: 'text-white' },
-                    { label: 'Growth Trend', value: results.length > 25 ? 'High' : 'Steady', sub: 'Content momentum', icon: TrendingUp, color: 'text-[#00dfd8]' },
+                    { label: 'Growth Trend', value: results.length > 25 ? 'High' : 'Steady', sub: 'Content momentum', icon: TrendingUp, color: 'text-[#00f0ff]' },
                     { label: 'Opportunity', value: `${((results.reduce((acc, item) => acc + calculateViralityScore(item).score, 0) / results.length) * (1 - (results.length / 100))).toFixed(0)}%`, sub: 'Viral potential', icon: Target, color: 'text-geist-success' },
                   ].map((stat, i) => (
                     <div key={i} className="bg-white/[0.02] border border-white/5 p-6 rounded-2xl relative overflow-hidden group">
@@ -277,8 +277,8 @@ export default function Home() {
                       <div className="text-xl font-bold text-white">{(results.reduce((acc, item) => acc + parseFloat(calculateViralityScore(item).engagement), 0) / results.length).toFixed(2)}%</div>
                     </div>
                     <div className="w-8 h-8 rounded-full border-2 border-white/10 flex items-center justify-center relative">
-                      <div className="absolute inset-0 border-2 border-[#00dfd8] rounded-full border-t-transparent group-hover:rotate-180 transition-transform duration-1000"></div>
-                      <Zap className="w-3 h-3 text-[#00dfd8]" />
+                      <div className="absolute inset-0 border-2 border-[#00f0ff] rounded-full border-t-transparent group-hover:rotate-180 transition-transform duration-1000"></div>
+                      <Zap className="w-3 h-3 text-[#00f0ff]" />
                     </div>
                   </div>
 

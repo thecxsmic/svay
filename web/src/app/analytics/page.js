@@ -453,6 +453,7 @@ export default function AnalyticsPage() {
           ))}
         </div>
       </section>
+      </main>
     </div>
   );
 }

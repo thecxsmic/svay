@@ -1,9 +1,19 @@
 import { auth } from "@clerk/nextjs/server";
 import { getUserChannel, saveChannelSnapshot, getChannelSnapshots, getChannelVideos } from "@/lib/cache/turso";
 import { apiSuccess, apiError } from "@/lib/utils/response";
+import { getIsDemoMode, generateMockAnalytics } from "@/lib/utils/demoMock";
 
 export async function GET(req) {
   try {
+    if (await getIsDemoMode()) {
+      const mockData = generateMockAnalytics();
+      return apiSuccess({
+        data: mockData.snapshots,
+        channel: mockData.channel,
+        videos: mockData.videos.slice(0, 10)
+      });
+    }
+
     const { userId } = await auth();
     if (!userId) return apiError(new Error("Unauthorized"), 401);
 
@@ -28,6 +38,10 @@ export async function GET(req) {
 
 export async function POST(req) {
   try {
+    if (await getIsDemoMode()) {
+      return apiSuccess({ success: true });
+    }
+
     const { userId } = await auth();
     if (!userId) return apiError(new Error("Unauthorized"), 401);
 
@@ -48,3 +62,4 @@ export async function POST(req) {
     return apiError(error);
   }
 }
+

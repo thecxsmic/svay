@@ -76,6 +76,18 @@ h1, h2, h3, h4, h5, h6 {
   --font-sans: var(--font-montserrat-alternates);
   --font-display: var(--font-righteous);
   --font-logo: var(--font-audiowide);
+
+  --color-brand-volt: #00f0ff;
+  --color-brand-mint: #0052ff;
+  --color-brand-rose: #ff4f6d;
+  --color-brand-indigo: #6c63ff;
+  --color-bg-dark: #000000;
+  --color-surface-dark: #0a0a0c;
+  --color-border-dark: rgba(255, 255, 255, 0.06);
+  --color-border-glow: rgba(0, 240, 255, 0.15);
+
+  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-spin-slow: spin 20s linear infinite;
 }
 
 /* User Requested Font Classes */
@@ -145,7 +157,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .virality-badge {
-  background: linear-gradient(135deg, #0070f3 0%, #00dfd8 100%);
+  background: linear-gradient(135deg, #0070f3 0%, #00f0ff 100%);
   color: white;
   padding: 2px 8px;
   border-radius: 4px;
@@ -213,3 +225,55 @@ h1, h2, h3, h4, h5, h6 {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #444;
 }
+
+/* Custom background grain */
+.bg-grain::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  opacity: 0.8;
+}
+
+/* Glassmorphism utility */
+.glass-panel {
+  background: rgba(10, 10, 12, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.glass-panel-glow {
+  background: rgba(10, 10, 12, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 240, 255, 0.15);
+  box-shadow: 0 0 30px rgba(0, 240, 255, 0.03);
+}
+
+/* Glowing text utility */
+.text-glow-volt {
+  text-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+}
+
+.text-glow-mint {
+  text-shadow: 0 0 15px rgba(0, 82, 255, 0.3);
+}
+
+/* Marquee infinite scroll */
+.marquee-track {
+  animation: marquee 30s linear infinite;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+
