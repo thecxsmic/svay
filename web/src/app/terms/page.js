@@ -144,7 +144,7 @@ export default function TermsPage() {
             <section className="space-y-3">
               <h2 className="text-white text-base font-bold uppercase tracking-wider">6. Contact Us</h2>
               <p>
-                If you have questions about these terms or platform rules, email our team at <a href="mailto:thecxsmic@gmail.com" className="text-brand-volt font-mono">thecxsmic@gmail.com</a>.
+                If you have questions about these terms or platform rules, email our team at <a href="mailto:help@svay.space" className="text-brand-volt font-mono">help@svay.space</a>.
               </p>
             </section>
           </div>

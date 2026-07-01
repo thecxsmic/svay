@@ -107,7 +107,7 @@ export default function RefundPage() {
                 Because Svay provides real-time access to computed creator intelligence, we do not offer pro-rata refunds for partial months or unused time once a billing cycle is charged.
               </p>
               <p>
-                However, if you notice double billing or transaction processing errors by Razorpay, please email our support team at <a href="mailto:thecxsmic@gmail.com" className="text-brand-volt font-mono">thecxsmic@gmail.com</a> within 7 days of the charge. We will audit the transaction logs and issue credit adjustments where appropriate.
+                However, if you notice double billing or transaction processing errors by Razorpay, please email our support team at <a href="mailto:help@svay.space" className="text-brand-volt font-mono">help@svay.space</a> within 7 days of the charge. We will audit the transaction logs and issue credit adjustments where appropriate.
               </p>
             </section>
           </div>

@@ -149,7 +149,7 @@ export default function PrivacyPage() {
                 Quick summary: You own your data. You can access, edit, or delete your account whenever you choose.
               </div>
               <p>
-                We believe you should have complete control over your information. Under data protection regulations (such as GDPR), you have the right to request access to your data, fix errors, or ask for complete deletion of your workspace logs. You can delete linked YouTube channel tokens or cancel your profile directly from your settings. For questions about your data, email us at <a href="mailto:thecxsmic@gmail.com" className="text-brand-volt font-mono">thecxsmic@gmail.com</a>.
+                We believe you should have complete control over your information. Under data protection regulations (such as GDPR), you have the right to request access to your data, fix errors, or ask for complete deletion of your workspace logs. You can delete linked YouTube channel tokens or cancel your profile directly from your settings. For questions about your data, email us at <a href="mailto:help@svay.space" className="text-brand-volt font-mono">help@svay.space</a>.
               </p>
             </section>
           </div>
