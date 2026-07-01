@@ -1,7 +1,7 @@
 import { Audiowide, Montserrat_Alternates, Righteous } from "next/font/google";
 import Link from "next/link";
 import { ClerkProvider } from "@clerk/nextjs";
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { getSubscriptionStatus } from "@/lib/auth/subscription";
 import { UserProvider } from "@/contexts/user";
 import { ChannelProvider } from "@/contexts/channel";
@@ -84,10 +84,28 @@ export default async function RootLayout({ children }) {
   } else {
     try {
       const { userId } = await auth();
-      subscription = userId ? await getSubscriptionStatus(userId) : null;
-      isSubscribed = subscription?.isActive;
+      if (userId) {
+        // Fetch Clerk user details to check if they are the admin
+        const user = await currentUser();
+        const userEmail = user?.emailAddresses[0]?.emailAddress;
+        
+        if (userEmail === "thecxsmic@gmail.com") {
+          isSubscribed = true;
+          subscription = {
+            status: "active",
+            isActive: true,
+            isHalted: false,
+            isExpired: false,
+            currentPeriodEnd: 0
+          };
+          console.log("[Auth] Admin user detected: Bypassing subscription required gate");
+        } else {
+          subscription = await getSubscriptionStatus(userId);
+          isSubscribed = subscription?.isActive;
+        }
+      }
     } catch (e) {
-      console.warn("Clerk auth failed, using defaults");
+      console.warn("Clerk auth failed, using defaults", e);
     }
   }
 
