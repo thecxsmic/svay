@@ -51,7 +51,7 @@ export default function LayoutContent({ children }) {
       <div className="p-6">
         <Link href="/" className="flex items-center gap-3 transition-opacity hover:opacity-80 group">
           <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-geist-success via-[#00f0ff] to-geist-success animate-logo-gradient shadow-[0_0_15px_rgba(0,112,243,0.3)] group-hover:shadow-[0_0_20px_rgba(0,112,243,0.5)] transition-shadow" />
-          <span className="font-logo text-xl tracking-tight text-white uppercase">Svay</span>
+          <span className="font-logo font-black text-xl tracking-tight text-white uppercase">Svay</span>
         </Link>
       </div>
 
@@ -275,7 +275,7 @@ export default function LayoutContent({ children }) {
               {children}
             </div>
             
-            <footer className="h-[88px] border-t border-accents-2 px-8 mt-auto flex items-center">
+            <footer className="min-h-[88px] py-6 md:py-0 border-t border-accents-2 px-8 mt-auto flex items-center">
               <div className="w-full flex flex-col md:flex-row justify-between items-center gap-6">
                 <div className="flex items-center gap-2.5">
                     <div className="w-4 h-4 bg-white/10 rounded-full flex items-center justify-center">
@@ -284,9 +284,8 @@ export default function LayoutContent({ children }) {
                     <span className="text-[10px] font-medium text-accents-4 tracking-tight">© 2026 Svay Intelligence. All rights reserved.</span>
                 </div>
                 <div className="flex gap-6 text-[11px] font-medium text-accents-4">
-                    <a href="#" className="hover:text-white transition-colors">Privacy</a>
-                    <a href="#" className="hover:text-white transition-colors">Terms</a>
-                    <a href="#" className="hover:text-white transition-colors">GitHub</a>
+                    <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+                    <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
                 </div>
               </div>
             </footer>

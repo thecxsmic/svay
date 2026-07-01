@@ -45,7 +45,7 @@ export default function ResearchNotesModal({ isOpen, onClose, item, onSave, onVi
               <Target className="w-2.5 h-2.5" />
               Strategy / Opportunity
             </p>
-            <p className="text-[11px] text-zinc-400 leading-relaxed line-clamp-2 italic">{rationale}</p>
+            <p className="text-[11px] text-zinc-400 leading-relaxed line-clamp-2">{rationale}</p>
           </div>
         )}
         <div className="flex gap-4">
@@ -79,7 +79,7 @@ export default function ResearchNotesModal({ isOpen, onClose, item, onSave, onVi
   useEffect(() => {
     let isMounted = true;
 
-    if (!isOpen || !item) {
+    if (!isOpen) {
       // Reset state when modal closes, with a short delay for exit animation
       const timer = setTimeout(() => {
         if (isMounted) {
@@ -99,9 +99,9 @@ export default function ResearchNotesModal({ isOpen, onClose, item, onSave, onVi
     setQuillReady(false);
     setContent('');
 
-    const initialContent = item.content || '';
-    const initialDbId = item.dbId || (item.hasOwnProperty('content') ? item.id : null);
-    const refId = item.reference_id || item.id || item.channelId;
+    const initialContent = item?.content || '';
+    const initialDbId = item?.dbId || (item?.hasOwnProperty('content') ? item.id : null);
+    const refId = item?.reference_id || item?.id || item?.channelId;
 
     if (initialContent) {
       // We already have content — set it and mount Quill immediately
@@ -247,10 +247,14 @@ export default function ResearchNotesModal({ isOpen, onClose, item, onSave, onVi
           {[base, ...competitors.slice(0, 4)].map((ch, i) => (
             <img 
               key={i}
-              src={ch.thumbnail} 
+              src={ch.thumbnail || `https://ui-avatars.com/api/?name=${encodeURIComponent(ch.title || '')}&background=27272a&color=fff`} 
               className="inline-block h-8 w-8 rounded-full ring-2 ring-zinc-900 grayscale-[0.5] hover:grayscale-0 transition-all" 
               title={ch.title}
               alt=""
+              referrerPolicy="no-referrer"
+              onError={(e) => {
+                e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(ch.title || '')}&background=27272a&color=fff`;
+              }}
             />
           ))}
           {competitors.length > 4 && (
@@ -276,10 +280,15 @@ export default function ResearchNotesModal({ isOpen, onClose, item, onSave, onVi
           border-color: #27272a !important;
           border-bottom-left-radius: 1rem;
           border-bottom-right-radius: 1rem;
-          height: 250px;
+          height: 180px;
           font-family: inherit;
           font-size: 0.875rem;
           background: transparent;
+        }
+        @media (min-width: 640px) {
+          .quill-dark .ql-container {
+            height: 250px;
+          }
         }
         .quill-dark .ql-stroke {
           stroke: #71717a !important;
@@ -307,7 +316,7 @@ export default function ResearchNotesModal({ isOpen, onClose, item, onSave, onVi
 
       <AnimatePresence>
         {isOpen && (
-          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-6">
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-0 sm:p-6">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -320,16 +329,16 @@ export default function ResearchNotesModal({ isOpen, onClose, item, onSave, onVi
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+              className="relative w-full max-w-2xl bg-zinc-900 border-0 sm:border border-zinc-800 rounded-none sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col h-full sm:h-auto max-h-full sm:max-h-[90vh]"
             >
               {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-zinc-800 shrink-0">
+              <div className="flex items-center justify-between p-4 sm:p-6 border-b border-zinc-800 shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-zinc-800 rounded-xl">
                     {getIcon()}
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-white uppercase tracking-tighter italic">
+                    <h3 className="text-lg font-bold text-white uppercase tracking-tighter">
                       {dbId ? 'Edit Research Note' : 'Save to Research Hub'}
                     </h3>
                     {item?.title && (
@@ -345,7 +354,7 @@ export default function ResearchNotesModal({ isOpen, onClose, item, onSave, onVi
               </div>
 
               {/* Scrollable Content */}
-              <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
+              <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto custom-scrollbar flex-1 min-h-0">
                 {/* Reference Preview */}
                 {item && (
                   <div className="bg-black/40 border border-zinc-800 rounded-2xl overflow-hidden flex flex-col md:flex-row min-h-[8rem]">
@@ -479,7 +488,7 @@ export default function ResearchNotesModal({ isOpen, onClose, item, onSave, onVi
               </div>
 
               {/* Footer */}
-              <div className="p-6 border-t border-zinc-800 flex justify-end gap-3 shrink-0">
+              <div className="p-4 sm:p-6 border-t border-zinc-800 flex justify-end gap-3 shrink-0">
                 {dbId && (
                   <button
                     onClick={() => {

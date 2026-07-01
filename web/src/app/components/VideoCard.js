@@ -147,7 +147,7 @@ export default function VideoCard({ item, setHoverInfo, setSelectedVideo, format
               </button>
               <button 
                 onClick={() => setSelectedVideo({ item, v, dominantColor: color })} 
-                className="w-full sm:w-auto shrink-0 text-[10px] font-black tracking-[0.2em] uppercase bg-white text-black px-8 py-3 rounded-2xl hover:scale-105 active:scale-95 transition-all duration-300 shadow-xl hover:bg-[rgba(var(--card-color),1)] hover:text-white"
+                className="flex-1 sm:flex-none sm:w-auto text-[10px] font-black tracking-[0.2em] uppercase bg-white text-black px-4 sm:px-8 py-3 rounded-2xl hover:scale-105 active:scale-95 transition-all duration-300 shadow-xl hover:bg-[rgba(var(--card-color),1)] hover:text-white"
                 style={{ boxShadow: `0 10px 30px rgba(${color}, 0.3)` }}
               >
                 View Details

@@ -103,10 +103,12 @@ export async function POST(req) {
             if (subCount > 1000000) badge = { label: 'Market Leader', color: '#ff0055', bg: 'rgba(255,0,85,0.1)' };
             else if (subCount > 100000) badge = { label: 'Rising Star', color: '#00dfd8', bg: 'rgba(0,223,216,0.1)' };
 
+            const thumbnail = channel.snippet.thumbnails?.default?.url || channel.snippet.thumbnails?.medium?.url || channel.snippet.thumbnails?.high?.url || `https://ui-avatars.com/api/?name=${encodeURIComponent(channel.snippet.title)}&background=27272a&color=fff`;
+            
             return `
               <div style="background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 20px; padding: 20px; margin-bottom: 20px;">
                 <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
-                  <img src="${channel.snippet.thumbnails.default.url}" style="width: 48px; height: 48px; border-radius: 50%; border: 2px solid #333;" />
+                  <img src="${thumbnail}" style="width: 48px; height: 48px; border-radius: 50%; border: 2px solid #333;" />
                   <div style="flex: 1;">
                     <p style="font-weight: 900; margin: 0; font-size: 18px; color: #fff;">${channel.snippet.title}</p>
                     <div style="display: inline-block; background: ${badge.bg}; color: ${badge.color}; padding: 3px 8px; border-radius: 6px; font-size: 9px; font-weight: 900; text-transform: uppercase; margin-top: 4px;">

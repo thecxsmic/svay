@@ -97,9 +97,9 @@ ${item.snippet?.description || item.description || "No description found."}
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-12 backdrop-blur-xl bg-black/60 animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-0 md:p-12 backdrop-blur-xl bg-black/60 animate-in fade-in duration-300">
       <div 
-        className="bg-[#000000] border w-full max-w-4xl rounded-3xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90dvh]"
+        className="bg-[#000000] border-0 md:border w-full max-w-4xl rounded-none md:rounded-3xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col h-full md:h-auto max-h-full md:max-h-[90dvh]"
         style={{ 
           borderColor: `rgba(${selectedVideo.dominantColor || '0, 112, 243'}, 0.3)`,
           boxShadow: `0 0 100px rgba(${selectedVideo.dominantColor || '0, 112, 243'}, 0.15)`,
@@ -504,7 +504,7 @@ ${item.snippet?.description || item.description || "No description found."}
           )}
         </div>
         
-        <div className="p-6 md:p-8 pt-0 flex gap-3">
+        <div className="p-6 md:p-8 pt-0 flex gap-3 shrink-0">
           <button 
             onClick={copyToClipboard}
             className={`flex-1 font-bold py-3 md:py-4 rounded-xl md:rounded-2xl transition-all flex items-center justify-center gap-2 text-sm md:text-base border ${

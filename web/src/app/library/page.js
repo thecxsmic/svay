@@ -27,7 +27,8 @@ import {
   Layers,
   SearchCode,
   Sparkles,
-  LayoutGrid
+  LayoutGrid,
+  Database
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -377,7 +378,7 @@ export default function LibraryPage() {
                     <div className="relative aspect-video mb-8 rounded-2xl overflow-hidden border border-white/5 bg-black">
                        <img src={getThumbnail(item)} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-all duration-700 scale-105 group-hover:scale-100" alt="" />
                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-                       {item.metadata.channelTitle && (
+                       {item.metadata?.channelTitle && (
                          <div className="absolute bottom-4 left-5 right-5 flex justify-between items-center">
                             <p className="text-[10px] font-black text-white/50 uppercase tracking-[0.2em] truncate flex-1">{item.metadata.channelTitle}</p>
                             {item.type === 'video' && (

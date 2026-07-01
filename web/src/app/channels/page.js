@@ -408,9 +408,17 @@ function ChannelsContent() {
                              {channel.matchType}
                           </div>
                        )}
-                       <div className="w-16 h-16 rounded-full overflow-hidden border border-white/10 shrink-0">
-                          <img src={channel.thumbnail} alt="" className="w-full h-full object-cover" />
-                       </div>
+                        <div className="w-16 h-16 rounded-full overflow-hidden border border-white/10 shrink-0">
+                           <img 
+                             src={channel.thumbnail || `https://ui-avatars.com/api/?name=${encodeURIComponent(channel.title)}&background=27272a&color=fff`} 
+                             alt="" 
+                             className="w-full h-full object-cover" 
+                             referrerPolicy="no-referrer"
+                             onError={(e) => {
+                               e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(channel.title)}&background=27272a&color=fff`;
+                             }}
+                           />
+                        </div>
                        <div className="flex-1 min-w-0">
                           <h4 className="text-lg font-bold text-white truncate mb-0.5">{channel.title}</h4>
                           <p className="text-[10px] text-accents-4 font-bold uppercase tracking-widest mb-2">{channel.custom_url}</p>
@@ -465,7 +473,15 @@ function ChannelsContent() {
                   <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 md:gap-12">
                     <div className="relative shrink-0">
                       <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border border-white/10 relative z-10">
-                        <img src={analysisData.channel.thumbnail} alt="" className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 transition-all duration-700" />
+                        <img 
+                          src={analysisData.channel.thumbnail || `https://ui-avatars.com/api/?name=${encodeURIComponent(analysisData.channel.title)}&background=27272a&color=fff`} 
+                          alt="" 
+                          className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 transition-all duration-700" 
+                          referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(analysisData.channel.title)}&background=27272a&color=fff`;
+                          }}
+                        />
                       </div>
                       <div className="absolute -bottom-1 -right-1 bg-white text-black p-1.5 rounded-lg shadow-xl z-20">
                         <BarChart3 className="w-3.5 h-3.5" />

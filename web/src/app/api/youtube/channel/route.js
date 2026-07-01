@@ -67,7 +67,7 @@ export async function GET(req) {
           id: c.id,
           title: c?.snippet?.title || "Unknown Channel",
           custom_url: c?.snippet?.customUrl || "",
-          thumbnail: c?.snippet?.thumbnails?.high?.url || c?.snippet?.thumbnails?.default?.url || null,
+          thumbnail: c?.snippet?.thumbnails?.high?.url || c?.snippet?.thumbnails?.medium?.url || c?.snippet?.thumbnails?.default?.url || null,
           statistics: c?.statistics || {},
           source: 'youtube'
         }))

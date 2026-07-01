@@ -216,7 +216,7 @@ export async function saveChannel(channel, videos = []) {
         channel.id,
         channel?.snippet?.customUrl || channel.custom_url || "",
         channel?.snippet?.title || channel.title || "Unknown",
-        channel?.snippet?.thumbnails?.high?.url || channel?.snippet?.thumbnails?.default?.url || channel.thumbnail || null,
+        channel?.snippet?.thumbnails?.high?.url || channel?.snippet?.thumbnails?.medium?.url || channel?.snippet?.thumbnails?.default?.url || channel.thumbnail || null,
         JSON.stringify(channel.statistics || {}),
         now
       ],

@@ -343,19 +343,21 @@ export default function AnalyticsPage() {
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-8 bg-[#080808] border border-white/5 rounded-2xl p-8 min-h-[450px] flex flex-col relative overflow-hidden">
-          {chartData.isPrediction && (
-            <div className="absolute top-8 right-8 z-10 flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg backdrop-blur-md">
-              <Sparkles className="w-3.5 h-3.5 text-geist-success" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-geist-success">Growth Prediction</span>
+        <div className="lg:col-span-8 bg-[#080808] border border-white/5 rounded-2xl p-6 sm:p-8 min-h-[350px] sm:min-h-[450px] flex flex-col relative overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+            <div>
+              <h3 className="text-xl font-black uppercase tracking-tighter mb-1">Performance Trajectory</h3>
+              <p className="text-[10px] text-accents-4 font-bold uppercase tracking-[0.2em]">
+                {chartData.isPrediction ? 'Linear projection based on recent video performance' : 'Historical data from daily snapshots'}
+              </p>
             </div>
-          )}
-          
-          <div className="mb-8">
-            <h3 className="text-xl font-black uppercase tracking-tighter mb-1">Performance Trajectory</h3>
-            <p className="text-[10px] text-accents-4 font-bold uppercase tracking-[0.2em]">
-              {chartData.isPrediction ? 'Linear projection based on recent video performance' : 'Historical data from daily snapshots'}
-            </p>
+            
+            {chartData.isPrediction && (
+              <div className="self-start sm:self-auto flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg backdrop-blur-md shrink-0">
+                <Sparkles className="w-3.5 h-3.5 text-geist-success" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-geist-success">Growth Prediction</span>
+              </div>
+            )}
           </div>
 
           <div className="flex-1 min-h-0">
@@ -373,7 +375,7 @@ export default function AnalyticsPage() {
         </div>
 
         <div className="lg:col-span-4 flex flex-col gap-6">
-          <div className="flex-1 bg-white text-black rounded-2xl p-8 flex flex-col justify-between">
+          <div className="flex-1 bg-white text-black rounded-2xl p-6 sm:p-8 flex flex-col justify-between">
             <div>
               <div className="w-12 h-12 bg-black/5 rounded-2xl flex items-center justify-center mb-6">
                 <Target className="w-6 h-6 text-black" />
@@ -404,7 +406,7 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          <div className="bg-[#111] border border-white/5 rounded-2xl p-8 flex items-center justify-between group cursor-pointer hover:border-white/20 transition-all">
+          <div className="bg-[#111] border border-white/5 rounded-2xl p-6 sm:p-8 flex items-center justify-between group cursor-pointer hover:border-white/20 transition-all">
              <div>
                 <h4 className="text-[10px] font-black uppercase tracking-widest text-accents-4 mb-1">Channel Health</h4>
                 <p className="text-xl font-black uppercase tracking-tighter">Stable Growth</p>
@@ -423,9 +425,9 @@ export default function AnalyticsPage() {
              <div className="w-10 h-10 bg-white/5 rounded-2xl flex items-center justify-center">
                 <Video className="w-5 h-5 text-white" />
              </div>
-             <h3 className="text-2xl font-black uppercase tracking-tighter italic">Recent Performance</h3>
+             <h3 className="text-2xl font-black uppercase tracking-tighter">Recent Performance</h3>
           </div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-accents-3 italic">Last 10 Uploads</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-accents-3">Last 10 Uploads</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
@@ -462,7 +464,7 @@ function StatCard({ label, value, change, icon: Icon, subLabel }) {
   const isPositive = change >= 0;
   
   return (
-    <div className="bg-[#080808] border border-white/5 p-8 rounded-2xl hover:border-white/10 transition-all group">
+    <div className="bg-[#080808] border border-white/5 p-6 sm:p-8 rounded-2xl hover:border-white/10 transition-all group">
       <div className="flex justify-between items-start mb-6">
         <div className="w-10 h-10 bg-white/5 rounded-2xl flex items-center justify-center group-hover:bg-white/10 transition-all">
           <Icon className="w-5 h-5 text-accents-3 group-hover:text-white" />

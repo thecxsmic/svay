@@ -176,7 +176,7 @@ export default function NotePage({ params }) {
                   <Rocket className="w-3.5 h-3.5 text-purple-500" />
                   The Opportunity
                 </p>
-                <p className="text-sm text-zinc-300 leading-relaxed italic">"{rationale}"</p>
+                <p className="text-sm text-zinc-300 leading-relaxed">"{rationale}"</p>
              </div>
            )}
            {action && (
@@ -251,7 +251,7 @@ export default function NotePage({ params }) {
         {item.metadata?.snippet?.description && (
           <div className="bg-zinc-900/10 border border-white/5 rounded-2xl p-6">
              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-4">Channel Positioning</p>
-             <p className="text-sm text-zinc-400 leading-relaxed line-clamp-6 italic whitespace-pre-wrap">{item.metadata.snippet.description}</p>
+             <p className="text-sm text-zinc-400 leading-relaxed line-clamp-6 whitespace-pre-wrap">{item.metadata.snippet.description}</p>
           </div>
         )}
       </div>
@@ -294,7 +294,7 @@ export default function NotePage({ params }) {
                 <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Original Description</p>
                 <div className="flex-1 h-px bg-white/5"></div>
              </div>
-             <p className="text-sm text-zinc-400 leading-relaxed line-clamp-4 whitespace-pre-wrap italic">{item.metadata.description}</p>
+             <p className="text-sm text-zinc-400 leading-relaxed line-clamp-4 whitespace-pre-wrap">{item.metadata.description}</p>
           </div>
         )}
       </div>

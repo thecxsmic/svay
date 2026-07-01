@@ -75,7 +75,7 @@ export async function channelSearchPipeline(query, pageToken = null) {
       id: youtubeChannel.id,
       custom_url: youtubeChannel?.snippet?.customUrl || "",
       title: youtubeChannel?.snippet?.title || "Unknown",
-      thumbnail: youtubeChannel?.snippet?.thumbnails?.high?.url || youtubeChannel?.snippet?.thumbnails?.default?.url || null,
+      thumbnail: youtubeChannel?.snippet?.thumbnails?.high?.url || youtubeChannel?.snippet?.thumbnails?.medium?.url || youtubeChannel?.snippet?.thumbnails?.default?.url || null,
       statistics: youtubeChannel.statistics || {},
     },
     videos: youtubeVideos.map(v => ({

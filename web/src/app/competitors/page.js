@@ -477,7 +477,15 @@ export default function CompetitorsPage() {
 
                     <div className="lg:col-span-4 p-8 rounded-2xl bg-white text-black">
                       <div className="flex items-center gap-4 mb-10">
-                        <img src={data.baseChannel.thumbnail} className="w-12 h-12 rounded-full" alt="" />
+                        <img 
+                          src={data.baseChannel.thumbnail || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.baseChannel.title)}&background=27272a&color=fff`} 
+                          className="w-12 h-12 rounded-full" 
+                          alt="" 
+                          referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(data.baseChannel.title)}&background=27272a&color=fff`;
+                          }}
+                        />
                         <div>
                           <h2 className="text-lg font-bold tracking-tight line-clamp-1">{data.baseChannel.title}</h2>
                           <p className="text-[10px] font-bold uppercase tracking-widest opacity-50">Main Subject</p>
@@ -568,7 +576,15 @@ export default function CompetitorsPage() {
                         {[data.baseChannel, ...data.competitors].map(ch => (
                           <div key={ch.id} className="flex items-center justify-between p-4 rounded-2xl bg-zinc-900/50 border border-white/5">
                             <div className="flex items-center gap-3">
-                              <img src={ch.thumbnail} className="w-6 h-6 rounded-full" alt="" />
+                              <img 
+                                src={ch.thumbnail || `https://ui-avatars.com/api/?name=${encodeURIComponent(ch.title)}&background=27272a&color=fff`} 
+                                className="w-6 h-6 rounded-full" 
+                                alt="" 
+                                referrerPolicy="no-referrer"
+                                onError={(e) => {
+                                  e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(ch.title)}&background=27272a&color=fff`;
+                                }}
+                              />
                               <span className="text-xs font-medium text-zinc-200">{ch.title}</span>
                             </div>
                             <span className="text-xs font-bold text-green-500">+12% / mo</span>
@@ -674,7 +690,15 @@ function CompetitorCard({ comp, baseSubs, onSave }) {
     <div className="group p-6 rounded-2xl bg-zinc-900/30 border border-zinc-800 hover:bg-zinc-900/50 transition-all flex flex-col gap-6">
       <div className="flex justify-between items-start">
         <div className="flex items-center gap-4">
-          <img src={comp.thumbnail} className="w-12 h-12 rounded-full grayscale group-hover:grayscale-0 transition-all" alt="" />
+          <img 
+            src={comp.thumbnail || `https://ui-avatars.com/api/?name=${encodeURIComponent(comp.title)}&background=27272a&color=fff`} 
+            className="w-12 h-12 rounded-full grayscale group-hover:grayscale-0 transition-all" 
+            alt="" 
+            referrerPolicy="no-referrer"
+            onError={(e) => {
+              e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(comp.title)}&background=27272a&color=fff`;
+            }}
+          />
           <div>
             <h4 className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors line-clamp-1">{comp.title}</h4>
             <span className={`text-[9px] font-black uppercase tracking-widest ${typeColor}`}>
