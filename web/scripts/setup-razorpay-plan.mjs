@@ -17,7 +17,7 @@ async function setupPlan() {
       period: "monthly",
       interval: 1,
       item: {
-        name: "Vyron Neural Pro",
+        name: "Svay Neural Pro",
         amount: 999, // $9.99 -> 999 cents
         currency: "USD",
         description: "Unlimited access to content ecosystem intelligence"
@@ -37,7 +37,7 @@ async function setupPlan() {
                 period: "monthly",
                 interval: 1,
                 item: {
-                  name: "Vyron Neural Pro",
+                  name: "Svay Neural Pro",
                   amount: 99900, // 999 INR -> 99900 paise
                   currency: "INR",
                   description: "Unlimited access to content ecosystem intelligence"

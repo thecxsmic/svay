@@ -51,7 +51,7 @@ export default function LayoutContent({ children }) {
       <div className="p-6">
         <Link href="/" className="flex items-center gap-3 transition-opacity hover:opacity-80 group">
           <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-geist-success via-[#00f0ff] to-geist-success animate-logo-gradient shadow-[0_0_15px_rgba(0,112,243,0.3)] group-hover:shadow-[0_0_20px_rgba(0,112,243,0.5)] transition-shadow" />
-          <span className="font-logo text-xl tracking-tight text-white uppercase">Vyron</span>
+          <span className="font-logo text-xl tracking-tight text-white uppercase">Svay</span>
         </Link>
       </div>
 
@@ -265,7 +265,7 @@ export default function LayoutContent({ children }) {
                     <div className="w-4 h-4 bg-white/10 rounded-full flex items-center justify-center">
                       <div className="w-0 h-0 border-t-[2.5px] border-t-transparent border-l-[4px] border-l-white/40 border-b-[2.5px] border-b-transparent ml-0.5"></div>
                     </div>
-                    <span className="text-[10px] font-medium text-accents-4 tracking-tight">© 2026 Vyron Intelligence. All rights reserved.</span>
+                    <span className="text-[10px] font-medium text-accents-4 tracking-tight">© 2026 Svay Intelligence. All rights reserved.</span>
                 </div>
                 <div className="flex gap-6 text-[11px] font-medium text-accents-4">
                     <a href="#" className="hover:text-white transition-colors">Privacy</a>

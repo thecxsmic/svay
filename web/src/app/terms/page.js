@@ -36,7 +36,7 @@ export default function TermsPage() {
           
           <div className="flex items-center gap-2 min-w-0">
             <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-brand-volt via-[#00b0ff] to-brand-mint shrink-0" />
-            <span className="font-display font-extrabold text-sm text-white tracking-tight uppercase shrink-0">VYRON</span>
+            <span className="font-display font-extrabold text-sm text-white tracking-tight uppercase shrink-0">SVAY</span>
             <span className="text-[10px] font-mono text-zinc-500 font-bold uppercase tracking-widest pl-2 border-l border-zinc-800 shrink-0">Legal</span>
           </div>
         </div>
@@ -78,7 +78,7 @@ export default function TermsPage() {
           <div className="space-y-4">
             <h1 className="font-display font-extrabold text-2.5xl md:text-3.5xl text-white uppercase tracking-tight leading-none">Terms of Service</h1>
             <p className="text-zinc-400 text-sm leading-relaxed">
-              These terms form the agreement between you and Vyron. We've written them to be clear and straightforward, so you know exactly what rules govern our creator platform and what is expected of both of us.
+              These terms form the agreement between you and Svay. We've written them to be clear and straightforward, so you know exactly what rules govern our creator platform and what is expected of both of us.
             </p>
             <p className="text-zinc-500 text-[10px] font-mono">Last updated: June 28, 2026</p>
           </div>
@@ -87,10 +87,10 @@ export default function TermsPage() {
             <section className="space-y-3">
               <h2 className="text-white text-base font-bold uppercase tracking-wider">1. Agreement to Terms</h2>
               <div className="text-zinc-550 text-xs mb-2 italic">
-                Quick summary: By creating an account and using Vyron, you agree to follow these platform rules.
+                Quick summary: By creating an account and using Svay, you agree to follow these platform rules.
               </div>
               <p>
-                By accessing or using the Vyron platform (the &quot;Service&quot;), you acknowledge that you have read, understood, and agreed to be bound by these Terms of Service. If you do not agree, you must stop using the platform.
+                By accessing or using the Svay platform (the &quot;Service&quot;), you acknowledge that you have read, understood, and agreed to be bound by these Terms of Service. If you do not agree, you must stop using the platform.
               </p>
             </section>
 
@@ -110,7 +110,7 @@ export default function TermsPage() {
                 Quick summary: Billing is managed via Razorpay. Trials are free, and you can cancel anytime.
               </div>
               <ul className="list-disc pl-5 space-y-2">
-                <li><strong>Pro Plan Pricing:</strong> We offer full access to our creator intelligence tools under a monthly Pro Plan priced at ₹499.</li>
+                <li><strong>Pro Plan Pricing:</strong> We offer full access to our creator intelligence tools under a monthly subscription priced at ₹999/month, or a yearly subscription priced at ₹699/month (billed annually as ₹8,388/year).</li>
                 <li><strong>7-Day Free Trial:</strong> New accounts are eligible for a 7-day free trial. If you cancel before the trial concludes, you will not be charged.</li>
                 <li><strong>Billing Cycles & Automatic Renewal:</strong> Subscription payments are processed securely by Razorpay. Subscriptions renew automatically each month on the anniversary of your billing date unless cancelled.</li>
               </ul>
@@ -137,7 +137,7 @@ export default function TermsPage() {
                 Quick summary: We evaluate public data to guide your content decisions, but we cannot guarantee viral success.
               </div>
               <p>
-                Vyron indexes public statistics to help you spot formats and trends. However, platform metrics, search scoring values, and competitor benchmarks are offered for informational guidance only. We do not warrant that the metadata retrieved is free from error, or that following these benchmarks will result in specific channel growth.
+                Svay indexes public statistics to help you spot formats and trends. However, platform metrics, search scoring values, and competitor benchmarks are offered for informational guidance only. We do not warrant that the metadata retrieved is free from error, or that following these benchmarks will result in specific channel growth.
               </p>
             </section>
 
@@ -153,7 +153,7 @@ export default function TermsPage() {
 
       {/* ── FOOTER ── */}
       <footer className="border-t border-zinc-900 py-6 text-center text-[9px] font-mono text-zinc-655 font-bold uppercase tracking-widest relative z-10 bg-black">
-        © 2026 Vyron Intelligence Platform · All Systems Protected
+        © 2026 Svay Intelligence Platform · All Systems Protected
       </footer>
     </div>
   );

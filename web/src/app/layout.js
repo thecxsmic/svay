@@ -35,8 +35,8 @@ const righteous = Righteous({
 
 export const metadata = {
   title: {
-    template: "%s | Vyron",
-    default: "Vyron Intelligence",
+    template: "%s | Svay",
+    default: "Svay Intelligence",
   },
   description: "Advanced Content Ecosystem Tracking",
 };

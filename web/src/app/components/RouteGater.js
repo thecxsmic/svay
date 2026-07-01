@@ -12,9 +12,14 @@ export default function RouteGater({ children, initialIsSubscribed, initialSubsc
   const pathname = usePathname();
   const { isSignedIn, isLoaded } = useAuth();
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [billingInterval, setBillingInterval] = useState("monthly");
 
   useEffect(() => {
     setIsDemoMode(document.cookie.includes("demo_mode=true"));
+    const match = document.cookie.match(/selected_plan=(monthly|yearly)/);
+    if (match) {
+      setBillingInterval(match[1]);
+    }
   }, [pathname]); // Refresh demo cookie detection on route transition
 
   const isPublicPage = pathname.startsWith("/sign-in") || 
@@ -74,7 +79,7 @@ export default function RouteGater({ children, initialIsSubscribed, initialSubsc
                 <p className="text-zinc-400 text-sm md:text-base font-normal leading-relaxed">
                   {initialSubscription?.isHalted 
                     ? "We couldn't process your payment. Please update your billing info to continue."
-                    : "Unlock advanced tracking, real-time viral analysis, and deep insights with Vyron Pro."}
+                    : "Unlock advanced tracking, real-time viral analysis, and deep insights with Svay Pro."}
                 </p>
                 
                 <ul className="space-y-3 pt-2">
@@ -97,30 +102,66 @@ export default function RouteGater({ children, initialIsSubscribed, initialSubsc
                 {/* Top border gradient line */}
                 <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-brand-volt to-brand-mint opacity-80" />
 
-                {/* User profile badge in header */}
-                <div className="flex justify-between items-center mb-8 border-b border-zinc-900/80 pb-5">
-                   <div>
-                     <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Selected Plan</p>
-                     <h2 className="font-display font-extrabold text-xl text-white uppercase mt-0.5">Pro Plan</h2>
-                   </div>
-                   <div className="flex items-center gap-3">
-                     <UserButton appearance={{ elements: { userButtonAvatarBox: "w-8 h-8 border border-white/10" } }} />
-                   </div>
-                </div>
+                 {/* User profile badge in header */}
+                 <div className="flex justify-between items-center mb-6 border-b border-zinc-900/80 pb-5">
+                    <div>
+                      <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Selected Plan</p>
+                      <h2 className="font-display font-extrabold text-xl text-white uppercase mt-0.5">Pro {billingInterval === "yearly" ? "Yearly" : "Monthly"}</h2>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <UserButton appearance={{ elements: { userButtonAvatarBox: "w-8 h-8 border border-white/10" } }} />
+                    </div>
+                 </div>
 
-                <div className="flex items-baseline gap-2 mb-6">
-                   <span className="text-3xl font-extrabold text-zinc-500">₹</span>
-                   <span className="text-5xl md:text-6xl font-extrabold text-white tracking-tight">499</span>
-                   <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">/ Month</span>
-                </div>
+                 {/* Plan Toggle */}
+                 <div className="flex bg-zinc-900/90 border border-zinc-800/80 p-1 rounded-xl mb-6 justify-between items-center">
+                    <button
+                      onClick={() => {
+                        setBillingInterval("monthly");
+                        document.cookie = "selected_plan=monthly; path=/; max-age=3600;";
+                      }}
+                      className={`flex-1 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                        billingInterval === "monthly" ? "bg-brand-volt text-black font-black" : "text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      Monthly
+                    </button>
+                    <button
+                      onClick={() => {
+                        setBillingInterval("yearly");
+                        document.cookie = "selected_plan=yearly; path=/; max-age=3600;";
+                      }}
+                      className={`flex-1 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                        billingInterval === "yearly" ? "bg-brand-volt text-black font-black" : "text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      Yearly
+                      <span className={`text-[7px] font-black tracking-wide px-1 py-0.5 rounded ${billingInterval === "yearly" ? "bg-black/10 text-black" : "bg-brand-rose/15 text-brand-rose"}`}>-30%</span>
+                    </button>
+                 </div>
 
-                <div className="flex items-center gap-2 mb-8">
-                  <span className="text-zinc-500 line-through text-xs font-bold">₹999/mo</span>
-                  <span className="bg-brand-rose/15 text-brand-rose border border-brand-rose/25 font-black text-[9px] px-2 py-0.5 rounded tracking-wide uppercase">SAVE 50%</span>
-                </div>
-                
-                <div className="space-y-5">
-                   <SubscriptionButton />
+                 <div className="flex items-baseline gap-2 mb-2">
+                    <span className="text-3xl font-extrabold text-zinc-500">₹</span>
+                    <span className="text-5xl md:text-6xl font-extrabold text-white tracking-tight">{billingInterval === "yearly" ? "699" : "999"}</span>
+                    <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">/ Month</span>
+                 </div>
+
+                 <div className="flex items-center gap-2 mb-8">
+                   {billingInterval === "monthly" ? (
+                     <>
+                       <span className="text-zinc-500 line-through text-xs font-bold">₹1,499/mo</span>
+                       <span className="bg-brand-rose/15 text-brand-rose border border-brand-rose/25 font-black text-[9px] px-2 py-0.5 rounded tracking-wide uppercase">SAVE 33%</span>
+                     </>
+                   ) : (
+                     <>
+                       <span className="text-zinc-500 line-through text-xs font-bold">₹999/mo</span>
+                       <span className="bg-brand-rose/15 text-brand-rose border border-brand-rose/25 font-black text-[9px] px-2 py-0.5 rounded tracking-wide uppercase">SAVE 30%</span>
+                     </>
+                   )}
+                 </div>
+                 
+                 <div className="space-y-5">
+                    <SubscriptionButton planType={billingInterval} />
                    
                    <div className="relative flex py-2 items-center">
                      <div className="flex-grow border-t border-zinc-900"></div>

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Script from "next/script";
 
-export default function SubscriptionButton({ planName = "Neural Pro", onSuccess, onError }) {
+export default function SubscriptionButton({ planName = "Neural Pro", planType = "monthly", onSuccess, onError }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -14,6 +14,7 @@ export default function SubscriptionButton({ planName = "Neural Pro", onSuccess,
       const res = await fetch("/api/razorpay/subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planType }),
       });
 
       const subscriptionData = await res.json();
@@ -24,8 +25,8 @@ export default function SubscriptionButton({ planName = "Neural Pro", onSuccess,
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         subscription_id: subscriptionData.id,
-        name: "Vyron Intelligence",
-        description: `7-Day Free Trial - then 999/mo`,
+        name: "Svay Intelligence",
+        description: `7-Day Free Trial - then ${planType === "yearly" ? "₹699/mo (billed yearly)" : "₹999/mo"}`,
         handler: async function (response) {
           setIsProcessing(true);
           // 2. Verify payment on the backend
@@ -54,8 +55,8 @@ export default function SubscriptionButton({ planName = "Neural Pro", onSuccess,
           }
         },
         prefill: {
-          name: "Vyron Administrator",
-          email: "admin@vyron.ai",
+          name: "Svay Administrator",
+          email: "admin@svay.space",
         },
         theme: {
           color: "#0070f3",

@@ -36,7 +36,7 @@ export default function CookiesPage() {
           
           <div className="flex items-center gap-2 min-w-0">
             <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-brand-volt via-[#00b0ff] to-brand-mint shrink-0" />
-            <span className="font-display font-extrabold text-sm text-white tracking-tight uppercase shrink-0">VYRON</span>
+            <span className="font-display font-extrabold text-sm text-white tracking-tight uppercase shrink-0">SVAY</span>
             <span className="text-[10px] font-mono text-zinc-500 font-bold uppercase tracking-widest pl-2 border-l border-zinc-800 shrink-0">Legal</span>
           </div>
         </div>
@@ -95,7 +95,7 @@ export default function CookiesPage() {
             </section>
 
             <section className="space-y-3">
-              <h2 className="text-white text-base font-bold uppercase tracking-wider">2. How Vyron Uses Cookies</h2>
+              <h2 className="text-white text-base font-bold uppercase tracking-wider">2. How Svay Uses Cookies</h2>
               <div className="text-zinc-550 text-xs mb-2 italic">
                 Quick summary: We use cookies to verify who you are, secure transaction processing, and remember settings.
               </div>
@@ -121,7 +121,7 @@ export default function CookiesPage() {
 
       {/* ── FOOTER ── */}
       <footer className="border-t border-zinc-900 py-6 text-center text-[9px] font-mono text-zinc-655 font-bold uppercase tracking-widest relative z-10 bg-black">
-        © 2026 Vyron Intelligence Platform · All Systems Protected
+        © 2026 Svay Intelligence Platform · All Systems Protected
       </footer>
     </div>
   );

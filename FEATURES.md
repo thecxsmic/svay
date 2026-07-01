@@ -1,6 +1,6 @@
-# Features & Tools: Vyron Intelligence
+# Features & Tools: Svay Intelligence
 
-This document outlines the core features and tools available in the Vyron Intelligence platform, categorized by functionality.
+This document outlines the core features and tools available in the Svay Intelligence platform, categorized by functionality.
 
 ## 1. Analytics & Tracking
 - **Historical Analytics:** Tracks subscribers, total views, and video counts over time via daily snapshots.

@@ -86,7 +86,7 @@ export default function DocsPage() {
           
           <div className="flex items-center gap-2 min-w-0">
             <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-brand-volt via-[#00b0ff] to-brand-mint shrink-0" />
-            <span className="font-display font-extrabold text-sm text-white tracking-tight uppercase shrink-0">VYRON</span>
+            <span className="font-display font-extrabold text-sm text-white tracking-tight uppercase shrink-0">SVAY</span>
             <span className="text-[10px] font-mono text-zinc-500 font-bold uppercase tracking-widest pl-2 border-l border-zinc-800 shrink-0">Docs</span>
           </div>
         </div>
@@ -220,7 +220,7 @@ export default function DocsPage() {
 
       {/* ── FOOTER ── */}
       <footer className="border-t border-zinc-900 px-4 py-3 text-center text-[9px] font-mono text-zinc-600 font-bold uppercase tracking-widest bg-black shrink-0">
-        © 2026 Vyron Intelligence Platform
+        © 2026 Svay Intelligence Platform
       </footer>
 
     </div>

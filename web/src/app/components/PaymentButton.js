@@ -23,7 +23,7 @@ export default function PaymentButton({ amount, planName = "Pro Plan", onSuccess
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: orderData.amount,
         currency: orderData.currency,
-        name: "Vyron Intelligence",
+        name: "Svay Intelligence",
         description: `Upgrade to ${planName}`,
         order_id: orderData.id,
         handler: async function (response) {
@@ -48,8 +48,8 @@ export default function PaymentButton({ amount, planName = "Pro Plan", onSuccess
           }
         },
         prefill: {
-          name: "Vyron Administrator",
-          email: "admin@vyron.ai",
+          name: "Svay Administrator",
+          email: "admin@svay.space",
         },
         theme: {
           color: "#0070f3",

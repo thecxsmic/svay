@@ -36,7 +36,7 @@ export default function RefundPage() {
           
           <div className="flex items-center gap-2 min-w-0">
             <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-brand-volt via-[#00b0ff] to-brand-mint shrink-0" />
-            <span className="font-display font-extrabold text-sm text-white tracking-tight uppercase shrink-0">VYRON</span>
+            <span className="font-display font-extrabold text-sm text-white tracking-tight uppercase shrink-0">SVAY</span>
             <span className="text-[10px] font-mono text-zinc-500 font-bold uppercase tracking-widest pl-2 border-l border-zinc-800 shrink-0">Legal</span>
           </div>
         </div>
@@ -78,7 +78,7 @@ export default function RefundPage() {
           <div className="space-y-4">
             <h1 className="font-display font-extrabold text-2.5xl md:text-3.5xl text-white uppercase tracking-tight leading-none">Refund & Cancellation Policy</h1>
             <p className="text-zinc-400 text-sm leading-relaxed">
-              We want you to be completely satisfied with Vyron. This policy outlines how subscriptions are managed, when renewals occur, and how to cancel or address billing discrepancies.
+              We want you to be completely satisfied with Svay. This policy outlines how subscriptions are managed, when renewals occur, and how to cancel or address billing discrepancies.
             </p>
             <p className="text-zinc-500 text-[10px] font-mono">Last updated: June 28, 2026</p>
           </div>
@@ -104,7 +104,7 @@ export default function RefundPage() {
                 Quick summary: We do not offer refunds for partial months, but we will review transaction errors.
               </div>
               <p>
-                Because Vyron provides real-time access to computed creator intelligence, we do not offer pro-rata refunds for partial months or unused time once a billing cycle is charged.
+                Because Svay provides real-time access to computed creator intelligence, we do not offer pro-rata refunds for partial months or unused time once a billing cycle is charged.
               </p>
               <p>
                 However, if you notice double billing or transaction processing errors by Razorpay, please email our support team at <a href="mailto:thecxsmic@gmail.com" className="text-brand-volt font-mono">thecxsmic@gmail.com</a> within 7 days of the charge. We will audit the transaction logs and issue credit adjustments where appropriate.
@@ -116,7 +116,7 @@ export default function RefundPage() {
 
       {/* ── FOOTER ── */}
       <footer className="border-t border-zinc-900 py-6 text-center text-[9px] font-mono text-zinc-655 font-bold uppercase tracking-widest relative z-10 bg-black">
-        © 2026 Vyron Intelligence Platform · All Systems Protected
+        © 2026 Svay Intelligence Platform · All Systems Protected
       </footer>
     </div>
   );

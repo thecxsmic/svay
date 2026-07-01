@@ -102,11 +102,11 @@ export async function POST(req) {
             </div>
           </div>
 
-          <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://updates.vyron.space'}/radar" style="display: block; background: #ffffff; color: #000000; text-decoration: none; padding: 18px; border-radius: 12px; font-weight: 900; font-size: 13px; text-transform: uppercase; text-align: center; letter-spacing: 1px; margin-top: 40px;">Launch Full Intelligence Radar</a>
+          <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://updates.svay.space'}/radar" style="display: block; background: #ffffff; color: #000000; text-decoration: none; padding: 18px; border-radius: 12px; font-weight: 900; font-size: 13px; text-transform: uppercase; text-align: center; letter-spacing: 1px; margin-top: 40px;">Launch Full Intelligence Radar</a>
         </div>
 
         <div style="padding: 30px; border-top: 1px solid #1a1a1a; text-align: center; background: #050505;">
-          <p style="font-size: 11px; font-weight: bold; color: #444; margin: 0; text-transform: uppercase; letter-spacing: 2px;">Powered by Vyron Intelligence</p>
+          <p style="font-size: 11px; font-weight: bold; color: #444; margin: 0; text-transform: uppercase; letter-spacing: 2px;">Powered by Svay Intelligence</p>
         </div>
       </div>
     `;

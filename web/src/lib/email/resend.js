@@ -14,7 +14,7 @@ export async function sendEmail({ to, subject, html, text }) {
 
   try {
     const data = await resend.emails.send({
-      from: 'Vyron <hello@updates.vyron.space>',
+      from: 'Svay <hello@updates.svay.space>',
       to,
       subject,
       html: html || text,

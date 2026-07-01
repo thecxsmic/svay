@@ -36,7 +36,7 @@ export default function PrivacyPage() {
           
           <div className="flex items-center gap-2 min-w-0">
             <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-brand-volt via-[#00b0ff] to-brand-mint shrink-0" />
-            <span className="font-display font-extrabold text-sm text-white tracking-tight uppercase shrink-0">VYRON</span>
+            <span className="font-display font-extrabold text-sm text-white tracking-tight uppercase shrink-0">SVAY</span>
             <span className="text-[10px] font-mono text-zinc-500 font-bold uppercase tracking-widest pl-2 border-l border-zinc-800 shrink-0">Legal</span>
           </div>
         </div>
@@ -90,7 +90,7 @@ export default function PrivacyPage() {
                 Quick summary: We only collect information that is strictly necessary to log you in, calculate your analytics, and secure your account.
               </div>
               <p>
-                To operate the Vyron dashboard and run our metrics calculations, we collect and process the following information:
+                To operate the Svay dashboard and run our metrics calculations, we collect and process the following information:
               </p>
               <ul className="list-disc pl-5 space-y-2">
                 <li><strong>Account Credentials:</strong> We use Clerk to handle user login and account security. When you sign up, Clerk stores your name, email address, profile photo, and social login metadata.</li>
@@ -129,7 +129,7 @@ export default function PrivacyPage() {
               <ul className="list-disc pl-5 space-y-2">
                 <li><strong>Clerk:</strong> Provides secure authentication gates and user profile protection.</li>
                 <li><strong>Razorpay:</strong> Handles subscription cycles, payment security, and renewals.</li>
-                <li><strong>YouTube API Services:</strong> Retrieves public channel statistics. By using Vyron, you agree to be bound by the <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer" className="text-brand-volt underline">YouTube Terms of Service</a> and the <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-brand-volt underline">Google Privacy Policy</a>. You can manage or revoke this access at any time through Google's security settings.</li>
+                <li><strong>YouTube API Services:</strong> Retrieves public channel statistics. By using Svay, you agree to be bound by the <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer" className="text-brand-volt underline">YouTube Terms of Service</a> and the <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-brand-volt underline">Google Privacy Policy</a>. You can manage or revoke this access at any time through Google's security settings.</li>
               </ul>
             </section>
 
@@ -158,7 +158,7 @@ export default function PrivacyPage() {
 
       {/* ── FOOTER ── */}
       <footer className="border-t border-zinc-900 py-6 text-center text-[9px] font-mono text-zinc-650 font-bold uppercase tracking-widest relative z-10 bg-black">
-        © 2026 Vyron Intelligence Platform · All Systems Protected
+        © 2026 Svay Intelligence Platform · All Systems Protected
       </footer>
     </div>
   );

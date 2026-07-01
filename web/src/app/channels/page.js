@@ -622,7 +622,7 @@ function ChannelsContent() {
                           </div>
                           <div className="pt-6 mt-6 border-t border-white/5 flex items-center gap-3">
                             <Activity className="w-4 h-4 text-geist-success" />
-                            <span className="text-[10px] font-bold text-accents-5 uppercase tracking-widest">Ecosystem Tracked by Vyron Neural</span>
+                            <span className="text-[10px] font-bold text-accents-5 uppercase tracking-widest">Ecosystem Tracked by Svay Neural</span>
                           </div>
                         </div>
                       </div>

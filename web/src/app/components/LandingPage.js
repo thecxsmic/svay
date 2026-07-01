@@ -58,6 +58,11 @@ export default function LandingPage() {
     window.location.reload();
   };
 
+  const handleStartTrial = () => {
+    document.cookie = `selected_plan=${billingInterval}; path=/; max-age=3600;`;
+    window.location.href = "/sign-in";
+  };
+
   // Navigation scroll state
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -71,13 +76,15 @@ export default function LandingPage() {
 
   
   // Pricing counter states (animated)
-  const [priceDisplay, setPriceDisplay] = useState(499);
+  const [billingInterval, setBillingInterval] = useState("monthly");
+  const [priceDisplay, setPriceDisplay] = useState(999);
+
   
   // FAQ state
   const [openFaq, setOpenFaq] = useState(null);
   
-  // Countdown Timer states
-  const [timeLeft, setTimeLeft] = useState({ hours: 23, minutes: 47, seconds: 12 });
+  // Countdown Timer states (Target: July 15, 2026)
+  const [timeLeft, setTimeLeft] = useState({ days: 14, hours: 0, minutes: 0, seconds: 0 });
 
   // Typing effect for hero badge
   const badgePhrases = ['Real-Time Creator Intelligence', 'AI-Powered Trend Detection', 'Competitor Analysis Engine'];
@@ -189,32 +196,45 @@ export default function LandingPage() {
     return () => clearTimeout(timeout);
   }, [charIdx, isDeleting, phraseIdx]);
 
-  // Countdown timer handler
+  // Countdown timer handler targeting July 15, 2026
   useEffect(() => {
+    const targetDate = new Date("2026-07-15T23:59:59Z").getTime();
+    
+    const calculateTimeLeft = () => {
+      const now = Date.now();
+      const difference = targetDate - now;
+      
+      if (difference <= 0) {
+        return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+      }
+      
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
+      const minutes = Math.floor((difference / 1000 / 60) % 60);
+      const seconds = Math.floor((difference / 1000) % 60);
+      
+      return { days, hours, minutes, seconds };
+    };
+
+    setTimeLeft(calculateTimeLeft());
+    
     const interval = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev.seconds > 0) {
-          return { ...prev, seconds: prev.seconds - 1 };
-        } else if (prev.minutes > 0) {
-          return { ...prev, minutes: prev.minutes - 1, seconds: 59 };
-        } else if (prev.hours > 0) {
-          return { hours: prev.hours - 1, minutes: 59, seconds: 59 };
-        } else {
-          // Reset countdown to preserve UI action
-          return { hours: 23, minutes: 59, seconds: 59 };
-        }
-      });
+      setTimeLeft(calculateTimeLeft());
     }, 1000);
+    
     return () => clearInterval(interval);
   }, []);
 
-  // Animate pricing on mount
+  // Animate pricing when interval changes
   useEffect(() => {
     let startTime = null;
-    const duration = 1200; // ms
-    const startPrice = 199;
-    const targetPrice = 499;
+    const duration = 800; // ms
+    const startPrice = priceDisplay;
+    const targetPrice = billingInterval === "monthly" ? 999 : 699;
     
+    if (startPrice === targetPrice) return;
+    
+    let animId;
     const animate = (timestamp) => {
       if (!startTime) startTime = timestamp;
       const progress = Math.min((timestamp - startTime) / duration, 1);
@@ -223,12 +243,14 @@ export default function LandingPage() {
       setPriceDisplay(current);
       
       if (progress < 1) {
-        requestAnimationFrame(animate);
+        animId = requestAnimationFrame(animate);
       }
     };
     
-    requestAnimationFrame(animate);
-  }, []);
+    animId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animId);
+  }, [billingInterval]);
+
 
   // Canvas particle background
   useEffect(() => {
@@ -370,7 +392,7 @@ export default function LandingPage() {
             {/* Logo */}
             <a href="#" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2.5 group">
               <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-brand-volt via-[#00b0ff] to-brand-mint shadow-[0_0_15px_rgba(0,240,255,0.25)] group-hover:shadow-[0_0_25px_rgba(0,240,255,0.45)] transition-all" />
-              <span className="font-display font-extrabold text-lg text-white tracking-tight">VYRON</span>
+              <span className="font-display font-extrabold text-lg text-white tracking-tight">SVAY</span>
             </a>
 
             {/* Hamburger menu button for mobile */}
@@ -446,7 +468,7 @@ export default function LandingPage() {
 
           {/* Description */}
           <p className="text-zinc-400 text-base md:text-xs lg:text-sm xl:text-base leading-relaxed max-w-xl mb-6 md:mb-8 xl:mb-10 font-normal">
-            Stop guessing what your audience wants. Vyron tracks your competitors' top-performing formats, catches breakout topics as they begin to spike, and helps you structure video ideas backed by real demand data.
+            Stop guessing what your audience wants. Svay tracks your competitors' top-performing formats, catches breakout topics as they begin to spike, and helps you structure video ideas backed by real demand data.
           </p>
 
           {/* Action Buttons */}
@@ -488,57 +510,68 @@ export default function LandingPage() {
             ref={heroCardRef}
             onMouseMove={handleCardMouseMove}
             onMouseLeave={handleCardMouseLeave}
-            className="w-full max-w-[360px] lg:max-w-[420px] rounded-3xl p-4 lg:p-6 glass-panel-glow relative overflow-hidden transition-all duration-200"
+            className="w-full max-w-[360px] lg:max-w-[420px] rounded-3xl p-5 lg:p-6 bg-zinc-950/80 border border-white/[0.08] backdrop-blur-xl relative overflow-hidden transition-all duration-200"
             style={{ 
               transform: cardTransform,
-              boxShadow: '0 25px 60px rgba(0,0,0,0.8), 0 0 40px rgba(0,240,255,0.06)'
+              boxShadow: '0 30px 80px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.05), 0 0 50px rgba(0,240,255,0.04)'
             }}
           >
             {/* Top decorative accent bar */}
             <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-brand-volt to-brand-mint opacity-85" />
             
             {/* Header info */}
-            <div className="flex items-center justify-between mb-6 pb-4 border-b border-zinc-900">
+            <div className="flex items-center justify-between mb-6 pb-4 border-b border-zinc-900/80">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-brand-volt animate-pulse" />
+                <div className="w-2 h-2 rounded-full bg-brand-volt animate-ping" />
                 <span className="font-mono text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Growth Analytics</span>
               </div>
-              <span className="font-mono text-[9px] font-black text-brand-mint bg-brand-mint/10 border border-brand-mint/20 px-2 py-0.5 rounded">LIVE ACTIVE</span>
+              <span className="font-mono text-[9px] font-black text-brand-mint bg-brand-mint/10 border border-brand-mint/20 px-2.5 py-1 rounded-md uppercase tracking-wider">LIVE ACTIVE</span>
             </div>
 
             {/* Channels metrics */}
             <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="bg-zinc-950/60 border border-white/[0.03] p-4 rounded-2xl relative overflow-hidden group hover:border-brand-volt/20 transition-colors">
-                <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider mb-1">Subscriber Net</p>
-                <p className="font-display font-extrabold text-2xl text-white">48,250</p>
-                <p className="text-[10px] text-brand-volt font-bold mt-1">↑ +2.1% today</p>
+              <div className="bg-zinc-900/20 border border-zinc-800/60 p-4 rounded-2xl relative overflow-hidden group hover:border-brand-volt/30 transition-all hover:bg-zinc-900/30">
+                <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">Subscriber Net</p>
+                <div className="flex items-baseline justify-between gap-1">
+                  <p className="font-display font-extrabold text-2xl text-white">48,250</p>
+                  <span className="text-[8px] font-black font-mono text-brand-volt bg-brand-volt/10 border border-brand-volt/20 px-1.5 py-0.5 rounded">↑ +2.1%</span>
+                </div>
                 <div className="absolute bottom-0 right-0 w-8 h-8 bg-brand-volt/[0.02] rounded-tl-2xl" />
               </div>
-              <div className="bg-zinc-950/60 border border-white/[0.03] p-4 rounded-2xl relative overflow-hidden group hover:border-brand-mint/20 transition-colors">
-                <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider mb-1">Virality Index</p>
-                <p className="font-display font-extrabold text-2xl text-white">92.4 <span className="text-xs text-brand-mint">/100</span></p>
-                <p className="text-[10px] text-brand-mint font-bold mt-1">↑ Strong Surge</p>
+              
+              <div className="bg-zinc-900/20 border border-zinc-800/60 p-4 rounded-2xl relative overflow-hidden group hover:border-brand-mint/30 transition-all hover:bg-zinc-900/30">
+                <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">Virality Index</p>
+                <div className="flex items-baseline justify-between gap-1">
+                  <p className="font-display font-extrabold text-2xl text-white">92.4</p>
+                  <span className="text-[8px] font-black font-mono text-brand-mint bg-brand-mint/10 border border-brand-mint/20 px-1.5 py-0.5 rounded">HOT</span>
+                </div>
                 <div className="absolute bottom-0 right-0 w-8 h-8 bg-brand-mint/[0.02] rounded-tl-2xl" />
               </div>
             </div>
 
             {/* Glowing Chart Simulation */}
             <div className="mb-6">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider">Weekly View Volume</span>
-                <span className="text-[9px] font-mono text-zinc-400">Total: 3.4M</span>
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Weekly View Volume</span>
+                <span className="text-[9px] font-mono font-bold text-zinc-400 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800/40">Total: 3.4M</span>
               </div>
-              <div className="h-28 flex items-end justify-between gap-1.5 pt-4 pb-2 relative border-b border-zinc-900">
+              <div className="h-28 flex items-end justify-between gap-1.5 pt-4 pb-2 relative border-b border-zinc-900/60 overflow-hidden rounded-lg bg-zinc-950/40 px-2">
+                {/* Simulated Gridlines */}
+                <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-5 py-4">
+                  <div className="w-full border-t border-white" />
+                  <div className="w-full border-t border-white" />
+                  <div className="w-full border-t border-white" />
+                </div>
                 {/* Simulated Chart Bars with scaling delays */}
                 {[30, 48, 35, 62, 55, 75, 68, 88, 98, 72, 85, 95].map((val, idx) => (
-                  <div key={idx} className="flex-1 flex flex-col items-center h-full justify-end group">
+                  <div key={idx} className="flex-1 flex flex-col items-center h-full justify-end group relative z-10">
                     {/* Tooltip on hover */}
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-volt text-black text-[8px] font-black px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 whitespace-nowrap">
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-volt text-black text-[8px] font-black px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 whitespace-nowrap shadow-[0_0_10px_rgba(0,240,255,0.4)]">
                       +{val}%
                     </div>
                     {/* Bar */}
                     <div 
-                      className="w-full bg-brand-volt/10 group-hover:bg-brand-volt/30 border-t border-brand-volt/30 rounded-t-[2px] transition-all duration-500 cursor-pointer origin-bottom"
+                      className="w-full bg-gradient-to-t from-brand-volt/10 via-brand-volt/40 to-brand-volt group-hover:from-brand-volt/20 group-hover:to-[#33f3ff] rounded-t-[3px] transition-all duration-500 cursor-pointer origin-bottom shadow-[0_0_10px_rgba(0,240,255,0.15)] group-hover:shadow-[0_0_15px_rgba(0,240,255,0.35)]"
                       style={{ 
                         height: `${val}%`, 
                         animationDelay: `${idx * 0.05}s`
@@ -551,47 +584,47 @@ export default function LandingPage() {
 
             {/* Hot topics block */}
             <div className="space-y-2">
-              <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider mb-2">Topic Velocity Alerts</p>
+              <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Topic Velocity Alerts</p>
               
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-950/40 border border-white/[0.03] hover:border-zinc-800 transition-colors">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-6 h-6 rounded-lg bg-red-500/10 flex items-center justify-center text-xs">🔥</div>
+              <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-900/10 border border-zinc-900 hover:border-zinc-800 transition-all hover:bg-zinc-900/20">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-xs shadow-inner">🔥</div>
                   <div>
-                    <p className="text-[11px] font-bold text-white">AI Agents 2026</p>
-                    <p className="text-[8px] text-zinc-500 font-medium">Scraped 3m ago · Tech</p>
+                    <p className="text-xs font-black text-white">AI Agents 2026</p>
+                    <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-wider mt-0.5">Scraped 3m ago · Tech</p>
                   </div>
                 </div>
-                <span className="text-[9px] font-mono font-black text-brand-rose bg-brand-rose/10 border border-brand-rose/20 px-2 py-0.5 rounded">VIRAL</span>
+                <span className="text-[9px] font-mono font-black text-brand-rose bg-brand-rose/10 border border-brand-rose/25 px-2.5 py-0.5 rounded-md uppercase tracking-wider">VIRAL</span>
               </div>
 
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-950/40 border border-white/[0.03] hover:border-zinc-800 transition-colors">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-6 h-6 rounded-lg bg-brand-volt/10 flex items-center justify-center text-xs">🚀</div>
+              <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-900/10 border border-zinc-900 hover:border-zinc-800 transition-all hover:bg-zinc-900/20">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-brand-volt/10 border border-brand-volt/20 flex items-center justify-center text-xs shadow-inner">🚀</div>
                   <div>
-                    <p className="text-[11px] font-bold text-white">Milvus Vector Database</p>
-                    <p className="text-[8px] text-zinc-500 font-medium">Scraped 15m ago · Dev</p>
+                    <p className="text-xs font-black text-white">Milvus Vector Database</p>
+                    <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-wider mt-0.5">Scraped 15m ago · Dev</p>
                   </div>
                 </div>
-                <span className="text-[9px] font-mono font-black text-brand-volt bg-brand-volt/10 border border-brand-volt/20 px-2 py-0.5 rounded">+147%</span>
+                <span className="text-[9px] font-mono font-black text-brand-volt bg-brand-volt/10 border border-brand-volt/25 px-2.5 py-0.5 rounded-md uppercase tracking-wider">+147%</span>
               </div>
             </div>
           </div>
 
-          {/* Layered floating metric badge 1 (Top-Right) - visible on lg screens and up */}
+          {/* Layered floating metric badge 1 (Top-Right) */}
           <div 
-            className="hidden lg:flex items-center gap-2.5 p-3 rounded-full bg-zinc-950/90 border border-brand-volt/20 shadow-[0_15px_30px_rgba(0,0,0,0.8)] absolute -top-6 lg:-right-2 xl:-right-16 scale-90 xl:scale-100 z-25 backdrop-blur-md transition-all duration-300 hover:-translate-y-1"
+            className="hidden lg:flex items-center gap-2.5 p-3.5 rounded-full bg-zinc-950/90 border border-brand-volt/20 shadow-[0_15px_30px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.05)] absolute -top-6 lg:-right-2 xl:-right-16 scale-90 xl:scale-100 z-25 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-brand-volt/40"
             style={{ transform: `translateY(${scrollY * -0.06}px)` }}
           >
-            <div className="w-5 h-5 rounded-full bg-brand-volt/10 flex items-center justify-center text-[10px]">📈</div>
+            <div className="w-6 h-6 rounded-full bg-brand-volt/10 flex items-center justify-center text-xs">📈</div>
             <div>
-              <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-widest leading-none">Niche Gap</p>
-              <p className="text-[10px] font-black text-white leading-none mt-0.5">+28.4% CPM</p>
+              <p className="text-[8px] text-zinc-500 font-black uppercase tracking-widest leading-none">Niche Gap</p>
+              <p className="text-[10px] font-black text-white leading-none mt-1">+28.4% CPM</p>
             </div>
           </div>
 
-          {/* Layered floating audit card 2 (Bottom-Right) - visible on lg screens and up */}
+          {/* Layered floating audit card 2 (Bottom-Right) */}
           <div 
-            className="hidden lg:flex flex-col gap-2.5 p-4 rounded-2xl bg-zinc-950/90 border border-brand-mint/20 shadow-[0_20px_40px_rgba(0,0,0,0.9)] absolute -bottom-10 lg:-right-2 xl:-right-8 w-52 scale-90 xl:scale-100 z-25 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 text-left"
+            className="hidden lg:flex flex-col gap-3 p-4.5 rounded-2xl bg-zinc-950/90 border border-brand-mint/20 shadow-[0_20px_40px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.05)] absolute -bottom-10 lg:-right-2 xl:-right-8 w-52 scale-90 xl:scale-100 z-25 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-brand-mint/40 text-left"
             style={{ transform: `translateY(${scrollY * 0.04}px)` }}
           >
             <div className="flex items-center justify-between">
@@ -600,18 +633,18 @@ export default function LandingPage() {
             </div>
             <div>
               <p className="text-[8px] text-zinc-500 uppercase font-black tracking-wider leading-none">Velocity Score</p>
-              <div className="flex items-baseline gap-1 mt-0.5">
-                <span className="text-base font-display font-extrabold text-white">88.2</span>
+              <div className="flex items-baseline gap-1 mt-1">
+                <span className="text-lg font-display font-extrabold text-white">88.2</span>
                 <span className="text-[8px] font-bold text-brand-mint">↑ +14%</span>
               </div>
             </div>
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <div className="flex justify-between text-[7px] font-mono text-zinc-500 leading-none">
                 <span>QUEUE</span>
                 <span>94%</span>
               </div>
               <div className="w-full h-1 bg-zinc-900 rounded-full overflow-hidden">
-                <div className="h-full bg-brand-mint rounded-full" style={{ width: '94%' }} />
+                <div className="h-full bg-brand-mint rounded-full shadow-[0_0_8px_#00ffca]" style={{ width: '94%' }} />
               </div>
             </div>
           </div>
@@ -665,7 +698,7 @@ export default function LandingPage() {
               <h2 className="font-display font-extrabold text-3.5xl md:text-5.5xl tracking-tight text-white leading-none uppercase">
                 Test-drive the<br/>
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0052ff] via-[#00d2ff] to-[#7c3aed] text-glow-volt">
-                  Vyron Workspace.
+                  Svay Workspace.
                 </span>
               </h2>
               
@@ -710,43 +743,68 @@ export default function LandingPage() {
 
             {/* Graphic side */}
             <div className="md:col-span-5 relative flex items-center justify-center">
-              <div className="w-full aspect-[4/3] rounded-2xl border border-zinc-800/60 bg-zinc-900/10 p-5 flex flex-col justify-between relative overflow-hidden group/console">
-                {/* Embedded console mockup illustration */}
+              <div 
+                className="w-full aspect-[4/3] rounded-2xl border border-white/[0.08] bg-zinc-950/80 p-5 flex flex-col justify-between relative overflow-hidden group/console backdrop-blur-xl"
+                style={{
+                  boxShadow: '0 20px 50px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.05)'
+                }}
+              >
+                {/* Header Window Bar */}
                 <div className="flex items-center justify-between border-b border-zinc-900 pb-3 mb-4">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-brand-volt" />
-                    <span className="font-mono text-[9px] text-zinc-500 font-bold uppercase tracking-wider">demo@vyron.ai</span>
+                  <div className="flex items-center gap-2">
+                    {/* Window Controls */}
+                    <div className="flex gap-1.5 mr-2">
+                      <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f56]" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-[#ffbd2e]" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-[#27c93f]" />
+                    </div>
+                    <span className="font-mono text-[9px] text-zinc-500 font-bold uppercase tracking-wider">demo@svay.space:~</span>
                   </div>
-                  <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest">Console V3.0</span>
+                  <span className="text-[8px] font-bold text-zinc-650 uppercase tracking-widest font-mono">Console V3.0</span>
                 </div>
 
-                <div className="flex-1 space-y-3.5 text-left">
-                  <div className="p-3 rounded-xl bg-zinc-950/60 border border-white/[0.02] flex items-center justify-between">
+                {/* Simulated Terminal Output */}
+                <div className="flex-1 space-y-4 text-left">
+                  {/* Metric Cell 1 */}
+                  <div className="p-3.5 rounded-xl bg-zinc-900/30 border border-zinc-900 flex items-center justify-between hover:border-brand-volt/20 transition-all">
                     <div>
-                      <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-wider">Subscriber count</p>
-                      <p className="font-mono text-base font-extrabold text-white">124,500</p>
+                      <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-widest mb-1">Subscriber count</p>
+                      <p className="font-mono text-xl font-extrabold text-white">124,500</p>
                     </div>
-                    <span className="text-[8px] font-mono font-bold text-brand-mint">+1.8K today</span>
+                    <span className="text-[9px] font-mono font-bold text-brand-mint bg-brand-mint/10 border border-brand-mint/20 px-2 py-0.5 rounded-md">
+                      +1.8K today
+                    </span>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-zinc-950/60 border border-white/[0.02] space-y-2">
+                  {/* Metric Cell 2 */}
+                  <div className="p-3.5 rounded-xl bg-zinc-900/30 border border-zinc-900 space-y-2.5 hover:border-brand-volt/20 transition-all">
                     <div className="flex justify-between items-center">
-                      <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-wider">Active Scans</p>
-                      <span className="w-1.5 h-1.5 rounded-full bg-brand-volt animate-ping" />
+                      <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-widest">Active Radar Scans</p>
+                      <span className="flex h-2 w-2 relative">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-volt opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-volt"></span>
+                      </span>
                     </div>
-                    <div className="h-1 bg-zinc-900 rounded-full overflow-hidden">
-                      <div className="h-full bg-brand-volt rounded-full animate-pulse" style={{ width: '75%' }} />
+                    <div className="h-1.5 bg-zinc-950 rounded-full overflow-hidden p-[1px] border border-zinc-900">
+                      <div className="h-full bg-gradient-to-r from-brand-volt to-brand-mint rounded-full animate-pulse shadow-[0_0_8px_#00f0ff]" style={{ width: '75%' }} />
                     </div>
                   </div>
                 </div>
 
+                {/* Footer status badges */}
                 <div className="pt-4 border-t border-zinc-900 flex items-center justify-between text-[8px] font-mono text-zinc-500 uppercase tracking-wider">
-                  <span>Connection: Demo Mode</span>
-                  <span>Session: Active</span>
+                  <div className="flex items-center gap-1.5 bg-zinc-900/40 px-2.5 py-1 rounded-lg border border-zinc-900">
+                    <span className="w-1.5 h-1.5 rounded-full bg-brand-volt shadow-[0_0_6px_#00f0ff]" />
+                    <span>Sandbox Connection</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 bg-zinc-900/40 px-2.5 py-1 rounded-lg border border-zinc-900">
+                    <span className="w-1.5 h-1.5 rounded-full bg-brand-mint animate-pulse shadow-[0_0_6px_#00ffca]" />
+                    <span>System Active</span>
+                  </div>
                 </div>
 
-                {/* Decorative glow */}
-                <div className="absolute inset-0 border border-brand-volt/0 group-hover/console:border-brand-volt/20 rounded-2xl transition-colors duration-500 pointer-events-none" />
+                {/* Decorative border glow */}
+                <div className="absolute inset-0 border border-brand-volt/0 group-hover/console:border-brand-volt/10 rounded-2xl transition-colors duration-500 pointer-events-none" />
               </div>
             </div>
           </div>
@@ -767,7 +825,7 @@ export default function LandingPage() {
             Find your next viral topic.<br/>Backed by <em className="text-brand-volt not-italic text-glow-volt">performance data</em>.
           </h2>
           <p className="text-zinc-400 text-sm md:text-base leading-relaxed max-w-lg">
-            Move past basic view counters. Vyron maps the actual momentum, formatting, and keyword relationships driving successful channels in your space.
+            Move past basic view counters. Svay maps the actual momentum, formatting, and keyword relationships driving successful channels in your space.
           </p>
         </div>
         </RevealOnScroll>
@@ -908,9 +966,52 @@ export default function LandingPage() {
           <h2 className="font-display font-extrabold text-4xl md:text-5xl tracking-tight text-white mb-4">
             One simple plan. Full access.
           </h2>
-          <p className="text-zinc-400 text-sm leading-relaxed max-w-sm mx-auto">
+          <p className="text-zinc-400 text-sm leading-relaxed max-w-sm mx-auto mb-8">
             Try it free for 7 days. Cancel with a single click at any time.
           </p>
+
+          {/* Pricing Toggle */}
+          <div className="flex justify-center mb-8">
+            <div className="bg-zinc-950/60 border border-zinc-800/80 p-1.5 rounded-2xl inline-flex gap-1 relative backdrop-blur-md shadow-inner">
+              <button
+                onClick={() => setBillingInterval("monthly")}
+                className={`py-2.5 px-6 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 relative z-10 cursor-pointer ${
+                  billingInterval === "monthly" ? "text-zinc-950" : "text-zinc-500 hover:text-zinc-200"
+                }`}
+              >
+                Monthly
+                {billingInterval === "monthly" && (
+                  <motion.div
+                    layoutId="activeBillingPill"
+                    className="absolute inset-0 bg-brand-volt rounded-xl -z-10 shadow-[0_4px_20px_rgba(0,240,255,0.25)]"
+                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  />
+                )}
+              </button>
+              <button
+                onClick={() => setBillingInterval("yearly")}
+                className={`py-2.5 px-6 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 relative z-10 flex items-center gap-2 cursor-pointer ${
+                  billingInterval === "yearly" ? "text-zinc-950" : "text-zinc-500 hover:text-zinc-200"
+                }`}
+              >
+                Yearly
+                <span className={`text-[8px] font-black px-1.5 py-0.5 rounded tracking-wide transition-colors ${
+                  billingInterval === "yearly" 
+                    ? "bg-zinc-950/10 text-zinc-950" 
+                    : "bg-brand-rose/15 text-brand-rose border border-brand-rose/20"
+                }`}>
+                  Save 30%
+                </span>
+                {billingInterval === "yearly" && (
+                  <motion.div
+                    layoutId="activeBillingPill"
+                    className="absolute inset-0 bg-brand-volt rounded-xl -z-10 shadow-[0_4px_20px_rgba(0,240,255,0.25)]"
+                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  />
+                )}
+              </button>
+            </div>
+          </div>
         </div>
         </RevealOnScroll>
 
@@ -922,19 +1023,33 @@ export default function LandingPage() {
               <span className="bg-brand-rose text-white text-[9px] font-black tracking-widest px-2.5 py-1 rounded">LAUNCH OFFER</span>
               <div>
                 <h3 className="font-display font-extrabold text-lg text-white">Lock in early adopter pricing for life</h3>
-                <p className="text-xs text-zinc-500 mt-0.5">Secure your monthly rate before we introduce multi-tier pricing. Your rate will never increase.</p>
+                <p className="text-xs text-zinc-500 mt-0.5">Secure your {billingInterval} rate before we introduce multi-tier pricing. Your rate will never increase.</p>
               </div>
             </div>
 
             {/* Countdown timer */}
             <div className="flex items-center gap-3 bg-zinc-950 border border-zinc-900 p-3 rounded-2xl shrink-0">
               <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Offer ends in:</span>
-              <div className="flex items-center gap-1 font-mono font-bold text-sm text-brand-volt">
-                <span>{String(timeLeft.hours).padStart(2, '0')}</span>
+              <div className="flex items-center gap-2 font-mono font-bold text-sm text-brand-volt">
+                <span className="flex items-baseline gap-0.5">
+                  <span>{String(timeLeft.days).padStart(2, '0')}</span>
+                  <span className="text-[9px] text-zinc-500 uppercase font-sans font-medium">d</span>
+                </span>
                 <span className="opacity-40 animate-pulse">:</span>
-                <span>{String(timeLeft.minutes).padStart(2, '0')}</span>
+                <span className="flex items-baseline gap-0.5">
+                  <span>{String(timeLeft.hours).padStart(2, '0')}</span>
+                  <span className="text-[9px] text-zinc-500 uppercase font-sans font-medium">h</span>
+                </span>
                 <span className="opacity-40 animate-pulse">:</span>
-                <span>{String(timeLeft.seconds).padStart(2, '0')}</span>
+                <span className="flex items-baseline gap-0.5">
+                  <span>{String(timeLeft.minutes).padStart(2, '0')}</span>
+                  <span className="text-[9px] text-zinc-500 uppercase font-sans font-medium">m</span>
+                </span>
+                <span className="opacity-40 animate-pulse">:</span>
+                <span className="flex items-baseline gap-0.5">
+                  <span>{String(timeLeft.seconds).padStart(2, '0')}</span>
+                  <span className="text-[9px] text-zinc-500 uppercase font-sans font-medium">s</span>
+                </span>
               </div>
             </div>
           </div>
@@ -951,7 +1066,7 @@ export default function LandingPage() {
           <div className="md:col-span-6 flex flex-col justify-between">
             <div>
               <div className="flex items-center gap-2 text-brand-volt font-black uppercase text-[10px] tracking-widest mb-6">
-                <span className="w-1.5 h-1.5 rounded-full bg-brand-volt" /> Vyron Pro
+                <span className="w-1.5 h-1.5 rounded-full bg-brand-volt" /> Svay Pro {billingInterval === "yearly" ? "Yearly" : "Monthly"}
               </div>
               
               <div className="flex items-baseline gap-1.5 mb-2">
@@ -964,8 +1079,17 @@ export default function LandingPage() {
 
               {/* strike price */}
               <div className="flex items-center gap-2 mb-6">
-                <span className="text-zinc-500 line-through text-sm font-bold">₹999/mo</span>
-                <span className="bg-brand-rose/15 text-brand-rose border border-brand-rose/25 font-black text-[9px] px-2 py-0.5 rounded tracking-wide uppercase">SAVE 50%</span>
+                {billingInterval === "monthly" ? (
+                  <>
+                    <span className="text-zinc-500 line-through text-sm font-bold">₹1,499/mo</span>
+                    <span className="bg-brand-rose/15 text-brand-rose border border-brand-rose/25 font-black text-[9px] px-2 py-0.5 rounded tracking-wide uppercase">SAVE 33%</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-zinc-500 line-through text-sm font-bold">₹999/mo</span>
+                    <span className="bg-brand-rose/15 text-brand-rose border border-brand-rose/25 font-black text-[9px] px-2 py-0.5 rounded tracking-wide uppercase">SAVE 30%</span>
+                  </>
+                )}
               </div>
 
               <div className="flex items-center gap-2 text-xs font-extrabold text-brand-mint mb-8">
@@ -975,13 +1099,15 @@ export default function LandingPage() {
 
             <div>
               <button 
-                onClick={() => { window.location.href = "/sign-in"; }}
+                onClick={handleStartTrial}
                 className="w-full py-4.5 bg-brand-volt hover:bg-[#33f3ff] text-black font-extrabold text-sm uppercase tracking-wider rounded-2xl transition-all shadow-[0_0_35px_rgba(0,240,255,0.3)] hover:shadow-[0_0_50px_rgba(0,240,255,0.55)] hover:-translate-y-0.5 cursor-pointer"
               >
                 Start Trial
               </button>
               <p className="text-[10px] text-zinc-500 text-center mt-3 font-semibold tracking-wide">
-                Thereafter ₹499/month · Cancel at any time · Secure checkout powered by Razorpay
+                {billingInterval === "yearly" 
+                  ? "Billed annually at ₹8,388/year (₹699/mo) · Cancel at any time · Secure checkout powered by Razorpay"
+                  : "Thereafter ₹999/month · Cancel at any time · Secure checkout powered by Razorpay"}
               </p>
             </div>
           </div>
@@ -1023,7 +1149,7 @@ export default function LandingPage() {
             Frequently Asked Questions
           </h2>
           <p className="text-zinc-400 text-sm leading-relaxed max-w-sm mx-auto">
-            Clear answers to how Vyron helps you grow your channel.
+            Clear answers to how Svay helps you grow your channel.
           </p>
         </div>
         </RevealOnScroll>
@@ -1033,12 +1159,12 @@ export default function LandingPage() {
         <div className="space-y-3">
           {[
             {
-              q: "How does Vyron help me grow my channel?",
-              a: "Vyron continuously tracks high-performing channels in your space. By indexing topic relationships and calculating how well videos perform relative to a channel's size, Vyron flags high-potential video concepts so you publish content people are already looking for."
+              q: "How does Svay help me grow my channel?",
+              a: "Svay continuously tracks high-performing channels in your space. By indexing topic relationships and calculating how well videos perform relative to a channel's size, Svay flags high-potential video concepts so you publish content people are already looking for."
             },
             {
               q: "Do I need to connect my YouTube channel?",
-              a: "No, connecting your channel is completely optional. You can use Vyron strictly for competitor tracking and trend discovery. If you choose to link your channel, we use secure, read-only API access to generate custom growth benchmarks."
+              a: "No, connecting your channel is completely optional. You can use Svay strictly for competitor tracking and trend discovery. If you choose to link your channel, we use secure, read-only API access to generate custom growth benchmarks."
             },
             {
               q: "What is the Trend Radar?",
@@ -1046,7 +1172,7 @@ export default function LandingPage() {
             },
             {
               q: "How does the free trial and cancellation work?",
-              a: "Your trial runs for 7 days with full features unlocked. No credit card is required upfront. If you choose to continue after your trial, billing starts at ₹499/month. You can cancel with a single click in your settings at any time."
+              a: "Your trial runs for 7 days with full features unlocked. No credit card is required upfront. If you choose to continue after your trial, billing starts at ₹999/month (or ₹699/month if choosing the yearly plan). You can cancel with a single click in your settings at any time."
             }
           ].map((faq, idx) => {
             const isOpen = openFaq === idx;
@@ -1087,7 +1213,7 @@ export default function LandingPage() {
           
           {/* Huge watermark text */}
           <div className="absolute font-display font-black text-white/[0.015] text-8xl md:text-[160px] leading-none tracking-tighter select-none pointer-events-none top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 uppercase">
-            VYRON
+            SVAY
           </div>
 
           <div className="relative z-10 max-w-xl mx-auto">
@@ -1127,7 +1253,7 @@ export default function LandingPage() {
             <div className="md:col-span-7 flex flex-col items-start gap-4">
               <div className="flex items-center gap-2.5">
                 <div className="w-5.5 h-5.5 rounded-full bg-gradient-to-tr from-brand-volt via-[#00b0ff] to-brand-mint shadow-[0_0_12px_rgba(0,240,255,0.2)]" />
-                <span className="font-display font-extrabold text-base text-white tracking-tight">VYRON</span>
+                <span className="font-display font-extrabold text-base text-white tracking-tight">SVAY</span>
               </div>
               <p className="text-zinc-500 text-xs leading-relaxed max-w-sm">
                 Decoding YouTube performance data in real-time so you can focus on building a sustainable channel.
@@ -1159,7 +1285,7 @@ export default function LandingPage() {
           {/* Bottom Divider & Copyright */}
           <div className="border-t border-zinc-900/80 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-[9px] font-mono text-zinc-600 font-bold uppercase tracking-widest">
-              © 2026 Vyron Intelligence Platform. All rights reserved.
+              © 2026 Svay Intelligence Platform. All rights reserved.
             </p>
             <a 
               href="#" 

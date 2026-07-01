@@ -141,12 +141,12 @@ export async function POST(req) {
             <p style="font-size: 14px; color: #aaa; line-height: 1.6; margin-bottom: 20px;">
               Your rivals are currently dominating with the titles shown above. To gain an edge, we recommend focusing on <strong>higher-velocity content</strong> that targets their engagement gaps. Use their "Recent Wins" as a blueprint for your next upload.
             </p>
-            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://updates.vyron.space'}/competitors?analysisId=${analysisId}" style="display: block; background: #ffffff; color: #000000; text-decoration: none; padding: 15px; border-radius: 12px; font-weight: 900; font-size: 13px; text-transform: uppercase; text-align: center; letter-spacing: 1px;">Open Full interactive Matrix</a>
+            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://updates.svay.space'}/competitors?analysisId=${analysisId}" style="display: block; background: #ffffff; color: #000000; text-decoration: none; padding: 15px; border-radius: 12px; font-weight: 900; font-size: 13px; text-transform: uppercase; text-align: center; letter-spacing: 1px;">Open Full interactive Matrix</a>
           </div>
         </div>
 
         <div style="padding: 30px; border-top: 1px solid #1a1a1a; text-align: center; background: #050505;">
-          <p style="font-size: 11px; font-weight: bold; color: #444; margin: 0; text-transform: uppercase; letter-spacing: 2px;">Powered by Vyron Intelligence</p>
+          <p style="font-size: 11px; font-weight: bold; color: #444; margin: 0; text-transform: uppercase; letter-spacing: 2px;">Powered by Svay Intelligence</p>
         </div>
       </div>
     `;

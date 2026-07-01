@@ -237,7 +237,7 @@ export default function DemoDashboard() {
         <div className="flex items-center justify-between gap-2 px-3 py-1.5 border border-zinc-800 bg-black/60 rounded-lg font-mono text-[10px] tracking-wide max-w-[180px] xs:max-w-[240px] sm:max-w-[340px] w-full">
           <Lock className="w-2.5 h-2.5 text-brand-mint shrink-0" />
           <div className="flex items-center gap-1 mx-auto overflow-hidden truncate">
-            <span className="text-zinc-300">app.vyron.ai</span>
+            <span className="text-zinc-300">app.svay.space</span>
             <span className="text-zinc-600">/</span>
             <span className="text-zinc-400">console</span>
             <span className="text-zinc-600">/</span>
@@ -266,7 +266,7 @@ export default function DemoDashboard() {
                 <Sparkles className="w-3.5 h-3.5 text-brand-volt" />
               </div>
             </div>
-            <span className="font-display font-extrabold text-sm tracking-wider text-white">VYRON CORES</span>
+            <span className="font-display font-extrabold text-sm tracking-wider text-white">SVAY CORES</span>
           </div>
 
           {/* Nav List */}
