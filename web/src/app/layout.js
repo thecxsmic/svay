@@ -9,6 +9,7 @@ import { BottomSheetProvider } from "@/contexts/bottomSheet";
 import RouteGater from "./components/RouteGater";
 import { cookies } from "next/headers";
 import "./globals.css";
+import Script from "next/script";
 
 
 const audiowide = Audiowide({
@@ -96,6 +97,11 @@ export default async function RootLayout({ children }) {
       className={`${audiowide.variable} ${montserratAlternates.variable} ${righteous.variable} h-full antialiased dark`}
     >
       <body className="h-full bg-black text-[#ededed] selection:bg-[#0070f3] selection:text-white font-sans">
+        <Script
+          src="https://cloud.umami.is/script.js"
+          data-website-id="0e5f3f30-23db-41cf-b7d0-d7abfd372536"
+          strategy="afterInteractive"
+        />
         <ClerkProvider>
           <UserProvider>
             <ChannelProvider>
