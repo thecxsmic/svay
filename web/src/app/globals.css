@@ -76,6 +76,7 @@ h1, h2, h3, h4, h5, h6 {
   --font-sans: var(--font-montserrat-alternates);
   --font-display: var(--font-righteous);
   --font-logo: var(--font-audiowide);
+  --font-ahsing: var(--font-ahsing);
 
   --color-brand-volt: #00f0ff;
   --color-brand-mint: #0052ff;
@@ -91,6 +92,10 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* User Requested Font Classes */
+.font-ahsing {
+  font-family: var(--font-ahsing), var(--font-righteous), sans-serif;
+}
+
 .audiowide-regular {
   font-family: var(--font-audiowide), sans-serif;
   font-weight: 400;

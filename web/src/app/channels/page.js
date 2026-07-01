@@ -328,7 +328,7 @@ function ChannelsContent() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="font-display text-4xl md:text-6xl tracking-tight mb-4 text-white uppercase"
+            className="font-ahsing text-4xl md:text-6xl tracking-tight mb-4 text-white uppercase"
           >
             Channel Intelligence
           </motion.h1>

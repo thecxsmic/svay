@@ -288,7 +288,7 @@ export default function AnalyticsPage() {
             <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
               <BarChart3 className="w-5 h-5 text-black" />
             </div>
-            <h1 className="font-display text-lg tracking-tight uppercase flex items-center gap-3">
+            <h1 className="font-ahsing text-lg tracking-tight uppercase flex items-center gap-3">
               Analytics <span className="text-zinc-600 font-normal hidden sm:inline">/ {data.channel?.title || 'Loading'}</span>
             </h1>
           </div>

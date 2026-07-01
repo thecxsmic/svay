@@ -76,7 +76,7 @@ export default function CookiesPage() {
         {/* Content */}
         <main className="md:col-span-9 space-y-6 text-left min-w-0 max-w-3xl">
           <div className="space-y-4">
-            <h1 className="font-display font-extrabold text-2.5xl md:text-3.5xl text-white uppercase tracking-tight leading-none">Cookie Policy</h1>
+            <h1 className="font-ahsing font-extrabold text-2.5xl md:text-3.5xl text-white uppercase tracking-tight leading-none">Cookie Policy</h1>
             <p className="text-zinc-400 text-sm leading-relaxed">
               We believe in transparency. This policy outlines how and why we use cookies to secure your account, process payments, and save your dashboard state.
             </p>

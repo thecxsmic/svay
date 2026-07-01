@@ -458,7 +458,7 @@ export default function LandingPage() {
           </div>
 
           {/* Main Title */}
-          <h1 className="font-display font-extrabold text-5xl md:text-4xl lg:text-5xl xl:text-7xl leading-[1.0] tracking-tight text-white mb-4 md:mb-6">
+          <h1 className="font-ahsing font-extrabold text-5xl md:text-4xl lg:text-5xl xl:text-7xl leading-[1.0] tracking-tight text-white mb-4 md:mb-6">
             Know what performs.<br/>
             Before you hit<br/>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0052ff] via-[#00d2ff] to-[#7c3aed] drop-shadow-[0_0_15px_rgba(0,240,255,0.1)] text-glow-volt">

@@ -268,7 +268,7 @@ export default function LibraryPage() {
             <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
               <Layers className="w-5 h-5 text-black" />
             </div>
-            <h1 className="text-lg font-medium tracking-tight">Research Hub</h1>
+            <h1 className="font-ahsing text-lg tracking-tight uppercase">Research Hub</h1>
           </div>
           
           <div className="flex items-center gap-4">

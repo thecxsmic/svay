@@ -76,7 +76,7 @@ export default function TermsPage() {
         {/* Content */}
         <main className="md:col-span-9 space-y-6 text-left min-w-0 max-w-3xl">
           <div className="space-y-4">
-            <h1 className="font-display font-extrabold text-2.5xl md:text-3.5xl text-white uppercase tracking-tight leading-none">Terms of Service</h1>
+            <h1 className="font-ahsing font-extrabold text-2.5xl md:text-3.5xl text-white uppercase tracking-tight leading-none">Terms of Service</h1>
             <p className="text-zinc-400 text-sm leading-relaxed">
               These terms form the agreement between you and Svay. We've written them to be clear and straightforward, so you know exactly what rules govern our creator platform and what is expected of both of us.
             </p>

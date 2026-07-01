@@ -67,7 +67,7 @@ export default function SetupUserChannelModal({ onChannelSet }) {
             </svg>
           </div>
           
-          <h2 className="text-3xl font-black text-white text-center mb-4 uppercase tracking-tighter">Register Your Channel</h2>
+          <h2 className="font-ahsing text-3xl font-black text-white text-center mb-4 uppercase tracking-tighter">Register Your Channel</h2>
           <p className="text-[#888888] text-sm text-center mb-10 font-medium leading-relaxed">
             To generate personalized AI strategies, you need to associate your YouTube channel with your account.
           </p>

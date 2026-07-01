@@ -1,4 +1,5 @@
 import { Audiowide, Montserrat_Alternates, Righteous } from "next/font/google";
+import localFont from "next/font/local";
 import Link from "next/link";
 import { ClerkProvider } from "@clerk/nextjs";
 import { auth, currentUser } from "@clerk/nextjs/server";
@@ -31,6 +32,12 @@ const righteous = Righteous({
   weight: "400",
   variable: "--font-righteous",
   subsets: ["latin"],
+  display: "swap",
+});
+
+const ahsing = localFont({
+  src: "./fonts/typogama-ahsing.otf",
+  variable: "--font-ahsing",
   display: "swap",
 });
 
@@ -112,7 +119,7 @@ export default async function RootLayout({ children }) {
   return (
     <html
       lang="en"
-      className={`${audiowide.variable} ${montserratAlternates.variable} ${righteous.variable} h-full antialiased dark`}
+      className={`${audiowide.variable} ${montserratAlternates.variable} ${righteous.variable} ${ahsing.variable} h-full antialiased dark`}
     >
       <body className="h-full bg-black text-[#ededed] selection:bg-[#0070f3] selection:text-white font-sans">
         <Script
