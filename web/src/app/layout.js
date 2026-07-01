@@ -72,6 +72,10 @@ export const metadata = {
   manifest: "/site.webmanifest"
 };
 
+export const viewport = {
+  themeColor: "#000000",
+};
+
 export default async function RootLayout({ children }) {
   const cookieStore = await cookies();
   const isDemoMode = cookieStore.get("demo_mode")?.value === "true";
