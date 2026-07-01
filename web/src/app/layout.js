@@ -38,7 +38,37 @@ export const metadata = {
     template: "%s | Svay",
     default: "Svay Intelligence",
   },
-  description: "Advanced Content Ecosystem Tracking",
+  description: "Advanced Content Ecosystem Tracking and Creator Analytics Platform",
+  keywords: ["Svay", "Creator Economy", "YouTube Analytics", "Content Intelligence", "Viral Trends", "Competitor Tracking"],
+  authors: [{ name: "Svay Team" }],
+  metadataBase: new URL("https://svay.space"),
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "Svay Intelligence",
+    description: "Advanced Content Ecosystem Tracking and Creator Analytics Platform",
+    url: "https://svay.space",
+    siteName: "Svay",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Svay Intelligence",
+    description: "Advanced Content Ecosystem Tracking and Creator Analytics Platform",
+  },
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },
+      { url: "/favicon.svg", type: "image/svg+xml" }
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }
+    ]
+  },
+  manifest: "/site.webmanifest"
 };
 
 export default async function RootLayout({ children }) {
