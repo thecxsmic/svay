@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import Script from "next/script";
+import { useUser } from "@/contexts/user";
 
 export default function SubscriptionButton({ planName = "Neural Pro", planType = "monthly", onSuccess, onError }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const { user } = useUser();
 
   const handleSubscription = async () => {
     setIsProcessing(true);
@@ -26,7 +28,9 @@ export default function SubscriptionButton({ planName = "Neural Pro", planType =
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         subscription_id: subscriptionData.id,
         name: "Svay Intelligence",
-        description: `7-Day Free Trial - then ${planType === "yearly" ? "₹699/mo (billed yearly)" : "₹999/mo"}`,
+        description: user?.email === "thecxsmic@gmail.com"
+          ? `Special Admin Plan - ₹1/${planType === "yearly" ? "yr" : "mo"}`
+          : `7-Day Free Trial - then ${planType === "yearly" ? "₹699/mo (billed yearly)" : "₹999/mo"}`,
         handler: async function (response) {
           setIsProcessing(true);
           // 2. Verify payment on the backend
@@ -55,8 +59,8 @@ export default function SubscriptionButton({ planName = "Neural Pro", planType =
           }
         },
         prefill: {
-          name: "Svay Administrator",
-          email: "admin@svay.space",
+          name: user?.name || "Svay Administrator",
+          email: user?.email || "admin@svay.space",
         },
         theme: {
           color: "#0070f3",
