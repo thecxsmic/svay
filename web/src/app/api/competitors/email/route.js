@@ -1,5 +1,5 @@
 import { auth, currentUser, createClerkClient } from "@clerk/nextjs/server";
-import { getAnalysisById, logEmail, getLastEmail } from "@/lib/cache/turso";
+import { getAnalysisById, logEmail, getLastEmail, checkEmailRateLimit } from "@/lib/cache/turso";
 import { sendEmail } from "@/lib/email/resend";
 import { apiSuccess, apiError } from "@/lib/utils/response";
 
@@ -32,7 +32,20 @@ export async function POST(req) {
     
     if (!analysisId) return apiError(new Error("Analysis ID is required"), 400);
 
-    // 1. Check 24h limit for this analysis
+    // 1. Check overall 3 emails per day per user limit
+    const emailRateLimit = await checkEmailRateLimit(userId);
+    const rateLimitHeaders = {
+      'X-RateLimit-Limit': String(emailRateLimit.limit),
+      'X-RateLimit-Remaining': String(emailRateLimit.remaining),
+      'X-RateLimit-Reset': String(emailRateLimit.reset),
+    };
+
+    if (emailRateLimit.limited) {
+      console.warn(`[Competitor Email API] User ${userId} has hit the daily limit of 3 emails.`);
+      return apiError(new Error("Daily email sending limit (3 emails) reached. Please try again in 24 hours."), 429, rateLimitHeaders);
+    }
+
+    // 1b. Check 24h limit for this analysis
     const lastEmailTime = await getLastEmail(userId, 'competitor_analysis', analysisId);
     if (lastEmailTime) {
       const now = Date.now();
@@ -169,7 +182,7 @@ export async function POST(req) {
     // 2. Log the email send
     await logEmail(userId, 'competitor_analysis', analysisId);
 
-    return apiSuccess({ success: true, message: "Email sent successfully" });
+    return apiSuccess({ success: true, message: "Email sent successfully" }, 200, rateLimitHeaders);
   } catch (error) {
     console.error("[Competitor Email API] Global Error:", error);
     return apiError(error);

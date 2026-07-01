@@ -760,3 +760,64 @@ export async function getLastEmail(userId, type, referenceId = null) {
     return null;
   }
 }
+
+/**
+ * Get the total number of emails sent by a user in the last 24 hours
+ */
+export async function getEmailCountInLast24Hours(userId) {
+  if (!process.env.TURSO_DATABASE_URL) return 0;
+
+  try {
+    const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+    const rs = await client.execute({
+      sql: "SELECT COUNT(*) as count FROM email_logs WHERE user_id = ? AND timestamp > ?",
+      args: [userId, oneDayAgo],
+    });
+
+    if (rs.rows.length === 0) return 0;
+    return rs.rows[0].count || 0;
+  } catch (error) {
+    console.error("[Turso] Get Email Count Error:", error);
+    return 0;
+  }
+}
+
+/**
+ * Check if the user is rate limited for emails, returning status and metadata
+ */
+export async function checkEmailRateLimit(userId) {
+  if (!process.env.TURSO_DATABASE_URL) {
+    return { limited: false, limit: 3, remaining: 3, reset: Date.now() };
+  }
+
+  try {
+    const now = Date.now();
+    const oneDayAgo = now - 24 * 60 * 60 * 1000;
+    
+    const rs = await client.execute({
+      sql: "SELECT timestamp FROM email_logs WHERE user_id = ? AND timestamp > ? ORDER BY timestamp ASC",
+      args: [userId, oneDayAgo],
+    });
+
+    const count = rs.rows.length;
+    const limit = 3;
+    const remaining = Math.max(0, limit - count);
+    
+    let reset = now;
+    if (count > 0) {
+      reset = rs.rows[0].timestamp + 24 * 60 * 60 * 1000;
+    }
+
+    return {
+      limited: count >= limit,
+      limit,
+      remaining,
+      reset
+    };
+  } catch (error) {
+    console.error("[Turso] Check Email Rate Limit Error:", error);
+    return { limited: false, limit: 3, remaining: 1, reset: Date.now() };
+  }
+}
+
+

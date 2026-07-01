@@ -532,18 +532,18 @@ export default function LandingPage() {
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div className="bg-zinc-900/20 border border-zinc-800/60 p-4 rounded-2xl relative overflow-hidden group hover:border-brand-volt/30 transition-all hover:bg-zinc-900/30">
                 <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">Subscriber Net</p>
-                <div className="flex items-baseline justify-between gap-1">
+                <div>
                   <p className="font-display font-extrabold text-2xl text-white">48,250</p>
-                  <span className="text-[8px] font-black font-mono text-brand-volt bg-brand-volt/10 border border-brand-volt/20 px-1.5 py-0.5 rounded">↑ +2.1%</span>
+                  <span className="inline-block mt-1.5 text-[8px] font-black font-mono text-brand-volt bg-brand-volt/10 border border-brand-volt/20 px-1.5 py-0.5 rounded">↑ +2.1%</span>
                 </div>
                 <div className="absolute bottom-0 right-0 w-8 h-8 bg-brand-volt/[0.02] rounded-tl-2xl" />
               </div>
               
               <div className="bg-zinc-900/20 border border-zinc-800/60 p-4 rounded-2xl relative overflow-hidden group hover:border-brand-mint/30 transition-all hover:bg-zinc-900/30">
                 <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">Virality Index</p>
-                <div className="flex items-baseline justify-between gap-1">
+                <div>
                   <p className="font-display font-extrabold text-2xl text-white">92.4</p>
-                  <span className="text-[8px] font-black font-mono text-brand-mint bg-brand-mint/10 border border-brand-mint/20 px-1.5 py-0.5 rounded">HOT</span>
+                  <span className="inline-block mt-1.5 text-[8px] font-black font-mono text-brand-mint bg-brand-mint/10 border border-brand-mint/20 px-1.5 py-0.5 rounded">HOT</span>
                 </div>
                 <div className="absolute bottom-0 right-0 w-8 h-8 bg-brand-mint/[0.02] rounded-tl-2xl" />
               </div>

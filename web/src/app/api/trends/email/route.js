@@ -1,5 +1,5 @@
 import { auth, currentUser, createClerkClient } from "@clerk/nextjs/server";
-import { getTrendRadar, logEmail, getLastEmail, getUserChannel } from "@/lib/cache/turso";
+import { getTrendRadar, logEmail, getLastEmail, getUserChannel, checkEmailRateLimit } from "@/lib/cache/turso";
 import { sendEmail } from "@/lib/email/resend";
 import { apiSuccess, apiError } from "@/lib/utils/response";
 
@@ -30,7 +30,20 @@ export async function POST(req) {
 
     if (!channelId) return apiError(new Error("Channel ID is required"), 400);
 
-    // 1. Check 24h limit for trend radar emails for this channel
+    // 1. Check overall 3 emails per day per user limit
+    const emailRateLimit = await checkEmailRateLimit(userId);
+    const rateLimitHeaders = {
+      'X-RateLimit-Limit': String(emailRateLimit.limit),
+      'X-RateLimit-Remaining': String(emailRateLimit.remaining),
+      'X-RateLimit-Reset': String(emailRateLimit.reset),
+    };
+
+    if (emailRateLimit.limited) {
+      console.warn(`[Trend Email API] User ${userId} has hit the daily limit of 3 emails.`);
+      return apiError(new Error("Daily email sending limit (3 emails) reached. Please try again in 24 hours."), 429, rateLimitHeaders);
+    }
+
+    // 1b. Check 24h limit for trend radar emails for this channel
     const lastEmailTime = await getLastEmail(userId, 'trend_radar', channelId);
     if (lastEmailTime) {
       const now = Date.now();
@@ -126,7 +139,7 @@ export async function POST(req) {
     console.log("[Trend Email API] Success! Logging to DB...");
     await logEmail(userId, 'trend_radar', channelId);
 
-    return apiSuccess({ success: true, message: "Trend radar email sent" });
+    return apiSuccess({ success: true, message: "Trend radar email sent" }, 200, rateLimitHeaders);
   } catch (error) {
     console.error("[Trend Email API] Global Error:", error);
     return apiError(error);
