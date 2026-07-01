@@ -3,7 +3,7 @@
 export default function DemoLoginButton({ label = "Explore with Demo Account", className = "" }) {
   const enterDemo = () => {
     document.cookie = "demo_mode=true; path=/; max-age=31536000;"; // 1 year
-    window.location.reload();
+    window.location.href = "/";
   };
 
   return (

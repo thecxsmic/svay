@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserButton } from "@clerk/nextjs";
-import { Plus, Menu, X, Search, Zap, Users, Trophy, BookOpen, BarChart3, Activity, Radio, HelpCircle } from 'lucide-react';
+import { Plus, Menu, X, Search, Zap, Users, Trophy, BookOpen, BarChart3, Activity, Radio, HelpCircle, SlidersHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useChannel } from '@/contexts/channel';
 import { useUser } from '@/contexts/user';
@@ -134,8 +134,24 @@ export default function LayoutContent({ children }) {
           <p className="font-display text-[10px] font-bold text-accents-4 uppercase tracking-wider">Pinned</p>
         </div>
         <PinnedChannels />
-      </nav>
 
+        {process.env.NODE_ENV === 'development' && (
+          <>
+            <div className="pt-8 pb-2 px-3">
+              <p className="font-display text-[10px] font-bold text-red-500 uppercase tracking-wider">Developer</p>
+            </div>
+            <a 
+              href="/api/env" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 px-3 py-2 rounded-md text-[11px] font-bold uppercase tracking-wider text-red-400 hover:text-red-300 hover:bg-red-500/5 transition-all group"
+            >
+              <SlidersHorizontal className="w-4 h-4 text-red-500 group-hover:rotate-45 transition-transform" />
+              Env Console
+            </a>
+          </>
+        )}
+      </nav>
       <div className="h-[88px] p-4 border-t border-accents-2 mt-auto flex items-center">
         {isDemo ? (
           <div 

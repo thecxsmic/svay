@@ -1,6 +1,29 @@
 import { auth } from "@clerk/nextjs/server";
 import { generateObject } from "ai";
-import { groq } from "@ai-sdk/groq";
+import { createGroq } from "@ai-sdk/groq";
+
+const groqPrimary = createGroq({
+  apiKey: process.env.GROQ_API_KEY
+});
+
+const groqBackup = createGroq({
+  apiKey: process.env.GROQ_API_KEY_BACKUP
+});
+
+async function generateObjectWithFallback({ modelName, ...options }) {
+  try {
+    return await generateObject({
+      ...options,
+      model: groqPrimary(modelName)
+    });
+  } catch (error) {
+    console.warn(`[Groq AI] Primary key failed or rate-limited. Falling back to backup key. Error: ${error.message || error}`);
+    return await generateObject({
+      ...options,
+      model: groqBackup(modelName)
+    });
+  }
+}
 import { z } from "zod";
 import { calculateViralityScore } from "@/lib/ranking/virality";
 import { getTrendRadar, saveTrendRadar, getLastEmail } from "@/lib/cache/turso";
@@ -180,8 +203,8 @@ ${recentVideos.slice(0, 10).map(v => `- ${v.snippet.title}`).join('\n')}
 
 Do not generate generic queries. Generate specific, trend-focused queries.`;
 
-          const { object } = await generateObject({
-            model: groq('openai/gpt-oss-120b'),
+          const { object } = await generateObjectWithFallback({
+            modelName: 'openai/gpt-oss-120b',
             schema: searchQueriesSchema,
             prompt,
             temperature: 0.7,
@@ -340,8 +363,8 @@ INSTRUCTIONS:
 6. Total videos analyzed should be exactly ${videosWithMetrics.length}.
 7. CRITICAL: Return ONLY a raw JSON object with the exact structure requested. Do NOT include "$schema", "properties", or any schema definitions in your output.`;
 
-        const { object } = await generateObject({
-          model: groq('openai/gpt-oss-120b'),
+        const { object } = await generateObjectWithFallback({
+          modelName: 'openai/gpt-oss-120b',
           schema: trendSchema,
           prompt,
           temperature: 0.7,
