@@ -690,46 +690,18 @@ ${competitorsText}
           {activeTab === "competitors" && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
               {!hasLargerCompetitors && baseSubs > 0 ? (
-                <div className="bg-gradient-to-br from-brand-volt/10 via-zinc-950/40 to-black border border-brand-volt/20 p-8 sm:p-12 rounded-[2rem] text-center space-y-6 relative overflow-hidden shadow-[0_0_50px_rgba(221,255,0,0.05)]">
-                  <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-brand-volt/5 via-transparent to-transparent pointer-events-none" />
-                  <div className="w-16 h-16 bg-brand-volt/10 border border-brand-volt/20 rounded-full flex items-center justify-center mx-auto shadow-inner">
-                    <Trophy className="w-8 h-8 text-brand-volt animate-bounce" />
+                <div className="border border-zinc-800 bg-zinc-950 p-6 sm:p-10 rounded-2xl space-y-4 text-left relative overflow-hidden">
+                  <div className="flex items-center gap-2">
+                    <Trophy className="w-4 h-4 text-white" />
+                    <span className="text-[9px] font-mono tracking-widest text-zinc-500 uppercase">niche dominance established</span>
                   </div>
-                  <div className="space-y-2 max-w-xl mx-auto">
-                    <h4 className="text-sm font-black text-brand-volt uppercase tracking-widest">🏆 Niche Dominance Established</h4>
-                    <h3 className="text-xl sm:text-2xl font-display font-extrabold text-white uppercase tracking-tight text-white">Undisputed Market Leader</h3>
-                    <p className="text-zinc-400 text-xs sm:text-sm leading-relaxed pt-2">
+                  <div className="space-y-2">
+                    <h3 className="text-base sm:text-lg font-bold text-white uppercase tracking-tight font-mono">Undisputed Market Leader</h3>
+                    <p className="text-zinc-450 text-xs leading-relaxed max-w-3xl">
                       Your channel sits at the absolute peak of this niche's subscriber hierarchy. No larger rivals were detected in this keyword space. 
                       You are currently the primary benchmark for other creators. Focus on pioneering new formats and optimizing viewer retention to protect your market share.
                     </p>
                   </div>
-
-                  {competitors.length > 0 && (
-                    <div className="pt-8 border-t border-white/5 space-y-4">
-                      <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block text-zinc-550">Benchmarked Peers (Under Your Lead)</label>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                        {competitors.slice(0, 2).map((comp, idx) => (
-                          <div key={idx} className="bg-white/[0.02] border border-white/5 p-4 rounded-xl flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-3 min-w-0">
-                              <img 
-                                src={comp.thumbnail || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=30&q=80"} 
-                                className="w-8 h-8 rounded-full border border-white/5 object-cover shrink-0" 
-                                alt="" 
-                              />
-                              <div className="min-w-0">
-                                <span className="font-bold text-white text-xs block truncate">{comp.title}</span>
-                                <span className="text-[9px] text-zinc-500 font-mono block truncate">{comp.custom_url || "YouTube Channel"}</span>
-                              </div>
-                            </div>
-                            <div className="text-right shrink-0">
-                              <span className="text-[8px] font-black text-brand-volt uppercase tracking-wider block">Lead Gap</span>
-                              <span className="text-xs font-mono font-bold text-white">+{formatNumber(baseSubs - parseInt(comp.statistics?.subscriberCount || 0, 10))}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
               ) : competitors.length > 0 ? (
                 <>
