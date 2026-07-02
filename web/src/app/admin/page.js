@@ -40,6 +40,7 @@ export default function AdminPage() {
   const [loadingChannels, setLoadingChannels] = useState(false);
   const [copiedCode, setCopiedCode] = useState(null);
   const [toast, setToast] = useState(null);
+  const [confirmModal, setConfirmModal] = useState(null); // { title: "", message: "", onConfirm: () => void, isDanger: boolean }
 
   const showToast = (message, type = "success") => {
     setToast({ message, type });
@@ -161,24 +162,29 @@ export default function AdminPage() {
     }
   };
 
-  const handleDeleteCode = async (code) => {
-    if (!confirm(`Are you sure you want to delete promo code: ${code}?`)) return;
-
-    try {
-      const res = await fetch(`/api/admin/promo?code=${encodeURIComponent(code)}`, {
-        method: "DELETE",
-      });
-      if (res.ok) {
-        fetchAdminData();
-        showToast("Promo code deleted successfully");
-      } else {
-        const data = await res.json();
-        showToast(data.error || "Failed to delete code", "error");
+  const handleDeleteCode = (code) => {
+    setConfirmModal({
+      title: "Delete Promo Code",
+      message: `Are you sure you want to delete promo code: ${code}?`,
+      isDanger: true,
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/admin/promo?code=${encodeURIComponent(code)}`, {
+            method: "DELETE",
+          });
+          if (res.ok) {
+            fetchAdminData();
+            showToast("Promo code deleted successfully");
+          } else {
+            const data = await res.json();
+            showToast(data.error || "Failed to delete code", "error");
+          }
+        } catch (err) {
+          console.error("Failed to delete code:", err);
+          showToast("Failed to delete code.", "error");
+        }
       }
-    } catch (err) {
-      console.error("Failed to delete code:", err);
-      showToast("Failed to delete code.", "error");
-    }
+    });
   };
 
   const handleDirectGrant = async (e) => {
@@ -275,44 +281,54 @@ export default function AdminPage() {
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
-  const handleClearCache = async (channelId, title) => {
-    if (!confirm(`Are you sure you want to clear all cached database records for channel: "${title}"?\n\nThis will remove its metrics, cached videos, and generated AI video ideas, allowing you to fetch clean updates.`)) return;
-
-    try {
-      const res = await fetch(`/api/admin/channels?channelId=${encodeURIComponent(channelId)}`, {
-        method: "DELETE",
-      });
-      const data = await res.json();
-      if (res.ok) {
-        showToast(data.message || "Cache successfully cleared!");
-        fetchChannels();
-      } else {
-        showToast(data.error || "Failed to clear cache", "error");
+  const handleClearCache = (channelId, title) => {
+    setConfirmModal({
+      title: "Clear Channel Cache",
+      message: `Are you sure you want to clear all cached database records for channel: "${title}"?\n\nThis will remove its metrics, cached videos, and generated AI video ideas, allowing you to fetch clean updates.`,
+      isDanger: true,
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/admin/channels?channelId=${encodeURIComponent(channelId)}`, {
+            method: "DELETE",
+          });
+          const data = await res.json();
+          if (res.ok) {
+            showToast(data.message || "Cache successfully cleared!");
+            fetchChannels();
+          } else {
+            showToast(data.error || "Failed to clear cache", "error");
+          }
+        } catch (err) {
+          console.error("Failed to clear cache:", err);
+          showToast("Failed to clear cache.", "error");
+        }
       }
-    } catch (err) {
-      console.error("Failed to clear cache:", err);
-      showToast("Failed to clear cache.", "error");
-    }
+    });
   };
 
-  const handlePurgeAllCaches = async () => {
-    if (!confirm("⚠️ CRITICAL SYSTEM WARNING ⚠️\n\nAre you sure you want to purge ALL cached channel reports, video stats, and AI insights from the database?\n\nThis action cannot be undone. All shared links will remain valid but will require a slow real-time rebuild on their next load.")) return;
-
-    try {
-      const res = await fetch("/api/admin/channels?purgeAll=true", {
-        method: "DELETE"
-      });
-      const data = await res.json();
-      if (res.ok) {
-        showToast(data.message || "All database caches purged!");
-        fetchChannels();
-      } else {
-        showToast(data.error || "Failed to purge caches", "error");
+  const handlePurgeAllCaches = () => {
+    setConfirmModal({
+      title: "⚠️ CRITICAL SYSTEM WARNING ⚠️",
+      message: "Are you sure you want to purge ALL cached channel reports, video stats, and AI insights from the database?\n\nThis action cannot be undone. All shared links will remain valid but will require a slow real-time rebuild on their next load.",
+      isDanger: true,
+      onConfirm: async () => {
+        try {
+          const res = await fetch("/api/admin/channels?purgeAll=true", {
+            method: "DELETE"
+          });
+          const data = await res.json();
+          if (res.ok) {
+            showToast(data.message || "All database caches purged!");
+            fetchChannels();
+          } else {
+            showToast(data.error || "Failed to purge caches", "error");
+          }
+        } catch (err) {
+          console.error("Failed to purge all caches:", err);
+          showToast("Failed to purge all caches.", "error");
+        }
       }
-    } catch (err) {
-      console.error("Failed to purge all caches:", err);
-      showToast("Failed to purge all caches.", "error");
-    }
+    });
   };
 
   function formatNumber(num) {
@@ -1004,6 +1020,50 @@ export default function AdminPage() {
         )}
 
       </main>
+
+      {/* Vercel-style Confirmation Modal */}
+      {confirmModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-zinc-950 border border-zinc-800 rounded-2xl max-w-md w-full p-6 space-y-6 shadow-2xl relative overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            {/* Red accent top border for danger actions */}
+            {confirmModal.isDanger && (
+              <div className="absolute top-0 inset-x-0 h-[2px] bg-red-500" />
+            )}
+            
+            <div className="space-y-2">
+              <h3 className={`text-base font-semibold ${confirmModal.isDanger ? "text-red-400" : "text-white"}`}>
+                {confirmModal.title}
+              </h3>
+              <p className="text-xs text-zinc-400 leading-relaxed whitespace-pre-line">
+                {confirmModal.message}
+              </p>
+            </div>
+            
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                onClick={() => setConfirmModal(null)}
+                className="px-4 py-2 border border-zinc-800 bg-zinc-900/50 hover:bg-zinc-900 rounded-lg text-xs font-semibold text-zinc-400 hover:text-zinc-300 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  const onConfirm = confirmModal.onConfirm;
+                  setConfirmModal(null);
+                  if (onConfirm) await onConfirm();
+                }}
+                className={`px-4 py-2 rounded-lg text-xs font-semibold text-white transition-colors cursor-pointer ${
+                  confirmModal.isDanger 
+                    ? "bg-red-650 hover:bg-red-500" 
+                    : "bg-white text-black hover:bg-zinc-200"
+                }`}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Vercel-style Toast Notification */}
       {toast && (
