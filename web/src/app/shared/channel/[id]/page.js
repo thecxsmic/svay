@@ -105,9 +105,107 @@ export default function SharedChannelPage({ params }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
-        <div className="w-12 h-12 rounded-full border-t-2 border-brand-volt animate-spin mb-4" />
-        <p className="text-[10px] text-zinc-500 font-black uppercase tracking-[0.2em] animate-pulse">Loading Svay Analysis Report...</p>
+      <div className="min-h-screen bg-black text-[#ededed] pb-24 relative overflow-x-hidden">
+        {/* Background gradients */}
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-brand-volt/5 rounded-full filter blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-red-500/5 rounded-full filter blur-[120px] pointer-events-none" />
+
+        {/* Header Skeleton */}
+        <header className="border-b border-white/5 bg-black/60 backdrop-blur-md sticky top-0 z-50">
+          <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 rounded-full bg-white/10 animate-pulse" />
+              <div className="w-16 h-4 bg-white/10 rounded animate-pulse" />
+            </div>
+            <div className="w-36 h-9 bg-white/10 rounded-xl animate-pulse" />
+          </div>
+        </header>
+
+        {/* Main Content Skeleton */}
+        <main className="max-w-4xl mx-auto px-4 pt-12 space-y-12 relative z-10">
+          {/* Banner Card Skeleton */}
+          <div className="bg-white/[0.01] border border-white/5 rounded-[2.5rem] p-6 md:p-10 shadow-2xl relative overflow-hidden">
+            <div className="flex flex-col md:flex-row md:items-center gap-6 justify-between">
+              <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-5 w-full">
+                {/* Profile Picture */}
+                <div className="w-20 h-20 rounded-full bg-white/5 animate-pulse shrink-0" />
+                <div className="space-y-3 w-full max-w-md">
+                  {/* Title */}
+                  <div className="h-8 bg-white/5 rounded-xl w-3/4 animate-pulse" />
+                  {/* Handle */}
+                  <div className="h-4 bg-white/5 rounded-lg w-1/2 animate-pulse" />
+                </div>
+              </div>
+              {/* Share Button */}
+              <div className="w-full md:w-44 h-12 bg-white/5 rounded-2xl animate-pulse shrink-0" />
+            </div>
+
+            {/* Stats Bar Skeleton */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-10 pt-8 border-t border-white/5">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="bg-white/[0.01] border border-white/5 p-4 rounded-2xl space-y-2">
+                  <div className="h-3 bg-white/5 rounded w-1/2 animate-pulse" />
+                  <div className="h-6 bg-white/5 rounded-lg w-3/4 animate-pulse" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Tabs Bar Skeleton */}
+          <div className="flex border-b border-white/5 gap-8 bg-black/80 backdrop-blur-md px-2 overflow-x-auto no-scrollbar">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="py-4 whitespace-nowrap">
+                <div className="w-16 h-3 bg-white/5 rounded animate-pulse" />
+              </div>
+            ))}
+          </div>
+
+          {/* Dashboard Body Skeleton */}
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="bg-white/[0.01] border border-white/5 p-6 rounded-2xl space-y-4">
+                  <div className="w-10 h-10 bg-white/5 rounded-xl animate-pulse" />
+                  <div className="space-y-2">
+                    <div className="h-3 bg-white/5 rounded w-1/3 animate-pulse" />
+                    <div className="h-6 bg-white/5 rounded-lg w-2/3 animate-pulse" />
+                    <div className="h-3 bg-white/5 rounded w-1/2 animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Bottom Row Skeleton */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-white/[0.01] border border-white/5 p-8 rounded-3xl space-y-6">
+                <div className="h-3 bg-white/5 rounded w-1/4 animate-pulse" />
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="space-y-2">
+                      <div className="flex justify-between">
+                        <div className="h-3 bg-white/5 rounded w-1/3 animate-pulse" />
+                        <div className="h-3 bg-white/5 rounded w-1/12 animate-pulse" />
+                      </div>
+                      <div className="h-1.5 bg-white/5 rounded-full w-full animate-pulse" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-white/[0.01] border border-white/5 p-8 rounded-3xl flex flex-col justify-between space-y-6">
+                <div className="space-y-3">
+                  <div className="h-3 bg-white/5 rounded w-1/3 animate-pulse" />
+                  <div className="h-4 bg-white/5 rounded w-full animate-pulse" />
+                  <div className="h-4 bg-white/5 rounded w-5/6 animate-pulse" />
+                </div>
+                <div className="flex items-center gap-3 pt-6 border-t border-white/5">
+                  <div className="w-4 h-4 bg-white/5 rounded-full animate-pulse" />
+                  <div className="h-3 bg-white/5 rounded w-1/2 animate-pulse" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
       </div>
     );
   }
