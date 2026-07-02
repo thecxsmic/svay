@@ -1,5 +1,7 @@
 import { ImageResponse } from "next/og";
 import { createClient } from "@libsql/client";
+import { readFileSync } from "fs";
+import { join } from "path";
 
 export const runtime = "nodejs";
 
@@ -27,6 +29,14 @@ function formatNumber(num) {
 
 export default async function Image({ params }) {
   const { id } = await params;
+
+  let fontData = null;
+  try {
+    const fontPath = join(process.cwd(), "src/app/fonts/typogama-ahsing.otf");
+    fontData = readFileSync(fontPath);
+  } catch (err) {
+    console.error("[OG Image] Failed to load brand font:", err);
+  }
 
   let channel = null;
   try {
@@ -118,9 +128,9 @@ export default async function Image({ params }) {
             />
             <span
               style={{
-                fontSize: "24px",
-                fontWeight: "900",
-                letterSpacing: "0.15em",
+                fontFamily: "Ahsing",
+                fontSize: "28px",
+                letterSpacing: "0.05em",
                 textTransform: "uppercase",
               }}
             >
@@ -270,6 +280,13 @@ export default async function Image({ params }) {
     ),
     {
       ...size,
+      fonts: fontData ? [
+        {
+          name: "Ahsing",
+          data: fontData,
+          style: "normal",
+        }
+      ] : undefined,
     }
   );
 }
