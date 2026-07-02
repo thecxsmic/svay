@@ -24,7 +24,9 @@ import {
   CheckCircle2,
   SlidersHorizontal,
   ChevronRight,
-  TrendingDown
+  TrendingDown,
+  Copy,
+  Check
 } from "lucide-react";
 import { motion } from "framer-motion";
 
