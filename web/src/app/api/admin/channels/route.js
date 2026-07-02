@@ -46,12 +46,23 @@ export async function DELETE(req) {
     }
 
     const { searchParams } = new URL(req.url);
+    const purgeAll = searchParams.get("purgeAll") === "true";
     const channelId = searchParams.get("channelId");
+
+    if (purgeAll) {
+      // Clear ALL tables
+      await client.execute("DELETE FROM channels");
+      await client.execute("DELETE FROM videos");
+      await client.execute("DELETE FROM trend_radar");
+      console.log("[Admin Channels API] Purged ALL database caches.");
+      return apiSuccess({ success: true, message: "All database caches purged successfully." });
+    }
+
     if (!channelId) {
       return apiError(new Error("channelId query parameter is required"), 400);
     }
 
-    // Delete records from channels, videos, and trend_radar
+    // Delete records from channels, videos, and trend_radar for a specific channel
     await client.execute({
       sql: "DELETE FROM channels WHERE id = ?",
       args: [channelId]

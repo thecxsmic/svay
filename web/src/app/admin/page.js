@@ -22,7 +22,8 @@ import {
   Share2,
   Lock,
   ExternalLink,
-  Search
+  Search,
+  Database
 } from "lucide-react";
 
 export default function AdminPage() {
@@ -284,6 +285,26 @@ export default function AdminPage() {
     }
   };
 
+  const handlePurgeAllCaches = async () => {
+    if (!confirm("⚠️ CRITICAL SYSTEM WARNING ⚠️\n\nAre you sure you want to purge ALL cached channel reports, video stats, and AI insights from the database?\n\nThis action cannot be undone. All shared links will remain valid but will require a slow real-time rebuild on their next load.")) return;
+
+    try {
+      const res = await fetch("/api/admin/channels?purgeAll=true", {
+        method: "DELETE"
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(data.message || "All database caches purged!");
+        fetchChannels();
+      } else {
+        alert(data.error || "Failed to purge caches");
+      }
+    } catch (err) {
+      console.error("Failed to purge all caches:", err);
+      alert("Failed to purge all caches.");
+    }
+  };
+
   function formatNumber(num) {
     if (!num) return "0";
     const parsed = parseInt(num, 10);
@@ -348,10 +369,11 @@ export default function AdminPage() {
         </div>
 
         {/* Tab Controls */}
-        <div className="flex border-b border-white/5 gap-6 sm:gap-8 bg-transparent px-2">
+        <div className="flex border-b border-white/5 gap-6 sm:gap-8 bg-transparent px-2 overflow-x-auto no-scrollbar">
           {[
             { id: "promos", label: "Promo & Subscriptions", icon: Ticket },
-            { id: "shares", label: "Public Share Reports", icon: Globe }
+            { id: "shares", label: "Public Share Reports", icon: Globe },
+            { id: "cache", label: "Cache Manager", icon: Database }
           ].map((tab) => (
             <button
               key={tab.id}
@@ -832,6 +854,37 @@ export default function AdminPage() {
                 </div>
               </section>
             </div>
+          </div>
+        )}
+
+        {activeTab === "cache" && (
+          <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
+            {/* Cache Overview Card */}
+            <section className="bg-zinc-950/80 border border-white/[0.06] rounded-2xl sm:rounded-[2rem] p-4 sm:p-8 backdrop-blur-md relative overflow-hidden">
+              <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-brand-rose/30 to-transparent" />
+              
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-brand-rose/10 rounded-xl border border-brand-rose/20 flex items-center justify-center shrink-0">
+                    <Database className="w-4 sm:w-5 h-4 sm:h-5 text-brand-rose" />
+                  </div>
+                  <div>
+                    <h2 className="font-display font-extrabold text-base sm:text-lg text-white uppercase">System Cache Stats</h2>
+                    <p className="text-zinc-500 text-[10px] sm:text-xs mt-0.5">
+                      Total Cached Channels: <span className="text-white font-bold">{channels.length}</span>
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handlePurgeAllCaches}
+                  disabled={channels.length === 0}
+                  className="px-6 py-3 bg-brand-rose/10 hover:bg-brand-rose/20 border border-brand-rose/20 hover:border-brand-rose/30 text-brand-rose hover:text-white disabled:opacity-40 disabled:cursor-not-allowed text-xs font-black uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Trash2 className="w-4 h-4" /> Purge All Caches
+                </button>
+              </div>
+            </section>
 
             {/* Generated shared channels list directory */}
             <section className="bg-zinc-950/80 border border-white/[0.06] rounded-2xl sm:rounded-[2rem] p-4 sm:p-8 backdrop-blur-md">
@@ -841,7 +894,7 @@ export default function AdminPage() {
                     <Globe className="w-4 sm:w-5 h-4 sm:h-5 text-white" />
                   </div>
                   <div>
-                    <h2 className="font-display font-extrabold text-base sm:text-lg text-white uppercase">Shared Reports Directory</h2>
+                    <h2 className="font-display font-extrabold text-base sm:text-lg text-white uppercase">Cached Reports Directory</h2>
                     <p className="text-zinc-500 text-[10px] sm:text-xs mt-0.5">Directory of all channel analyses currently stored in the database.</p>
                   </div>
                 </div>
@@ -859,7 +912,7 @@ export default function AdminPage() {
                 </div>
               ) : channels.length === 0 ? (
                 <div className="py-12 text-center text-zinc-500 text-xs sm:text-sm font-medium">
-                  No channel reports stored. Search and generate one above.
+                  No channel reports stored. Generate one under the Public Share Reports tab.
                 </div>
               ) : (
                 <div className="overflow-x-auto -mx-4 sm:mx-0">
@@ -923,10 +976,9 @@ export default function AdminPage() {
                                 </Link>
                                 <button
                                   onClick={() => handleClearCache(item.id, item.title)}
-                                  className="p-1.5 bg-brand-rose/10 hover:bg-brand-rose/20 border border-brand-rose/20 hover:border-brand-rose/30 rounded-lg text-brand-rose hover:text-white transition-all cursor-pointer flex items-center justify-center shrink-0"
-                                  title="Clear cached data"
+                                  className="px-3 py-1.5 bg-brand-rose/10 hover:bg-brand-rose/20 border border-brand-rose/20 hover:border-brand-rose/30 rounded-lg text-brand-rose hover:text-white transition-all cursor-pointer flex items-center gap-1 shrink-0"
                                 >
-                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <Trash2 className="w-3.5 h-3.5" /> Clear<span className="hidden sm:inline"> Cache</span>
                                 </button>
                               </div>
                             </td>
