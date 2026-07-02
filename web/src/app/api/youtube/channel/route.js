@@ -109,7 +109,33 @@ async function getCompetitorsForChannel(channel, videos) {
       })
       .join(' ');
       
-    const results = await fetchYouTubeChannels(nicheQuery);
+    let results = await fetchYouTubeChannels(nicheQuery);
+
+    // Cascade 1: Use top video title keywords
+    if (!results || results.length === 0) {
+      const topTitle = topVideos[0].snippet?.title || topVideos[0].title || "";
+      const fallbackQuery = topTitle.replace(/[^\w\s]/gi, '').split(/\s+/).slice(0, 4).join(' ');
+      if (fallbackQuery.trim()) {
+        console.log(`[Competitor API] Primary query returned 0. Cascading to: ${fallbackQuery}`);
+        results = await fetchYouTubeChannels(fallbackQuery);
+      }
+    }
+
+    // Cascade 2: Use base channel title
+    if (!results || results.length === 0) {
+      const channelTitle = channel.snippet?.title || channel.title || "";
+      if (channelTitle.trim()) {
+        console.log(`[Competitor API] Falling back to channel title: ${channelTitle}`);
+        results = await fetchYouTubeChannels(channelTitle);
+      }
+    }
+
+    // Cascade 3: Use general creator fallback
+    if (!results || results.length === 0) {
+      console.log(`[Competitor API] Using default fallback query 'creator vlogs'`);
+      results = await fetchYouTubeChannels("creator vlogs");
+    }
+
     const currentSubs = parseInt(channel.statistics?.subscriberCount || 0, 10);
     const filtered = (results || []).filter(c => c.id !== channel.id);
     
