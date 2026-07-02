@@ -61,7 +61,7 @@ async function searchChannels(query) {
   url.searchParams.set("part", "snippet");
   url.searchParams.set("q", query);
   url.searchParams.set("type", "channel");
-  url.searchParams.set("maxResults", "8");
+  url.searchParams.set("maxResults", "25");
   url.searchParams.set("key", apiKey);
 
   const response = await fetch(url.toString());
