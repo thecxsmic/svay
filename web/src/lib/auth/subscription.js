@@ -10,7 +10,7 @@ export async function getSubscriptionStatus(userId) {
 
   try {
     const rs = await client.execute({
-      sql: "SELECT status, current_period_end FROM user_subscriptions WHERE user_id = ?",
+      sql: "SELECT status, current_period_end, subscription_id, plan_id FROM user_subscriptions WHERE user_id = ?",
       args: [userId],
     });
 
@@ -35,7 +35,9 @@ export async function getSubscriptionStatus(userId) {
       isActive: isActive,
       isHalted: row.status === "halted",
       isExpired: row.status === "expired" || row.status === "cancelled",
-      currentPeriodEnd: row.current_period_end
+      currentPeriodEnd: row.current_period_end,
+      subscriptionId: row.subscription_id,
+      planId: row.plan_id
     };
   } catch (error) {
     console.error("Get Subscription Status Error:", error);

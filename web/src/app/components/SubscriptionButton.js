@@ -102,7 +102,7 @@ export default function SubscriptionButton({ planName = "Neural Pro", planType =
       <button
         onClick={handleSubscription}
         disabled={isProcessing}
-        className="w-full bg-white text-black py-4 rounded-2xl font-black uppercase tracking-[0.2em] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_20px_40px_rgba(255,255,255,0.1)] flex items-center justify-center gap-3"
+        className="w-full bg-white text-black py-4 rounded-2xl font-black uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[11px] sm:text-sm hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_20px_40px_rgba(255,255,255,0.1)] flex items-center justify-center gap-2 sm:gap-3"
       >
         {isProcessing && !isSuccess ? (
           <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin"></div>

@@ -164,6 +164,30 @@ async function syncSchema() {
     `);
     console.log("✓ Table 'email_logs' created or already exists.");
 
+    await client.execute(`
+      CREATE TABLE IF NOT EXISTS promo_codes (
+        code TEXT PRIMARY KEY,
+        duration_days INTEGER,
+        expires_at INTEGER,
+        max_uses INTEGER,
+        uses_count INTEGER DEFAULT 0,
+        created_at INTEGER
+      )
+    `);
+    console.log("✓ Table 'promo_codes' created or already exists.");
+
+    await client.execute(`
+      CREATE TABLE IF NOT EXISTS promo_redemptions (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        code TEXT,
+        redeemed_at INTEGER,
+        expires_at INTEGER,
+        FOREIGN KEY (code) REFERENCES promo_codes (code)
+      )
+    `);
+    console.log("✓ Table 'promo_redemptions' created or already exists.");
+
     console.log("Schema sync complete!");  } catch (error) {
     console.error("Error syncing schema:", error);
     process.exit(1);

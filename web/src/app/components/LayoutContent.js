@@ -22,14 +22,23 @@ const navItems = [
   { name: 'Docs', href: '/docs', icon: HelpCircle },
 ];
 
-export default function LayoutContent({ children }) {
+export default function LayoutContent({ children, subscription }) {
   const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
   const [isSetupModalOpen, setIsSetupModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { channels, userChannel, selectChannel, refreshChannels } = useChannel();
+  const { channels, userChannel, selectChannel, loading, refreshChannels } = useChannel();
   const { user } = useUser();
   const [isDemo, setIsDemo] = useState(false);
   const pathname = usePathname();
+
+  const isPromo = subscription?.subscriptionId?.startsWith("promo_") || 
+                  subscription?.planId?.startsWith("promo_") ||
+                  subscription?.subscriptionId?.startsWith("admin_grant") || 
+                  subscription?.planId?.startsWith("admin_grant");
+
+  const promoExpiryStr = subscription?.currentPeriodEnd 
+    ? new Date(subscription.currentPeriodEnd * 1000).toLocaleDateString()
+    : "";
 
   useEffect(() => {
     setIsDemo(document.cookie.includes("demo_mode=true"));
@@ -44,6 +53,14 @@ export default function LayoutContent({ children }) {
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [pathname]);
+
+  // Automatically prompt to connect channel if none is connected
+  useEffect(() => {
+    const isDemoCookie = document.cookie.includes("demo_mode=true");
+    if (!loading && !isDemoCookie && !userChannel) {
+      setIsSetupModalOpen(true);
+    }
+  }, [loading, userChannel]);
 
 
   const SidebarContent = () => (
@@ -176,8 +193,12 @@ export default function LayoutContent({ children }) {
                 } 
               }} />
               <div className="min-w-0">
-                <p className="text-[10px] font-bold text-white uppercase tracking-tight truncate">Pro Account</p>
-                <p className="text-[8px] text-accents-4 font-bold uppercase tracking-widest">Status: Active</p>
+                <p className="text-[10px] font-bold text-white uppercase tracking-tight truncate">
+                  {isPromo ? "Promo Account" : "Pro Account"}
+                </p>
+                <p className={`text-[8px] font-bold uppercase tracking-widest ${isPromo ? 'text-[#00f0ff]' : 'text-accents-4'}`}>
+                  {isPromo && promoExpiryStr ? `Expires: ${promoExpiryStr}` : "Status: Active"}
+                </p>
               </div>
           </div>
         )}

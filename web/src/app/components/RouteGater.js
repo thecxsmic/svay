@@ -14,6 +14,13 @@ export default function RouteGater({ children, initialIsSubscribed, initialSubsc
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [billingInterval, setBillingInterval] = useState("monthly");
 
+  // Promo code states
+  const [promoCode, setPromoCode] = useState("");
+  const [showPromoInput, setShowPromoInput] = useState(false);
+  const [isRedeeming, setIsRedeeming] = useState(false);
+  const [promoError, setPromoError] = useState("");
+  const [promoSuccess, setPromoSuccess] = useState("");
+
   useEffect(() => {
     setIsDemoMode(document.cookie.includes("demo_mode=true"));
     const match = document.cookie.match(/selected_plan=(monthly|yearly)/);
@@ -21,6 +28,40 @@ export default function RouteGater({ children, initialIsSubscribed, initialSubsc
       setBillingInterval(match[1]);
     }
   }, [pathname]); // Refresh demo cookie detection on route transition
+
+  const handleRedeemPromo = async (e) => {
+    e.preventDefault();
+    if (!promoCode.trim()) return;
+
+    setIsRedeeming(true);
+    setPromoError("");
+    setPromoSuccess("");
+
+    try {
+      const res = await fetch("/api/promo/redeem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: promoCode.trim() }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to redeem promo code");
+      }
+
+      setPromoSuccess(data.message);
+      setPromoCode("");
+      
+      // Reload page to refresh initialIsSubscribed
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch (err) {
+      setPromoError(err.message);
+    } finally {
+      setIsRedeeming(false);
+    }
+  };
 
   const isPublicPage = pathname.startsWith("/sign-in") || 
                        pathname.startsWith("/docs") ||
@@ -50,7 +91,7 @@ export default function RouteGater({ children, initialIsSubscribed, initialSubsc
 
   if (isSignedIn) {
     if (initialIsSubscribed) {
-      return <LayoutContent>{children}</LayoutContent>;
+      return <LayoutContent subscription={initialSubscription}>{children}</LayoutContent>;
     } else {
       /* Pricing / Subscription Required Page */
       return (
@@ -173,6 +214,46 @@ export default function RouteGater({ children, initialIsSubscribed, initialSubsc
                      label="Explore Demo Version" 
                      className="w-full py-4 bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 hover:border-zinc-700 text-zinc-355 hover:text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all text-center flex items-center justify-center gap-2 hover:-translate-y-0.5" 
                    />
+
+                   {/* Promo code redemption UI */}
+                   <div className="pt-2 text-center">
+                     {!showPromoInput ? (
+                       <button
+                         onClick={() => setShowPromoInput(true)}
+                         className="text-[10px] font-black uppercase tracking-wider text-zinc-500 hover:text-brand-volt transition-all cursor-pointer bg-transparent border-none outline-none"
+                       >
+                         Have a Promo Code?
+                       </button>
+                     ) : (
+                       <form onSubmit={handleRedeemPromo} className="space-y-2 text-left">
+                         <div className="flex gap-2">
+                           <input
+                             type="text"
+                             placeholder="ENTER PROMO CODE"
+                             value={promoCode}
+                             onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                             disabled={isRedeeming}
+                             className="flex-1 bg-zinc-900/80 border border-zinc-850 focus:border-brand-volt rounded-xl px-4 py-3 text-xs text-white placeholder:text-zinc-600 focus:outline-none transition-all uppercase font-mono"
+                             required
+                           />
+                           <button
+                             type="submit"
+                             disabled={isRedeeming}
+                             className="px-5 bg-brand-volt hover:bg-brand-volt/95 text-black font-black text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center disabled:opacity-50"
+                           >
+                             {isRedeeming ? "..." : "Redeem"}
+                           </button>
+                         </div>
+                         {promoError && (
+                           <p className="text-brand-rose text-[10px] font-bold uppercase tracking-wider pl-1">{promoError}</p>
+                         )}
+                         {promoSuccess && (
+                           <p className="text-emerald-400 text-[10px] font-bold uppercase tracking-wider pl-1">{promoSuccess}</p>
+                         )}
+                       </form>
+                     )}
+                   </div>
+
                    <p className="text-[9px] text-center font-bold text-zinc-500 uppercase tracking-widest pt-1">
                      {initialSubscription?.isHalted ? "Access restricted until resolved." : "Cancel at any time during trial."}
                    </p>
