@@ -1,7 +1,79 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { apiSuccess, apiError } from "@/lib/utils/response";
 import { fetchYouTubeChannels, fetchChannelVideos } from "@/lib/youtube/channels";
-import { saveChannel, saveTrendRadar } from "@/lib/cache/turso";
+import { getChannel, getChannelVideos, saveChannel, saveTrendRadar } from "@/lib/cache/turso";
+import { generateObject } from "ai";
+import { createGroq } from "@ai-sdk/groq";
+import { z } from "zod";
+import { calculateViralityScore } from "@/lib/ranking/virality";
+import { getIsDemoMode, MOCK_CHANNELS, generateMockVideos, MOCK_TREND_RADAR } from "@/lib/utils/demoMock";
+
+const groqPrimary = createGroq({
+  apiKey: process.env.GROQ_API_KEY
+});
+
+const groqBackup = createGroq({
+  apiKey: process.env.GROQ_API_KEY_BACKUP
+});
+
+async function generateObjectWithFallback({ modelName, ...options }) {
+  try {
+    return await generateObject({
+      ...options,
+      model: groqPrimary(modelName)
+    });
+  } catch (error) {
+    console.warn(`[Groq AI] Primary key failed or rate-limited. Falling back to backup key. Error: ${error.message || error}`);
+    return await generateObject({
+      ...options,
+      model: groqBackup(modelName)
+    });
+  }
+}
+
+const trendSchema = z.object({
+  summary: z.object({
+    totalVideosAnalyzed: z.number().describe("Estimated number of videos analyzed in the niche"),
+  }),
+  insights: z.object({
+    overview: z.object({
+      viralPotential: z.enum(['Low', 'Medium', 'High']),
+      marketMomentum: z.enum(['Stable', 'Rising', 'Hot']),
+      trendingTopics: z.number(),
+      summary: z.string().describe("A 2-3 sentence overview of the current market state for this channel's niche")
+    }),
+    quickWins: z.array(z.object({
+      idea: z.string(),
+      why: z.string(),
+      effort: z.enum(['low', 'medium', 'high']),
+      timing: z.string()
+    })).length(3),
+    emergingTrends: z.array(z.object({
+      topic: z.string(),
+      viralScore: z.number().min(0).max(100),
+      momentum: z.enum(['stable', 'rising', 'hot']),
+      difficulty: z.enum(['easy', 'medium', 'hard']),
+      opportunity: z.string(),
+      actionableIdea: z.string(),
+      timeWindow: z.string(),
+      estimatedViews: z.string()
+    })).length(3),
+    videoIdeas: z.array(z.object({
+      title: z.string().describe("A catchy, click-optimized title"),
+      description: z.string().describe("A short explanation of the video concept"),
+      predictedViews: z.string().describe("Realistic view estimate based on channel average"),
+      difficulty: z.enum(['Easy', 'Medium', 'Hard'])
+    })).length(3),
+    viralPatterns: z.object({
+      titleHooks: z.array(z.string()).length(3),
+      contentStyles: z.array(z.string()).length(3)
+    })
+  })
+});
+
+const searchQueriesSchema = z.object({
+  queries: z.array(z.string()).min(3).max(5).describe("Highly specific search queries to find current trending videos in the channel's niche")
+});
 
 function generateLocalTrendsAndIdeas(channel, videos) {
   const views = videos || [];
@@ -55,7 +127,8 @@ function generateLocalTrendsAndIdeas(channel, videos) {
 
   // Niche classification
   let niche = "general";
-  const titleTokens = sortedVideos.map(v => (v.snippet?.title || v.title || "").toLowerCase()).join(" ");
+  const channelTitle = (channel?.snippet?.title || channel?.title || "").toLowerCase();
+  const titleTokens = (sortedVideos.map(v => (v.snippet?.title || v.title || "").toLowerCase()).join(" ") + " " + channelTitle).toLowerCase();
   
   if (/\b(car|cars|drive|driving|ride|engine|exhaust|bmw|porsche|ferrari|tesla|toyota|ford|audi|mercedes|veloce|racing|speed|supercar|supercars|turbo|vehicle|vehicles|motor|motors)\b/i.test(titleTokens)) {
     niche = "automotive";
@@ -275,15 +348,202 @@ function generateLocalTrendsAndIdeas(channel, videos) {
   };
 }
 
+async function generateRealTrendsAndIdeas(youtubeChannel, youtubeVideos) {
+  const recentVideos = youtubeVideos || [];
+  const apiKey = process.env.YOUTUBE_API_KEY;
+
+  // 1. AI generates search queries based on user's videos
+  let searchQueries = [];
+  if (youtubeChannel && recentVideos.length > 0) {
+    const prompt = `You are a YouTube market researcher. Based on the following recent videos from the channel "${youtubeChannel.snippet?.title || youtubeChannel.title || ''}", generate 5 highly specific YouTube search queries that will help us find the CURRENT trending competitors and viral videos in this exact niche.
+    
+Recent Videos:
+${recentVideos.slice(0, 10).map(v => `- ${v.snippet?.title || v.title || ''}`).join('\n')}
+
+Do not generate generic queries. Generate specific, trend-focused queries.`;
+
+    const { object } = await generateObjectWithFallback({
+      modelName: 'openai/gpt-oss-120b',
+      schema: searchQueriesSchema,
+      prompt,
+      temperature: 0.7,
+    });
+    searchQueries = object.queries;
+  } else {
+    const niche = youtubeChannel?.snippet?.title ? youtubeChannel.snippet.title.split(' ')[0] : 'tech';
+    searchQueries.push(`${niche} trending 2026`, `${niche} viral`, `how to ${niche} 2026`);
+  }
+
+  // 2. Search YouTube using queries
+  const trendingVideos = [];
+  await Promise.all(searchQueries.map(async (query) => {
+    try {
+      const url = new URL("https://www.googleapis.com/youtube/v3/search");
+      url.searchParams.set("part", "snippet");
+      url.searchParams.set("q", query);
+      url.searchParams.set("type", "video");
+      url.searchParams.set("maxResults", "10");
+      url.searchParams.set("order", "viewCount");
+      const date45DaysAgo = new Date();
+      date45DaysAgo.setDate(date45DaysAgo.getDate() - 45);
+      url.searchParams.set("publishedAfter", date45DaysAgo.toISOString());
+      url.searchParams.set("key", apiKey);
+
+      const res = await fetch(url.toString());
+      const data = await res.json();
+      if (data.items) {
+        trendingVideos.push(...data.items);
+      }
+    } catch (err) {
+      console.error("Search query failed:", query, err);
+    }
+  }));
+
+  // Fetch stats for trending videos
+  const uniqueTrending = [];
+  const seenVideoIds = new Set();
+  for (const v of trendingVideos) {
+    const vid = v.id?.videoId;
+    if (vid && !seenVideoIds.has(vid)) {
+      seenVideoIds.add(vid);
+      uniqueTrending.push(vid);
+    }
+  }
+
+  let trendingWithStats = [];
+  if (uniqueTrending.length > 0) {
+    const chunks = [];
+    for (let i = 0; i < uniqueTrending.length; i += 50) {
+      chunks.push(uniqueTrending.slice(i, i + 50));
+    }
+
+    for (const chunk of chunks) {
+      try {
+        const statsUrl = new URL("https://www.googleapis.com/youtube/v3/videos");
+        statsUrl.searchParams.set("part", "snippet,statistics");
+        statsUrl.searchParams.set("id", chunk.join(","));
+        statsUrl.searchParams.set("key", apiKey);
+        const statsRes = await fetch(statsUrl.toString());
+        const statsData = await statsRes.json();
+        if (statsData.items) {
+          trendingWithStats.push(...statsData.items);
+        }
+      } catch(err) {
+        console.error("Stats fetch failed", err);
+      }
+    }
+  }
+
+  // 3. Calculate metrics & identify top competitors
+  const videosWithMetrics = trendingWithStats.map(item => {
+    const virality = calculateViralityScore(item);
+    return {
+      title: item.snippet.title,
+      channelId: item.snippet.channelId,
+      channelTitle: item.snippet.channelTitle,
+      viewCount: parseInt(item.statistics.viewCount || 0),
+      viralScore: virality.score,
+    };
+  }).sort((a, b) => b.viralScore - a.viralScore);
+
+  const channelCounts = {};
+  for (const v of videosWithMetrics) {
+    if (v.channelId === youtubeChannel.id) continue;
+    if (!channelCounts[v.channelId]) {
+      channelCounts[v.channelId] = { id: v.channelId, title: v.channelTitle, totalScore: 0 };
+    }
+    channelCounts[v.channelId].totalScore += v.viralScore;
+  }
+  
+  const topCompetitors = Object.values(channelCounts)
+    .sort((a, b) => b.totalScore - a.totalScore)
+    .slice(0, 3);
+
+  // Fetch top competitor recent videos
+  const competitorInsights = [];
+  for (const comp of topCompetitors) {
+    try {
+      const compVideosUrl = new URL("https://www.googleapis.com/youtube/v3/search");
+      compVideosUrl.searchParams.set("part", "snippet");
+      compVideosUrl.searchParams.set("channelId", comp.id);
+      compVideosUrl.searchParams.set("order", "date");
+      compVideosUrl.searchParams.set("type", "video");
+      compVideosUrl.searchParams.set("maxResults", "5");
+      compVideosUrl.searchParams.set("key", apiKey);
+      
+      const compRes = await fetch(compVideosUrl.toString());
+      const compData = await compRes.json();
+      
+      if (compData.items && compData.items.length > 0) {
+        const compTitles = compData.items.map(i => i.snippet.title);
+        competitorInsights.push({
+          channel: comp.title,
+          recentTitles: compTitles
+        });
+      }
+    } catch (err) {}
+  }
+
+  // 4. AI synthesizes Trend Radar
+  let avgViews = 0;
+  if (recentVideos.length > 0) {
+    const totalViews = recentVideos.reduce((sum, v) => sum + parseInt(v.statistics?.viewCount || v.views || 0, 10), 0);
+    avgViews = Math.round(totalViews / recentVideos.length);
+  }
+  const subCount = parseInt(youtubeChannel?.statistics?.subscriberCount || 0);
+
+  const currentDate = new Date().toISOString().split('T')[0];
+  const prompt = `You are an elite YouTube Trend Analyst AI. Create a highly customized Trend Radar analysis for the channel "${youtubeChannel?.snippet?.title || youtubeChannel?.title || 'General'}".
+Current Date: ${currentDate}
+
+USER CHANNEL CONTEXT:
+Subscriber Count: ${subCount > 0 ? subCount.toLocaleString() : 'Unknown'}
+Average Views per Video: ${avgViews > 0 ? avgViews.toLocaleString() : 'New/Small Channel'}
+Recent Videos: ${recentVideos.slice(0, 5).map(v => `"${v.snippet?.title || v.title || ''}"`).join(', ')}
+
+MARKET INTELLIGENCE:
+Top Viral Videos in Niche:
+${videosWithMetrics.slice(0, 10).map(v => `- "${v.title}" by ${v.channelTitle} (Viral Score: ${v.viralScore})`).join('\n')}
+
+COMPETITOR RECENT UPLOADS:
+${competitorInsights.map(c => `Channel: ${c.channel}\nRecent Videos: ${c.recentTitles.join(', ')}`).join('\n\n')}
+
+INSTRUCTIONS:
+1. Synthesize this data to find emerging patterns, hooks, and content styles that competitors are using successfully right now.
+2. Customize all 'quick wins' and 'emerging trends' so they specifically fit the user's channel context while leveraging what's currently working for competitors.
+3. Ensure actionable ideas are highly specific to the niche.
+4. Generate exactly 3 highly customized 'videoIdeas' specifically tailored for the user's channel based on the emerging trends.
+5. CRITICAL: Base your 'estimatedViews' and 'predictedViews' strictly on the user's current Average Views (${avgViews > 0 ? avgViews.toLocaleString() : 'Low'}) and Subscriber Count. Scale it realistically for a successful video on THEIR specific channel (e.g., if they average 100 views, a "viral" video for them might be 500-2K views, NOT 1M views).
+6. Total videos analyzed should be exactly ${videosWithMetrics.length}.
+7. CRITICAL: Return ONLY a raw JSON object with the exact structure requested. Do NOT include "$schema", "properties", or any schema definitions in your output.`;
+
+  const { object } = await generateObjectWithFallback({
+    modelName: 'openai/gpt-oss-120b',
+    schema: trendSchema,
+    prompt,
+    temperature: 0.7,
+  });
+
+  object.summary.totalVideosAnalyzed = videosWithMetrics.length > 0 ? videosWithMetrics.length : 120;
+
+  return object;
+}
+
 export async function POST(req) {
   try {
-    const { userId } = await auth();
-    if (!userId) return apiError(new Error("Unauthorized"), 401);
+    const isDemo = await getIsDemoMode();
+    let userId = null;
 
-    const user = await currentUser();
-    const userEmail = user?.emailAddresses?.[0]?.emailAddress;
-    if (userEmail !== "thecxsmic@gmail.com") {
-      return apiError(new Error("Forbidden: Admin access required"), 403);
+    if (!isDemo) {
+      const authResult = await auth();
+      userId = authResult.userId;
+      if (!userId) return apiError(new Error("Unauthorized"), 401);
+
+      const user = await currentUser();
+      const userEmail = user?.emailAddresses?.[0]?.emailAddress;
+      if (userEmail !== "thecxsmic@gmail.com") {
+        return apiError(new Error("Forbidden: Admin access required"), 403);
+      }
     }
 
     const { query } = await req.json();
@@ -293,25 +553,59 @@ export async function POST(req) {
 
     console.log(`[Admin Share API] Generating shareable analysis for query: ${query}`);
 
-    // 1. Fetch channel from YouTube
-    const channels = await fetchYouTubeChannels(query);
-    if (!channels || channels.length === 0) {
-      return apiError(new Error("Channel not found on YouTube"), 404);
+    // If demo mode is active, handle mock channel and videos
+    if (isDemo) {
+      const demoChannel = MOCK_CHANNELS[query] || MOCK_CHANNELS["UC-techvibeai123"];
+      const demoVideos = generateMockVideos(demoChannel.id);
+      
+      await saveChannel(demoChannel, demoVideos);
+      await saveTrendRadar(demoChannel.id, MOCK_TREND_RADAR);
+      
+      return apiSuccess({
+        success: true,
+        channelId: demoChannel.id,
+        title: demoChannel.title || "Unknown Channel"
+      });
     }
-    const youtubeChannel = channels[0];
 
-    // 2. Fetch recent videos
-    console.log(`[Admin Share API] Fetching videos for channel: ${youtubeChannel.id}`);
-    const { items: youtubeVideos } = await fetchChannelVideos(youtubeChannel.id, 50);
+    // 1. Check local Turso database first to save quota
+    let youtubeChannel = await getChannel(query);
+    let youtubeVideos = [];
 
-    // 3. Save channel and videos to local database
-    await saveChannel(youtubeChannel, youtubeVideos);
-    console.log(`[Admin Share API] Successfully saved channel and ${youtubeVideos?.length || 0} videos to DB`);
+    if (youtubeChannel) {
+      console.log(`[Admin Share API] Found channel in DB cache: ${youtubeChannel.id}`);
+      youtubeVideos = await getChannelVideos(youtubeChannel.id);
+    } else {
+      // 2. Fetch from YouTube
+      console.log(`[Admin Share API] Channel not in DB. Fetching from YouTube...`);
+      const channels = await fetchYouTubeChannels(query);
+      if (!channels || channels.length === 0) {
+        return apiError(new Error("Channel not found on YouTube"), 404);
+      }
+      youtubeChannel = channels[0];
 
-    // 4. Generate local trends / ideas and save them
-    const localTrends = generateLocalTrendsAndIdeas(youtubeChannel, youtubeVideos);
-    await saveTrendRadar(youtubeChannel.id, localTrends);
-    console.log(`[Admin Share API] Successfully generated and saved trend_radar data`);
+      // 3. Fetch recent videos
+      console.log(`[Admin Share API] Fetching videos for channel: ${youtubeChannel.id}`);
+      const { items: videos } = await fetchChannelVideos(youtubeChannel.id, 50);
+      youtubeVideos = videos;
+
+      // 4. Save channel and videos to local database
+      await saveChannel(youtubeChannel, youtubeVideos);
+      console.log(`[Admin Share API] Successfully saved channel and ${youtubeVideos?.length || 0} videos to DB`);
+    }
+
+    // 5. Generate real trends / ideas using LLM, with fallback to local template if rate-limited or fails
+    let trendsData;
+    try {
+      trendsData = await generateRealTrendsAndIdeas(youtubeChannel, youtubeVideos);
+      console.log(`[Admin Share API] Successfully generated trend_radar data using Real AI`);
+    } catch (llmErr) {
+      console.warn(`[Admin Share API] Real AI generation failed, falling back to static template. Error:`, llmErr);
+      trendsData = generateLocalTrendsAndIdeas(youtubeChannel, youtubeVideos);
+    }
+
+    await saveTrendRadar(youtubeChannel.id, trendsData);
+    console.log(`[Admin Share API] Successfully saved trend_radar data to database`);
 
     return apiSuccess({
       success: true,

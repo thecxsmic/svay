@@ -113,18 +113,25 @@ export default function SharedChannelPage({ params }) {
     const tierData = getAudienceTier(channel.statistics, videos);
     
     // 1. Video ideas list
-    const ideasText = trends?.videoIdeas && trends.videoIdeas.length > 0
-      ? trends.videoIdeas.map((idea, index) => 
-          `${index + 1}. Title Idea: "${idea.title || idea.topic}"\n   Strategy: ${idea.strategy || idea.description}\n   Target Audience Hook: ${idea.angle || "General engagement hook"}`
+    const ideasText = trends?.insights?.videoIdeas && trends.insights.videoIdeas.length > 0
+      ? trends.insights.videoIdeas.map((idea, index) => 
+          `${index + 1}. Title Idea: "${idea.title || idea.topic}"\n   Strategy/Concept: ${idea.strategy || idea.description}\n   Difficulty: ${idea.difficulty || "Medium"}\n   Predicted Views: ${idea.predictedViews || "N/A"}`
         ).join("\n\n")
       : "No automated ideas generated. Run deep analysis in dashboard.";
       
     // 2. Competitors list
-    const competitorsText = competitors.length > 0
-      ? competitors.map(comp => 
-          `- Name: ${comp.title} (@${comp.custom_url || comp.id})\n  Type: ${comp.matchType || "BENCHMARK"} (${comp.matchReason || "Similar size/cadence"})\n  Subscribers: ${formatNumber(comp.statistics?.subscriberCount)}`
-        ).join("\n")
-      : "No benchmarked competitors found.";
+    const baseSubs = parseInt(channel?.statistics?.subscriberCount || 0, 10);
+    const largerCompetitors = competitors.filter(c => parseInt(c.statistics?.subscriberCount || 0, 10) > baseSubs);
+    const hasLargerCompetitors = largerCompetitors.length > 0;
+    const isKing = !hasLargerCompetitors && baseSubs > 1000000;
+    
+    const competitorsText = isKing
+      ? "- Niche Dominance: They are the king (No larger rivals detected in this keyword space)"
+      : competitors.length > 0
+        ? competitors.map(comp => 
+            `- Name: ${comp.title} (@${comp.custom_url || comp.id})\n  Type: ${comp.matchType || "BENCHMARK"} (${comp.matchReason || "Similar size/cadence"})\n  Subscribers: ${formatNumber(comp.statistics?.subscriberCount)}`
+          ).join("\n")
+        : "No benchmarked competitors found.";
 
     // 3. Top videos virality list
     const topVideosText = videos && videos.length > 0
@@ -689,17 +696,16 @@ ${competitorsText}
 
           {activeTab === "competitors" && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
-              {!hasLargerCompetitors && baseSubs > 0 ? (
+              {!hasLargerCompetitors && baseSubs > 1000000 ? (
                 <div className="border border-zinc-800 bg-zinc-950 p-6 sm:p-10 rounded-2xl space-y-4 text-left relative overflow-hidden">
                   <div className="flex items-center gap-2">
                     <Trophy className="w-4 h-4 text-white" />
                     <span className="text-[9px] font-mono tracking-widest text-zinc-500 uppercase">niche dominance established</span>
                   </div>
                   <div className="space-y-2">
-                    <h3 className="text-base sm:text-lg font-bold text-white uppercase tracking-tight font-mono">Undisputed Market Leader</h3>
+                    <h3 className="text-base sm:text-lg font-bold text-white uppercase tracking-tight font-mono">They are the king</h3>
                     <p className="text-zinc-450 text-xs leading-relaxed max-w-3xl">
-                      Your channel sits at the absolute peak of this niche's subscriber hierarchy. No larger rivals were detected in this keyword space. 
-                      You are currently the primary benchmark for other creators. Focus on pioneering new formats and optimizing viewer retention to protect your market share.
+                      Your channel sits at the absolute peak of this niche's subscriber hierarchy. No larger rivals were detected in this keyword space.
                     </p>
                   </div>
                 </div>
@@ -908,21 +914,34 @@ ${competitorsText}
         </div>
 
         {/* Global CTA Banner */}
-        <section className="bg-gradient-to-tr from-brand-volt/10 to-transparent border border-brand-volt/20 rounded-[2.5rem] p-8 md:p-12 text-center space-y-6 relative overflow-hidden">
-          <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-brand-volt/30 to-transparent" />
+        <section className="bg-zinc-950/40 backdrop-blur-md border border-zinc-800/80 rounded-[2.5rem] p-10 md:p-16 text-center space-y-6 relative overflow-hidden">
+          {/* Subtle grid pattern background */}
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff02_1px,transparent_1px),linear-gradient(to_bottom,#ffffff02_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
           
-          <h2 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter leading-none">
+          {/* Top highlight glow */}
+          <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-zinc-700/50 to-transparent" />
+          
+          {/* Radial ambient glow */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-40 bg-zinc-500/5 blur-[80px] rounded-full pointer-events-none" />
+
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-zinc-800 bg-zinc-900/85 text-[10px] font-medium text-zinc-400 tracking-wide uppercase mx-auto select-none">
+            <span className="w-1.5 h-1.5 rounded-full bg-brand-volt animate-pulse" />
+            Svay Creator Intelligence
+          </div>
+          
+          <h2 className="text-3xl md:text-5xl font-semibold text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-zinc-400 tracking-tight leading-none max-w-2xl mx-auto">
             Unlock Real-Time Virality Tracking
           </h2>
-          <p className="text-zinc-400 text-xs md:text-sm max-w-lg mx-auto leading-relaxed">
+          <p className="text-zinc-400 text-xs md:text-sm max-w-lg mx-auto leading-relaxed font-normal">
             Svay is the ultimate workspace for content creators. Connect your channel in 1-click to track competitors, discover trending keywords, and forecast audience expansion.
           </p>
-          <div className="pt-2">
+          <div className="pt-4">
             <Link 
               href="/"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-white text-black font-black text-xs uppercase tracking-wider rounded-2xl hover:scale-105 active:scale-[0.98] transition-all"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-black font-semibold text-xs rounded-xl hover:bg-zinc-200 active:scale-[0.98] transition-all duration-200 shadow-[0_0_20px_rgba(255,255,255,0.15)]"
             >
               Analyze Your Channel Now
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
         </section>

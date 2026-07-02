@@ -322,6 +322,7 @@ export default function CompetitorsPage() {
   const baseSubs = data ? parseInt(data.baseChannel.statistics?.subscriberCount || 0, 10) : 0;
   const largerCompetitors = data ? data.competitors.filter(c => parseInt(c.statistics?.subscriberCount || 0, 10) > baseSubs) : [];
   const hasLargerCompetitors = largerCompetitors.length > 0;
+  const isKing = !hasLargerCompetitors && baseSubs > 1000000;
 
   const TABS = [
     { id: 'market', label: 'Market Matrix', icon: Target },
@@ -383,7 +384,7 @@ export default function CompetitorsPage() {
         </div>
 
         {/* Dynamic Tabs */}
-        {data && !loading && (
+        {data && !loading && !isKing && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 flex gap-8 overflow-x-auto no-scrollbar">
             {TABS.map((tab) => (
               <button
@@ -460,12 +461,27 @@ export default function CompetitorsPage() {
 
           {data && !loading && (
             <motion.div
-              key={activeTab}
+              key={isKing ? 'king' : activeTab}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               className="space-y-12 pb-20"
             >
-              {activeTab === 'market' && (
+              {isKing ? (
+                <div className="border border-zinc-800 bg-zinc-950 p-6 sm:p-10 rounded-2xl space-y-4 text-left relative overflow-hidden">
+                  <div className="flex items-center gap-2">
+                    <Trophy className="w-4 h-4 text-white" />
+                    <span className="text-[9px] font-mono tracking-widest text-zinc-500 uppercase">niche dominance established</span>
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-base sm:text-lg font-bold text-white uppercase tracking-tight font-mono">u are the king</h3>
+                    <p className="text-zinc-450 text-xs leading-relaxed max-w-3xl">
+                      Your channel sits at the absolute peak of this niche's subscriber hierarchy. No larger rivals were detected in this keyword space.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {activeTab === 'market' && (
                 <div className="space-y-12">
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     <div className="lg:col-span-8 p-8 rounded-2xl bg-zinc-900/30 border border-zinc-800 backdrop-blur-sm">
@@ -515,7 +531,7 @@ export default function CompetitorsPage() {
                     const largerCompetitors = data.competitors.filter(c => parseInt(c.statistics?.subscriberCount || 0, 10) > baseSubs);
                     const hasLarger = largerCompetitors.length > 0;
 
-                    if (!hasLarger && baseSubs > 0) {
+                    if (!hasLarger && baseSubs > 1000000) {
                       return (
                         <div className="border border-zinc-800 bg-zinc-950 p-6 sm:p-10 rounded-2xl space-y-4 text-left relative overflow-hidden">
                           <div className="flex items-center gap-2">
@@ -523,10 +539,9 @@ export default function CompetitorsPage() {
                             <span className="text-[9px] font-mono tracking-widest text-zinc-500 uppercase">niche dominance established</span>
                           </div>
                           <div className="space-y-2">
-                            <h3 className="text-base sm:text-lg font-bold text-white uppercase tracking-tight font-mono">Undisputed Market Leader</h3>
+                            <h3 className="text-base sm:text-lg font-bold text-white uppercase tracking-tight font-mono">u are the king</h3>
                             <p className="text-zinc-450 text-xs leading-relaxed max-w-3xl">
-                              Your channel sits at the absolute peak of this niche's subscriber hierarchy. No larger rivals were detected in this keyword space. 
-                              You are currently the primary benchmark for other creators. Focus on pioneering new formats and optimizing viewer retention to protect your market share.
+                              Your channel sits at the absolute peak of this niche's subscriber hierarchy. No larger rivals were detected in this keyword space.
                             </p>
                           </div>
                         </div>
@@ -656,7 +671,8 @@ export default function CompetitorsPage() {
                   </div>
                 </div>
               )}
-
+                </>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
