@@ -249,7 +249,7 @@ async function getCompetitorsForChannel(channel, videos) {
 
       if (peers.length === 0) {
         const closestPeers = nicheList
-          .filter(c => c.id !== channel.id)
+          .filter(c => c.id !== channel.id && c.subs >= currentSubs * 0.1)
           .sort((a, b) => Math.abs(a.subs - currentSubs) - Math.abs(b.subs - currentSubs))
           .slice(0, 2);
           
@@ -277,7 +277,7 @@ async function getCompetitorsForChannel(channel, videos) {
           
         if (leaders.length === 0) {
           leaders = nicheList
-            .filter(c => c.id !== channel.id)
+            .filter(c => c.id !== channel.id && c.subs >= currentSubs * 0.1)
             .sort((a, b) => b.subs - a.subs)
             .slice(0, 2);
         }
@@ -305,8 +305,8 @@ async function getCompetitorsForChannel(channel, videos) {
     if (currentSubs >= 1000000) {
       finalResults = finalResults.filter(c => {
         const s = parseInt(c.statistics?.subscriberCount || 0, 10);
-        // Keep if it has at least 1% of current channel's subs, or is one of our top picks
-        return s >= currentSubs * 0.01 || topPicks.some(p => p.id === c.id);
+        // Keep if it has at least 10% of current channel's subs, or is one of our top picks
+        return s >= currentSubs * 0.1 || topPicks.some(p => p.id === c.id);
       });
     }
 
