@@ -188,45 +188,43 @@ async function getCompetitorsForChannel(channel, videos) {
 
     const ELITE_CREATORS = {
       automotive: [
-        { id: "UCuT0_V24wH24fV6C4C8Xwvw", title: "carwow", subs: 9000000 },
-        { id: "UCLuooETz3SgIuK2lF6Cg2tA", title: "Doug DeMuro", subs: 4500000 },
-        { id: "UC21K1T6rVw3M1y3w7v6w3A", title: "Donut", subs: 8600000 },
-        { id: "UCigE0-apK18hc8uX1XQZqA", title: "Supercar Blondie", subs: 11000000 },
-        { id: "UCV1XQZ3A8_V7Y7Z0d1CqA", title: "ChrisFix", subs: 10200000 }
+        { id: "UCUhFaUpnq31m6TNX2VKVSVA", title: "carwow", subs: 9000000 },
+        { id: "UCG72WbiCvdB6JKU-3YRP8Kg", title: "Doug DeMuro", subs: 4500000 },
+        { id: "UCL6JmiMXKoXS6bpP1D3bk8g", title: "Donut Media", subs: 8600000 },
+        { id: "UCKSVUHI9rbbkXhvAXK-2uxA", title: "Supercar Blondie", subs: 11000000 },
+        { id: "UCes1EvRjcKU4sY_UEavndBw", title: "ChrisFix", subs: 10200000 }
       ],
       gaming: [
         { id: "UC-lHJZR3Gqxm24_Vd_AJ5Yw", title: "PewDiePie", subs: 111000000 },
         { id: "UC7_YxT-KID8yTOQzNew5XCg", title: "Markiplier", subs: 36000000 },
-        { id: "UC91V0XQZ3_V7Y7Z0d1CqA", title: "Jacksepticeye", subs: 30000000 },
-        { id: "UC5YwXQZ3_V7Y7Z0d1CqA", title: "Ninja", subs: 23500000 },
-        { id: "UCq6XQZ3_V7Y7Z0d1CqA", title: "DanTDM", subs: 28500000 }
+        { id: "UCYzPXprvl5Y-Sf0g4vX-m6g", title: "Jacksepticeye", subs: 30000000 },
+        { id: "UCAW-NpUFkMyCNrvRSSGIvDQ", title: "Ninja", subs: 23500000 },
+        { id: "UCS5Oz6CHmeoF7vSad0qqXfw", title: "DanTDM", subs: 28500000 }
       ],
       tech: [
-        { id: "UCBJycsmduvYELgT1S7cZ8aQ", title: "Marques Brownlee", subs: 18600000 },
-        { id: "UCXGgrKt94gR6mQZ5A8_V7Y7Z", title: "Linus Tech Tips", subs: 15600000 },
-        { id: "UC_V7Y7Z0d1CqA8_V7Y7Z", title: "Unbox Therapy", subs: 21500000 },
-        { id: "UCigE0-apK18hc8uX1XQZqA", title: "JerryRigEverything", subs: 8500000 },
-        { id: "UCV1XQZ3A8_V7Y7Z0d1CqA", title: "Austin Evans", subs: 5300000 }
+        { id: "UCBJycsmduvYEL83R_U4JriQ", title: "Marques Brownlee", subs: 18600000 },
+        { id: "UCXuqSBlHAE6Xw-yeJA0Tunw", title: "Linus Tech Tips", subs: 15600000 },
+        { id: "UCsTcErHg8oDvUnTzoqsYeNw", title: "Unbox Therapy", subs: 21500000 },
+        { id: "UCWFKCr40YwOZQx8FHU_ZqqQ", title: "JerryRigEverything", subs: 8500000 },
+        { id: "UCXGgrKt94gR6lmN4aN3mYTg", title: "Austin Evans", subs: 5300000 }
       ],
       finance: [
-        { id: "UCV6uXQZ3A8_V7Y7Z0d1CqA", title: "Graham Stephan", subs: 4600000 },
-        { id: "UCXGgrKt94gR6mQZ5A8_V7Y7", title: "Ali Abdaal", subs: 5200000 },
-        { id: "UCBJycsmduvYELgT1S7cZ8aQ", title: "Andrei Jikh", subs: 2300000 },
-        { id: "UCuT0_V24wH24fV6C4C8Xwvw", title: "Meet Kevin", subs: 1900000 },
-        { id: "UCLuooETz3SgIuK2lF6Cg2tA", title: "Mark Tilbury", subs: 1400000 }
+        { id: "UCV6KDgJskWaEckne5aPA0aQ", title: "Graham Stephan", subs: 4600000 },
+        { id: "UCoOae5nYA7VqaXzerajD0lg", title: "Ali Abdaal", subs: 5200000 },
+        { id: "UCGy7SkBjcIAgTiwkXEtPnYg", title: "Andrei Jikh", subs: 2300000 },
+        { id: "UCUvvj5lwue7PspotMDjk5UA", title: "Meet Kevin", subs: 1900000 },
+        { id: "UCxgAuX3XZROujMmGphN_scA", title: "Mark Tilbury", subs: 1400000 }
       ],
       lifestyle: [
         { id: "UCX6OQ3DkcsbYNE6H8uQQuVA", title: "MrBeast", subs: 300000000 },
-        { id: "UCLuooETz3SgIuK2lF6Cg2tA", title: "Dude Perfect", subs: 60000000 },
-        { id: "UCigE0-apK18hc8uX1XQZqA", title: "Sidemen", subs: 21000000 },
-        { id: "UCV6uXQZ3A8_V7Y7Z0d1CqA", title: "Casey Neistat", subs: 12600000 },
-        { id: "UCXGgrKt94gR6mQZ5A8_V7Y7Z", title: "Logan Paul", subs: 23600000 }
+        { id: "UCRijo3ddMTht_IHyNSNXpNQ", title: "Dude Perfect", subs: 60000000 },
+        { id: "UCtinbF-Q-fVthA0qrFQTgXQ", title: "Casey Neistat", subs: 12600000 },
+        { id: "UCG8rbF3g2AMX70yOd8vqIZg", title: "Logan Paul", subs: 23600000 }
       ],
       general: [
         { id: "UCX6OQ3DkcsbYNE6H8uQQuVA", title: "MrBeast", subs: 300000000 },
-        { id: "UCLuooETz3SgIuK2lF6Cg2tA", title: "Dude Perfect", subs: 60000000 },
-        { id: "UCigE0-apK18hc8uX1XQZqA", title: "Sidemen", subs: 21000000 },
-        { id: "UCV6uXQZ3A8_V7Y7Z0d1CqA", title: "Casey Neistat", subs: 12600000 }
+        { id: "UCRijo3ddMTht_IHyNSNXpNQ", title: "Dude Perfect", subs: 60000000 },
+        { id: "UCtinbF-Q-fVthA0qrFQTgXQ", title: "Casey Neistat", subs: 12600000 }
       ]
     };
 
@@ -301,7 +299,17 @@ async function getCompetitorsForChannel(channel, videos) {
     if (growthTargets.length > 0) topPicks.push({ ...growthTargets[0], matchType: 'TARGET', matchReason: 'Growth benchmark' });
     if (marketLeaders.length > 0) topPicks.push({ ...marketLeaders[0], matchType: 'LEADER', matchReason: 'Niche authority' });
 
-    const finalResults = topPicks.length > 0 ? [...topPicks, ...mapped.filter(c => !topPicks.find(p => p.id === c.id))] : mapped;
+    let finalResults = topPicks.length > 0 ? [...topPicks, ...mapped.filter(c => !topPicks.find(p => p.id === c.id))] : mapped;
+
+    // Filter out low quality matches (sub-10k or tiny relative scale) for large channels (1M+)
+    if (currentSubs >= 1000000) {
+      finalResults = finalResults.filter(c => {
+        const s = parseInt(c.statistics?.subscriberCount || 0, 10);
+        // Keep if it has at least 1% of current channel's subs, or is one of our top picks
+        return s >= currentSubs * 0.01 || topPicks.some(p => p.id === c.id);
+      });
+    }
+
     return finalResults;
   } catch (err) {
     console.error("Error generating competitors on backend:", err);
