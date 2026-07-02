@@ -319,10 +319,14 @@ export default function CompetitorsPage() {
     return subs === 0 ? "0" : (views / subs).toFixed(2);
   };
 
+  const baseSubs = data ? parseInt(data.baseChannel.statistics?.subscriberCount || 0, 10) : 0;
+  const largerCompetitors = data ? data.competitors.filter(c => parseInt(c.statistics?.subscriberCount || 0, 10) > baseSubs) : [];
+  const hasLargerCompetitors = largerCompetitors.length > 0;
+
   const TABS = [
     { id: 'market', label: 'Market Matrix', icon: Target },
     { id: 'content', label: 'Content DNA', icon: Activity },
-    { id: 'growth', label: 'Growth Velocity', icon: TrendingUp },
+    ...(hasLargerCompetitors ? [{ id: 'growth', label: 'Growth Velocity', icon: TrendingUp }] : []),
     { id: 'audience', label: 'Reach Analysis', icon: Users }
   ];
 

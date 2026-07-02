@@ -400,7 +400,7 @@ ${competitorsText}
             { id: "performance", label: "Virality" },
             { id: "ideas", label: "AI Video Ideas 💡" },
             { id: "competitors", label: "Competitors 🏁" },
-            { id: "projections", label: "Predictions 📈" },
+            ...(hasLargerCompetitors ? [{ id: "projections", label: "Predictions 📈" }] : []),
             { id: "videos", label: "Videos" }
           ].map((tab) => (
             <button
