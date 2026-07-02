@@ -1,5 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
-import { togglePin, getPinnedChannels, isChannelPinned } from "@/lib/cache/turso";
+import { togglePin, getPinnedChannels, isChannelPinned, getChannel, saveChannel } from "@/lib/cache/turso";
+import { fetchYouTubeChannels } from "@/lib/youtube/channels";
 import { apiSuccess, apiError } from "@/lib/utils/response";
 import { getIsDemoMode, MOCK_PINNED } from "@/lib/utils/demoMock";
 
@@ -44,6 +45,17 @@ export async function POST(req) {
 
     const { channelId } = await req.json();
     if (!channelId) return apiError(new Error("Channel ID is required"), 400);
+
+    // Ensure the channel exists in the database to prevent FOREIGN KEY constraint failure
+    const existing = await getChannel(channelId);
+    if (!existing) {
+      const channels = await fetchYouTubeChannels(channelId);
+      if (channels && channels.length > 0) {
+        await saveChannel(channels[0]);
+      } else {
+        return apiError(new Error("Channel not found on YouTube"), 404);
+      }
+    }
 
     const result = await togglePin(userId, channelId);
     return apiSuccess(result);
