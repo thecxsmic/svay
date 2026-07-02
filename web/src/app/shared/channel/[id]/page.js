@@ -2,8 +2,10 @@
 
 import { useState, useEffect, use } from "react";
 import { calculateViralityScore } from "@/lib/ranking/virality";
-import VideoCard from "../../../components/VideoCard";
-import VideoDetailsModal from "../../../components/VideoDetailsModal";
+import { generateChannelHistory, calculateAverages } from "@/lib/utils/history";
+import { GrowthChart, SubsChangeChart, EngagementPieChart, RevenueProjectionChart } from "@/app/components/ChannelCharts";
+import VideoCard from "@/app/components/VideoCard";
+import VideoDetailsModal from "@/app/components/VideoDetailsModal";
 import Link from "next/link";
 import { 
   Zap, 
@@ -14,7 +16,15 @@ import {
   Activity, 
   Share2, 
   Lock, 
-  Video 
+  Video,
+  Lightbulb,
+  Trophy,
+  TrendingUp,
+  DollarSign,
+  CheckCircle2,
+  SlidersHorizontal,
+  ChevronRight,
+  TrendingDown
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -118,8 +128,13 @@ export default function SharedChannelPage({ params }) {
     );
   }
 
-  const { channel, videos } = analysisData;
+  const { channel, videos, competitors = [], trends } = analysisData;
   const tierData = getAudienceTier(channel.statistics, videos);
+
+  // Setup history details for charts
+  const history = generateChannelHistory(channel.statistics, 14);
+  const avgs = calculateAverages(history);
+  const subsCount = parseInt(channel.statistics?.subscriberCount || 0);
 
   return (
     <div className="min-h-screen bg-black text-[#ededed] pb-24 relative overflow-x-hidden selection:bg-brand-volt selection:text-black">
@@ -201,9 +216,11 @@ export default function SharedChannelPage({ params }) {
         <div className="flex border-b border-white/5 gap-8 bg-black/80 backdrop-blur-md z-40 px-2 overflow-x-auto no-scrollbar">
           {[
             { id: "overview", label: "Overview" },
-            { id: "performance", label: "Performance" },
-            { id: "videos", label: "Recent Videos" },
-            { id: "projections", label: "Projections 🔒" }
+            { id: "performance", label: "Virality" },
+            { id: "ideas", label: "AI Video Ideas 💡" },
+            { id: "competitors", label: "Competitors 🏁" },
+            { id: "projections", label: "Predictions 📈" },
+            { id: "videos", label: "Videos" }
           ].map((tab) => (
             <button
               key={tab.id}
@@ -291,21 +308,378 @@ export default function SharedChannelPage({ params }) {
                 const avgDailyViews = videoStats.reduce((acc, s) => acc + s.dailyViews, 0) / videoStats.length;
 
                 return (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {[
-                      { label: "Viral Efficiency", value: `${hitRate.toFixed(1)}%`, sub: "Hit Rate (>40 score)", color: "text-white" },
-                      { label: "Avg Engagement", value: `${avgEngagement.toFixed(2)}%`, sub: "Interactive Resonance", color: "text-brand-mint" },
-                      { label: "Daily Velocity", value: `+${formatNumber(avgDailyViews)}`, sub: "Avg Daily Views", color: "text-brand-volt" }
-                    ].map((stat, i) => (
-                      <div key={i} className="bg-white/[0.01] border border-white/5 p-6 rounded-2xl">
-                        <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">{stat.label}</p>
-                        <p className={`text-2xl font-bold ${stat.color} tracking-tight`}>{stat.value}</p>
-                        <p className="text-[9px] text-zinc-400 font-bold uppercase mt-1">{stat.sub}</p>
+                  <div className="space-y-8">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {[
+                        { label: "Viral Efficiency", value: `${hitRate.toFixed(1)}%`, sub: "Hit Rate (>40 score)", color: "text-white" },
+                        { label: "Avg Engagement", value: `${avgEngagement.toFixed(2)}%`, sub: "Interactive Resonance", color: "text-brand-mint" },
+                        { label: "Daily Velocity", value: `+${formatNumber(avgDailyViews)}`, sub: "Avg Daily Views", color: "text-brand-volt" }
+                      ].map((stat, i) => (
+                        <div key={i} className="bg-white/[0.01] border border-white/5 p-6 rounded-2xl">
+                          <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">{stat.label}</p>
+                          <p className={`text-2xl font-bold ${stat.color} tracking-tight`}>{stat.value}</p>
+                          <p className="text-[9px] text-zinc-400 font-bold uppercase mt-1">{stat.sub}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Engagement spread table */}
+                    <div className="bg-white/[0.01] border border-white/5 p-8 rounded-3xl">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+                        <div>
+                          <h4 className="text-[10px] font-bold text-white uppercase tracking-widest mb-2">Resonance Spread</h4>
+                          <p className="text-[10px] text-zinc-500 font-bold uppercase mb-6 font-mono">Engagement Distribution</p>
+                          <div className="space-y-4">
+                            {[
+                              { label: "High (4% +)", count: videos.filter(v => (parseInt(v.statistics?.likeCount || 0) / parseInt(v.statistics?.viewCount || 1) * 100) > 4).length, color: "border-brand-volt" },
+                              { label: "Medium (2-4%)", count: videos.filter(v => { const s = (parseInt(v.statistics?.likeCount || 0) / parseInt(v.statistics?.viewCount || 1) * 100); return s <= 4 && s > 2; }).length, color: "border-brand-mint" },
+                              { label: "Low (0-2%)", count: videos.filter(v => (parseInt(v.statistics?.likeCount || 0) / parseInt(v.statistics?.viewCount || 1) * 100) <= 2).length, color: "border-white/10" }
+                            ].map((res, i) => (
+                              <div key={i} className={`flex justify-between items-center text-[10px] font-bold uppercase tracking-wider border-l-2 ${res.color} pl-4`}>
+                                <span className="text-zinc-400">{res.label}</span>
+                                <span className="text-white">{res.count} Videos</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="md:col-span-2 h-64 flex justify-center items-center">
+                          <EngagementPieChart videos={videos} />
+                        </div>
                       </div>
-                    ))}
+                    </div>
                   </div>
                 );
               })()}
+            </motion.div>
+          )}
+
+          {activeTab === "ideas" && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+              {trends ? (
+                <>
+                  {/* Overview Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-white/[0.01] border border-white/5 p-6 rounded-2xl">
+                      <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Viral Potential</p>
+                      <p className="text-2xl font-black text-brand-volt uppercase tracking-tight">
+                        {trends.insights?.overview?.viralPotential || "High"}
+                      </p>
+                    </div>
+                    <div className="bg-white/[0.01] border border-white/5 p-6 rounded-2xl">
+                      <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Market Momentum</p>
+                      <p className="text-2xl font-black text-brand-mint uppercase tracking-tight">
+                        {trends.insights?.overview?.marketMomentum || "Rising"}
+                      </p>
+                    </div>
+                    <div className="bg-white/[0.01] border border-white/5 p-6 rounded-2xl">
+                      <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Trending Topics</p>
+                      <p className="text-2xl font-black text-white uppercase tracking-tight">
+                        {trends.insights?.overview?.trendingTopics || "8"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Summary */}
+                  <div className="bg-white/[0.01] border border-white/5 p-8 rounded-3xl">
+                    <h4 className="text-[10px] font-bold text-white uppercase tracking-widest mb-4">Niche Analysis Summary</h4>
+                    <p className="text-sm text-zinc-400 font-medium leading-relaxed">
+                      {trends.insights?.overview?.summary}
+                    </p>
+                  </div>
+
+                  {/* Video Ideas */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Lightbulb className="w-5 h-5 text-brand-volt" />
+                      <h4 className="text-[10px] font-bold text-white uppercase tracking-widest">High-Impact Video Concepts</h4>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {trends.insights?.videoIdeas?.map((idea, i) => (
+                        <div key={i} className="bg-white/[0.01] border border-white/5 p-6 rounded-2xl flex flex-col justify-between gap-4">
+                          <div className="space-y-2">
+                            <span className="text-[9px] font-black tracking-widest px-2 py-0.5 rounded bg-brand-volt/10 text-brand-volt border border-brand-volt/10 uppercase">
+                              {idea.difficulty}
+                            </span>
+                            <h5 className="text-sm font-bold text-white leading-snug">{idea.title}</h5>
+                            <p className="text-xs text-zinc-500 leading-relaxed">{idea.description}</p>
+                          </div>
+                          <div className="pt-3 border-t border-white/5 text-[10px] font-bold text-zinc-450 uppercase flex justify-between">
+                            <span>Predicted Views</span>
+                            <span className="text-brand-mint">{idea.predictedViews}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Emerging Trends */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Activity className="w-5 h-5 text-brand-mint" />
+                      <h4 className="text-[10px] font-bold text-white uppercase tracking-widest">Emerging Trends</h4>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {trends.insights?.emergingTrends?.map((trend, i) => (
+                        <div key={i} className="bg-white/[0.01] border border-white/5 p-6 rounded-2xl space-y-4">
+                          <div className="flex justify-between items-center">
+                            <h5 className="text-xs font-black text-white uppercase tracking-wider font-mono truncate mr-2">{trend.topic}</h5>
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-white/5 text-zinc-400 font-mono">
+                              Score: {trend.viralScore}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-zinc-500 leading-relaxed">{trend.opportunity}</p>
+                          <div className="bg-white/[0.02] border border-white/5 p-3 rounded-xl">
+                            <p className="text-[8px] font-bold text-brand-volt uppercase tracking-wider mb-1">Action Idea</p>
+                            <p className="text-[11px] text-zinc-300 leading-relaxed">{trend.actionableIdea}</p>
+                          </div>
+                          <div className="pt-2 flex justify-between text-[8px] font-black uppercase text-zinc-500">
+                            <span>Time Window: <span className="text-white">{trend.timeWindow}</span></span>
+                            <span>Est: <span className="text-brand-mint">{trend.estimatedViews}</span></span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Quick Wins & Viral Hooks */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Quick Wins */}
+                    <div className="bg-white/[0.01] border border-white/5 p-8 rounded-3xl space-y-4">
+                      <h4 className="text-[10px] font-bold text-white uppercase tracking-widest">Quick Wins</h4>
+                      <div className="divide-y divide-white/5">
+                        {trends.insights?.quickWins?.map((win, i) => (
+                          <div key={i} className="py-3 first:pt-0 last:pb-0 space-y-1">
+                            <div className="flex justify-between text-[9px] font-bold uppercase">
+                              <span className="text-brand-volt">{win.idea}</span>
+                              <span className="text-zinc-500">{win.timing}</span>
+                            </div>
+                            <p className="text-xs text-zinc-450">{win.why}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Viral Hooks */}
+                    <div className="bg-white/[0.01] border border-white/5 p-8 rounded-3xl space-y-6">
+                      <div className="space-y-4">
+                        <h4 className="text-[10px] font-bold text-white uppercase tracking-widest">Suggested Title Hooks</h4>
+                        <ul className="space-y-2">
+                          {trends.insights?.viralPatterns?.titleHooks?.map((hook, i) => (
+                            <li key={i} className="text-xs text-zinc-400 flex items-start gap-2">
+                              <span className="text-brand-volt font-bold shrink-0 mt-0.5">→</span>
+                              <span className="font-mono text-[11px] select-all italic bg-white/5 px-2 py-1 rounded border border-white/5 w-full block">"{hook}"</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div className="space-y-2 pt-4 border-t border-white/5">
+                        <h4 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Content Styles to Apply</h4>
+                        <ul className="space-y-1.5">
+                          {trends.insights?.viralPatterns?.contentStyles?.map((style, i) => (
+                            <li key={i} className="text-xs text-zinc-400 flex items-center gap-2">
+                              <span className="text-brand-mint font-bold shrink-0">✓</span>
+                              <span>{style}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="bg-white/[0.01] border border-white/5 rounded-3xl p-8 text-center flex flex-col items-center justify-center py-16">
+                  <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mb-4">
+                    <Lightbulb className="w-5 h-5 text-zinc-600" />
+                  </div>
+                  <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-2">No AI Ideas Cached</h3>
+                  <p className="text-zinc-500 text-xs max-w-sm mb-6 leading-relaxed">
+                    AI analysis is ran on demand inside the primary application workspace.
+                  </p>
+                  <Link 
+                    href="/" 
+                    className="px-5 py-2.5 bg-brand-volt text-black rounded-xl text-[10px] font-black uppercase tracking-wider hover:scale-105 active:scale-95 transition-all"
+                  >
+                    Analyze Channel to Generate Ideas
+                  </Link>
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {activeTab === "competitors" && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+              {competitors.length > 0 ? (
+                <>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Trophy className="w-5 h-5 text-brand-volt" />
+                    <h4 className="text-[10px] font-bold text-white uppercase tracking-widest">Niche Rivals Benchmark Matrix</h4>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {competitors.slice(0, 3).map((comp, i) => (
+                      <div key={i} className="bg-white/[0.01] border border-white/5 p-6 rounded-2xl flex flex-col justify-between relative overflow-hidden">
+                        <div className="absolute top-0 right-0 px-3 py-1 bg-white/5 rounded-bl-xl text-[8px] font-black text-brand-mint uppercase tracking-widest border-l border-b border-white/5">
+                          {comp.matchType || "RIVAL"}
+                        </div>
+
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-3">
+                            <img 
+                              src={comp.thumbnail || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=50&q=80"} 
+                              className="w-10 h-10 rounded-full border border-white/10" 
+                              alt="" 
+                            />
+                            <div>
+                              <h5 className="text-sm font-bold text-white leading-snug">{comp.title}</h5>
+                              <p className="text-[9px] text-zinc-500 font-mono">{comp.custom_url || "YouTube Channel"}</p>
+                            </div>
+                          </div>
+                          <p className="text-xs text-zinc-450 font-medium italic">"{comp.matchReason || "Operating in matching keyword space"}"</p>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 mt-6 pt-4 border-t border-white/5 text-center">
+                          <div>
+                            <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest">Subs</span>
+                            <p className="text-xs font-bold text-white mt-0.5">{formatNumber(comp.statistics?.subscriberCount)}</p>
+                          </div>
+                          <div>
+                            <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest">Views</span>
+                            <p className="text-xs font-bold text-brand-mint mt-0.5">{formatNumber(comp.statistics?.viewCount)}</p>
+                          </div>
+                          <div>
+                            <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest">Videos</span>
+                            <p className="text-xs font-bold text-brand-volt mt-0.5">{formatNumber(comp.statistics?.videoCount)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Rivals radar mock CTA */}
+                  <div className="bg-white/[0.01] border border-white/5 rounded-3xl p-8 text-center flex flex-col items-center justify-center py-10 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-tr from-brand-volt/5 via-transparent to-transparent pointer-events-none" />
+                    <SlidersHorizontal className="w-8 h-8 text-brand-volt mb-3" />
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-2">Live Format Comparison</h4>
+                    <p className="text-zinc-500 text-[11px] max-w-sm mb-4 leading-relaxed">
+                      Upgrade to Svay Pro to overlay competitor upload schedules, compare thumbnails side-by-side, and map video structures.
+                    </p>
+                    <Link 
+                      href="/"
+                      className="px-4 py-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl text-[9px] font-black uppercase tracking-wider text-white transition-all flex items-center gap-1.5"
+                    >
+                      Compare Niche Formats <ChevronRight className="w-3 h-3" />
+                    </Link>
+                  </div>
+                </>
+              ) : (
+                <div className="bg-white/[0.01] border border-white/5 rounded-3xl p-8 text-center flex flex-col items-center justify-center py-16">
+                  <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mb-4">
+                    <Trophy className="w-5 h-5 text-zinc-600" />
+                  </div>
+                  <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-2">No Rivals Data Found</h3>
+                  <p className="text-zinc-500 text-xs max-w-sm mb-6 leading-relaxed">
+                    Connecting your channel triggers automatic competitor discovery and benchmarks views/publishing cadence.
+                  </p>
+                  <Link 
+                    href="/" 
+                    className="px-5 py-2.5 bg-brand-volt text-black rounded-xl text-[10px] font-black uppercase tracking-wider hover:scale-105 active:scale-95 transition-all"
+                  >
+                    Connect Channel
+                  </Link>
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {activeTab === "projections" && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+              {/* Predicted Statistics */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {(() => {
+                  let dailyVelocity = 0;
+                  if (videos.length > 0) {
+                    const batch = videos.slice(0, 10);
+                    const batchViews = batch.reduce((acc, v) => acc + parseInt(v.statistics?.viewCount || v.views || 0, 10), 0);
+                    const oldestDate = new Date(batch[batch.length - 1].published_at || batch[batch.length - 1].snippet?.publishedAt).getTime();
+                    const daysSpan = Math.max(1, (Date.now() - oldestDate) / (1000 * 60 * 60 * 24));
+                    dailyVelocity = batchViews / daysSpan;
+                  } else {
+                    dailyVelocity = (parseInt(channel.statistics?.viewCount || 0, 10) / Math.max(1, parseInt(channel.statistics?.videoCount || 1, 10))) * 0.1;
+                  }
+
+                  const avgEngagement = videos.length > 0 
+                    ? videos.slice(0, 10).reduce((acc, v) => {
+                        const vViews = parseInt(v.statistics?.viewCount || v.views || 1, 10);
+                        const vEng = (parseInt(v.statistics?.likeCount || v.likes || 0, 10) + parseInt(v.statistics?.commentCount || v.comments || 0, 10)) / vViews;
+                        return acc + vEng;
+                      }, 0) / Math.min(videos.length, 10)
+                    : 0.02;
+
+                  const base30DViews = dailyVelocity * 30;
+                  const opt30DViews = base30DViews * (1 + (avgEngagement * 5));
+                  const subVelocity = (base30DViews / Math.max(1, parseInt(channel.statistics?.viewCount || 1, 10))) * subsCount * 0.1;
+                  const isMonetized = subsCount >= 1000;
+                  const revMin = isMonetized ? (base30DViews / 1000) * 3.00 : 0;
+                  const revMax = isMonetized ? (opt30DViews / 1000) * 10.00 : 0;
+
+                  return [
+                    { label: "Predicted Subs (30D)", value: `+${formatNumber(subVelocity * 0.7)} — +${formatNumber(subVelocity * 1.4)}`, color: "text-[#00dfd8]" },
+                    { label: "Predicted Views (30D)", value: `+${formatNumber(base30DViews)} — +${formatNumber(opt30DViews)}`, color: "text-brand-mint" },
+                    { label: "Monetization Status", value: isMonetized ? "ACTIVE" : "PENDING", color: "text-white" },
+                    { label: "Estimated Revenue (30D)", value: isMonetized ? `$${formatNumber(revMin)} — $${formatNumber(revMax)}` : "—", color: "text-brand-volt" }
+                  ].map((p, i) => (
+                    <div key={i} className="bg-white/[0.01] border border-white/5 p-6 rounded-2xl">
+                      <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">{p.label}</p>
+                      <p className={`text-xl font-bold ${p.color} tracking-tight`}>{p.value}</p>
+                    </div>
+                  ));
+                })()}
+              </div>
+
+              {/* Revenue projection chart card */}
+              <div className="bg-white/[0.01] border border-white/5 p-10 rounded-[2rem] relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-8 opacity-5">
+                  <TrendingUp className="w-40 h-40 text-[#00dfd8]" />
+                </div>
+                <div className="relative z-10 text-center">
+                  <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Neural Revenue Projection</h4>
+                  <p className="text-2xl text-white font-black tracking-tight mb-8">Estimated Trajectory (Next 30 Days)</p>
+                  <div className="h-64">
+                    <RevenueProjectionChart history={history} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Growth velocity & Acquisition charts */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white/[0.01] border border-white/5 p-8 rounded-[2rem]">
+                  <h4 className="text-[10px] font-bold text-white uppercase tracking-widest mb-8">Growth Velocity Forecast</h4>
+                  <div className="h-60">
+                    <GrowthChart history={history} />
+                  </div>
+                </div>
+                <div className="bg-white/[0.01] border border-white/5 p-8 rounded-[2rem]">
+                  <h4 className="text-[10px] font-bold text-white uppercase tracking-widest mb-8">Subscriber Acquisition Speed</h4>
+                  <div className="h-60">
+                    <SubsChangeChart history={history} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Simulation locks banner */}
+              <div className="bg-white/[0.01] border border-white/5 rounded-3xl p-8 text-center flex flex-col items-center justify-center py-10 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-tr from-brand-volt/5 via-transparent to-transparent pointer-events-none" />
+                <Lock className="w-8 h-8 text-brand-volt mb-3" />
+                <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-2">Interactive Simulations Locked</h4>
+                <p className="text-zinc-500 text-[11px] max-w-sm mb-4 leading-relaxed">
+                  Upgrade to Pro to customize CPM rates, run worst-case scenarios, adjust target upload frequency, and export data spreadsheets.
+                </p>
+                <Link 
+                  href="/"
+                  className="px-4 py-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl text-[9px] font-black uppercase tracking-wider text-white transition-all flex items-center gap-1.5"
+                >
+                  Unlock Simulation Sandbox <ChevronRight className="w-3 h-3" />
+                </Link>
+              </div>
             </motion.div>
           )}
 
@@ -318,32 +692,6 @@ export default function SharedChannelPage({ params }) {
                   onClick={() => setSelectedVideo(video)}
                 />
               ))}
-            </motion.div>
-          )}
-
-          {activeTab === "projections" && (
-            <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
-              className="bg-white/[0.01] border border-white/5 rounded-3xl p-8 text-center flex flex-col items-center justify-center py-16 relative overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-gradient-to-tr from-brand-volt/5 via-transparent to-red-500/5 filter blur-md pointer-events-none" />
-              
-              <div className="w-16 h-16 bg-brand-volt/10 rounded-full flex items-center justify-center mb-6 border border-brand-volt/20">
-                <Lock className="w-6 h-6 text-brand-volt" />
-              </div>
-
-              <h3 className="text-xl font-black text-white uppercase tracking-tight mb-2">Growth Projections Locked</h3>
-              <p className="text-zinc-500 text-xs max-w-sm leading-relaxed mb-8">
-                Connect your YouTube channel and unlock advanced subscriber models, monthly revenue forecasting, and dynamic competitor analysis tools.
-              </p>
-
-              <Link 
-                href="/"
-                className="px-8 py-4 bg-brand-volt text-black text-xs font-black uppercase tracking-wider rounded-2xl hover:scale-105 active:scale-[0.98] transition-all flex items-center gap-2"
-              >
-                Claim Your Free Pro Trial <ArrowRight className="w-3.5 h-3.5 stroke-[3]" />
-              </Link>
             </motion.div>
           )}
         </div>
