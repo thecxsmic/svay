@@ -50,36 +50,34 @@ export async function DELETE(req) {
     const channelId = searchParams.get("channelId");
 
     if (purgeAll) {
-      // Clear ALL tables
-      await client.execute("DELETE FROM channels");
-      await client.execute("DELETE FROM videos");
+      // Reset last_updated on all channels to 0 (so they are seen as stale and will reload fresh)
+      await client.execute("UPDATE channels SET last_updated = 0");
+      
+      // Delete all generated AI video ideas & insights
       await client.execute("DELETE FROM trend_radar");
-      console.log("[Admin Channels API] Purged ALL database caches.");
-      return apiSuccess({ success: true, message: "All database caches purged successfully." });
+      
+      console.log("[Admin Channels API] Purged ALL trend radar caches and set channel freshness to stale.");
+      return apiSuccess({ success: true, message: "All generated competitor & video idea caches successfully purged." });
     }
 
     if (!channelId) {
       return apiError(new Error("channelId query parameter is required"), 400);
     }
 
-    // Delete records from channels, videos, and trend_radar for a specific channel
+    // Set last_updated to 0 for the specific channel so it reloads fresh next time
     await client.execute({
-      sql: "DELETE FROM channels WHERE id = ?",
-      args: [channelId]
-    });
-    
-    await client.execute({
-      sql: "DELETE FROM videos WHERE channel_id = ?",
+      sql: "UPDATE channels SET last_updated = 0 WHERE id = ?",
       args: [channelId]
     });
 
+    // Delete generated AI ideas & insights for the specific channel
     await client.execute({
       sql: "DELETE FROM trend_radar WHERE channel_id = ?",
       args: [channelId]
     });
 
-    console.log(`[Admin Channels API] Cleared cache for channel: ${channelId}`);
-    return apiSuccess({ success: true, message: "Channel cache successfully cleared." });
+    console.log(`[Admin Channels API] Reset cache freshness and cleared ideas for channel: ${channelId}`);
+    return apiSuccess({ success: true, message: "Channel competitor & idea cache successfully cleared." });
   } catch (error) {
     console.error("[Admin Channels API] DELETE Error:", error);
     return apiError(error);
