@@ -93,6 +93,22 @@ export default function LandingPage() {
   const [charIdx, setCharIdx] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Hero loop text state
+  const actionWords = ['record.', 'upload.', 'publish.', 'create.'];
+  const [actionWord, setActionWord] = useState('record.');
+  const [actionIdx, setActionIdx] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActionIdx((prev) => {
+        const next = (prev + 1) % actionWords.length;
+        setActionWord(actionWords[next]);
+        return next;
+      });
+    }, 2500);
+    return () => clearInterval(interval);
+  }, []);
+
   // Parallax scroll state
   const [scrollY, setScrollY] = useState(0);
 
@@ -461,8 +477,18 @@ export default function LandingPage() {
           <h1 className="font-display font-extrabold text-5xl md:text-4xl lg:text-5xl xl:text-7xl leading-[1.0] tracking-tight text-white mb-4 md:mb-6">
             Know what performs.<br/>
             Before you hit<br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0052ff] via-[#00d2ff] to-[#7c3aed] drop-shadow-[0_0_15px_rgba(0,240,255,0.1)] text-glow-volt">
-              record.
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0052ff] via-[#00d2ff] to-[#7c3aed] drop-shadow-[0_0_15px_rgba(0,240,255,0.1)] text-glow-volt inline-flex min-w-[200px]">
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={actionWord}
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.25, ease: 'easeOut' }}
+                >
+                  {actionWord}
+                </motion.span>
+              </AnimatePresence>
             </span>
           </h1>
 
@@ -471,20 +497,51 @@ export default function LandingPage() {
             Stop guessing what your audience wants. Svay tracks your competitors' top-performing formats, catches breakout topics as they begin to spike, and helps you structure video ideas backed by real demand data.
           </p>
 
-          {/* Action Buttons */}
-          <div className="flex flex-wrap items-center gap-4 w-full sm:w-auto">
-            <button 
-              onClick={() => { window.location.href = "/sign-in"; }}
-              className="w-full sm:w-auto px-6 md:px-5 lg:px-8 py-3 md:py-2.5 lg:py-4 bg-brand-volt hover:bg-[#33f3ff] text-black font-extrabold text-sm md:text-xs lg:text-sm uppercase tracking-wider rounded-xl transition-all shadow-[0_0_30px_rgba(0,240,255,0.25)] hover:shadow-[0_0_40px_rgba(0,240,255,0.45)] hover:-translate-y-0.5 text-center flex items-center justify-center gap-2 cursor-pointer"
-            >
-              Get Started <ArrowRight className="w-4 h-4" />
-            </button>
-            <button 
-              onClick={enterDemo}
-              className="w-full sm:w-auto px-6 md:px-5 lg:px-8 py-3 md:py-2.5 lg:py-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-white font-extrabold text-sm md:text-xs lg:text-sm uppercase tracking-wider rounded-xl transition-all text-center flex items-center justify-center gap-2 hover:-translate-y-0.5 cursor-pointer"
-            >
-              <Play className="w-4 h-4 fill-white" /> See Demo
-            </button>
+          {/* Action Buttons & Social Proof */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-6 w-full">
+            <div className="flex flex-wrap items-center gap-4 shrink-0">
+              <button 
+                onClick={() => { window.location.href = "/sign-in"; }}
+                className="px-6 md:px-5 lg:px-8 py-3 md:py-2.5 lg:py-4 bg-brand-volt hover:bg-[#33f3ff] text-black font-extrabold text-sm md:text-xs lg:text-sm uppercase tracking-wider rounded-xl transition-all shadow-[0_0_30px_rgba(0,240,255,0.25)] hover:shadow-[0_0_40px_rgba(0,240,255,0.45)] hover:-translate-y-0.5 text-center flex items-center justify-center gap-2 cursor-pointer"
+              >
+                Get Started <ArrowRight className="w-4 h-4" />
+              </button>
+              <button 
+                onClick={enterDemo}
+                className="px-6 md:px-5 lg:px-8 py-3 md:py-2.5 lg:py-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-white font-extrabold text-sm md:text-xs lg:text-sm uppercase tracking-wider rounded-xl transition-all text-center flex items-center justify-center gap-2 hover:-translate-y-0.5 cursor-pointer"
+              >
+                <Play className="w-4 h-4 fill-white" /> See Demo
+              </button>
+            </div>
+
+            {/* Social Proof Avatar Stack */}
+            <div className="flex items-center gap-3 select-none pl-1 sm:pl-4 sm:border-l sm:border-zinc-800">
+              <div className="flex -space-x-2">
+                {[
+                  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&h=100&q=80",
+                  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&h=100&q=80",
+                  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&h=100&q=80",
+                  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&h=100&q=80",
+                ].map((src, i) => (
+                  <img
+                    key={i}
+                    src={src}
+                    alt="Creator Avatar"
+                    className="w-7 h-7 rounded-full border-2 border-black object-cover relative z-10"
+                  />
+                ))}
+              </div>
+              <div className="text-left">
+                <div className="flex items-center gap-0.5">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-2.5 h-2.5 text-brand-volt fill-brand-volt" />
+                  ))}
+                </div>
+                <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider mt-0.5 leading-none">
+                  Trusted by <span className="text-white font-black">1,200+ creators</span>
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Quick Stats banner */}
@@ -830,125 +887,237 @@ export default function LandingPage() {
         </div>
         </RevealOnScroll>
 
-        {/* Feature Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Card 1 */}
+        {/* Feature Bento Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Card 1: col-span-2 (Analytics & Tracking) */}
           <RevealOnScroll delay={0}>
-          <div className="interactive-card feature-card-glow group relative p-8 rounded-3xl bg-zinc-950/60 border border-zinc-900 hover:border-zinc-800 transition-all duration-300 hover:-translate-y-1">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-volt/2 rounded-bl-full pointer-events-none group-hover:bg-brand-volt/5 transition-all duration-500" />
-            <span className="font-mono text-[9px] font-extrabold text-zinc-600 group-hover:text-brand-volt transition-colors uppercase tracking-widest block mb-4">01 // VELOCITY TRACKING</span>
-            <div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xl mb-6 group-hover:border-brand-volt/30 group-hover:bg-zinc-950 transition-colors">
-              <BarChart3 className="w-5 h-5 text-brand-volt" />
+          <div className="interactive-card group relative p-8 rounded-3xl bg-zinc-950/60 border border-white/[0.08] hover:border-brand-volt/30 transition-all duration-300 hover:-translate-y-1 md:col-span-2 overflow-hidden flex flex-col justify-between shadow-[0_15px_35px_rgba(0,0,0,0.8)]">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-brand-volt/5 rounded-bl-full pointer-events-none group-hover:bg-brand-volt/8 transition-all duration-500 filter blur-xl" />
+            <div>
+              <span className="font-mono text-[9px] font-extrabold text-zinc-500 group-hover:text-brand-volt transition-colors uppercase tracking-widest block mb-4">01 // VELOCITY TRACKING</span>
+              <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center">
+                <div className="space-y-3 flex-1 text-left">
+                  <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xl group-hover:border-brand-volt/30 group-hover:bg-zinc-950 transition-colors">
+                    <BarChart3 className="w-5 h-5 text-brand-volt" />
+                  </div>
+                  <h3 className="font-display font-extrabold text-xl text-white">Analytics & Tracking</h3>
+                  <p className="text-zinc-400 text-xs leading-relaxed font-normal">
+                    Monitor views and upload habits across your niche. Receive clear insights on subscriber growth trends and channel milestones without constantly checking analytics.
+                  </p>
+                </div>
+                {/* Visual mockup inside card */}
+                <div className="w-full lg:w-48 bg-black/40 border border-zinc-900 rounded-xl p-3.5 space-y-2 shrink-0 text-[8px] font-mono text-left">
+                  <div className="flex justify-between border-b border-zinc-900 pb-1.5">
+                    <span className="text-zinc-500 uppercase font-black">Velocity Stat</span>
+                    <span className="text-brand-volt font-black">ACTIVE</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-zinc-400">Total Views</span>
+                    <span className="text-white font-extrabold">3.4M</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-zinc-400">Net Growth</span>
+                    <span className="text-brand-volt font-extrabold">+14.2%</span>
+                  </div>
+                  <div className="h-1 bg-zinc-900 rounded-full overflow-hidden mt-1">
+                    <div className="h-full bg-brand-volt rounded-full" style={{ width: '65%' }} />
+                  </div>
+                </div>
+              </div>
             </div>
-            <h3 className="font-display font-bold text-lg text-white mb-3">Analytics & Tracking</h3>
-            <p className="text-zinc-400 text-xs leading-relaxed mb-6 font-normal">
-              Monitor views and upload habits across your niche. Receive clear insights on subscriber growth trends and channel milestones without constantly checking analytics.
-            </p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 mt-6">
               {['Growth trends', 'Projections', 'Milestones'].map(t => (
-                <span key={t} className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 border border-zinc-800/80 px-2 py-0.5 rounded bg-zinc-950/40 group-hover:border-zinc-800">{t}</span>
+                <span key={t} className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 border border-white/[0.04] px-2.5 py-1 rounded bg-black/40">{t}</span>
               ))}
             </div>
           </div>
           </RevealOnScroll>
 
-          {/* Card 2 */}
+          {/* Card 2: col-span-1 (Trend Radar) */}
           <RevealOnScroll delay={0.1}>
-          <div className="interactive-card feature-card-glow group relative p-8 rounded-3xl bg-zinc-950/60 border border-zinc-900 hover:border-zinc-800 transition-all duration-300 hover:-translate-y-1">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-mint/2 rounded-bl-full pointer-events-none group-hover:bg-brand-mint/5 transition-all duration-500" />
-            <span className="font-mono text-[9px] font-extrabold text-zinc-600 group-hover:text-brand-mint transition-colors uppercase tracking-widest block mb-4">02 // EARLY DETECTION</span>
-            <div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xl mb-6 group-hover:border-brand-mint/30 group-hover:bg-zinc-950 transition-colors">
-              <Zap className="w-5 h-5 text-brand-mint" />
+          <div className="interactive-card group relative p-8 rounded-3xl bg-zinc-950/60 border border-white/[0.08] hover:border-brand-rose/30 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between shadow-[0_15px_35px_rgba(0,0,0,0.8)] overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-rose/5 rounded-bl-full pointer-events-none group-hover:bg-brand-rose/8 transition-all duration-500 filter blur-xl" />
+            <div>
+              <span className="font-mono text-[9px] font-extrabold text-zinc-500 group-hover:text-brand-rose transition-colors uppercase tracking-widest block mb-4">02 // EARLY DETECTION</span>
+              <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xl mb-6 group-hover:border-brand-rose/30 group-hover:bg-zinc-950 transition-colors">
+                <Zap className="w-5 h-5 text-brand-rose" />
+              </div>
+              <h3 className="font-display font-extrabold text-xl text-white mb-3 text-left">Trend Radar</h3>
+              <p className="text-zinc-400 text-xs leading-relaxed font-normal text-left">
+                Detect rising search queries and tags early. Spot spikes in audience demand so you can outline videos before topics saturate.
+              </p>
             </div>
-            <h3 className="font-display font-bold text-lg text-white mb-3">Trend Radar</h3>
-            <p className="text-zinc-400 text-xs leading-relaxed mb-6 font-normal">
-              Detect rising search queries and tags early. Spot spikes in audience demand so you can outline videos and draft script hooks before the topic becomes saturated.
-            </p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 mt-6">
               {['Spike alerts', 'Breakout tags', 'Video outlines'].map(t => (
-                <span key={t} className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 border border-zinc-800/80 px-2 py-0.5 rounded bg-zinc-950/40 group-hover:border-zinc-800">{t}</span>
+                <span key={t} className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 border border-white/[0.04] px-2.5 py-1 rounded bg-black/40">{t}</span>
               ))}
             </div>
           </div>
           </RevealOnScroll>
 
-          {/* Card 3 */}
+          {/* Card 3: col-span-1 (Competitor Matrix) */}
           <RevealOnScroll delay={0.2}>
-          <div className="interactive-card feature-card-glow group relative p-8 rounded-3xl bg-zinc-950/60 border border-zinc-900 hover:border-zinc-800 transition-all duration-300 hover:-translate-y-1">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-rose/2 rounded-bl-full pointer-events-none group-hover:bg-brand-rose/5 transition-all duration-500" />
-            <span className="font-mono text-[9px] font-extrabold text-zinc-600 group-hover:text-brand-rose transition-colors uppercase tracking-widest block mb-4">03 // INTEL</span>
-            <div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xl mb-6 group-hover:border-brand-rose/30 group-hover:bg-zinc-950 transition-colors">
-              <Users className="w-5 h-5 text-brand-rose" />
+          <div className="interactive-card group relative p-8 rounded-3xl bg-zinc-950/60 border border-white/[0.08] hover:border-brand-mint/30 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between shadow-[0_15px_35px_rgba(0,0,0,0.8)] overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-mint/5 rounded-bl-full pointer-events-none group-hover:bg-brand-mint/8 transition-all duration-500 filter blur-xl" />
+            <div>
+              <span className="font-mono text-[9px] font-extrabold text-zinc-500 group-hover:text-brand-mint transition-colors uppercase tracking-widest block mb-4">03 // INTEL</span>
+              <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xl mb-6 group-hover:border-brand-mint/30 group-hover:bg-zinc-950 transition-colors">
+                <Users className="w-5 h-5 text-brand-mint" />
+              </div>
+              <h3 className="font-display font-extrabold text-xl text-white mb-3 text-left">Competitor Matrix</h3>
+              <p className="text-zinc-400 text-xs leading-relaxed font-normal text-left">
+                Compare your channel with direct competitors. Benchmark upload frequency, formats, and find what drives views.
+              </p>
             </div>
-            <h3 className="font-display font-bold text-lg text-white mb-3">Competitor Matrix</h3>
-            <p className="text-zinc-400 text-xs leading-relaxed mb-6 font-normal">
-              Compare your channel with direct competitors and rising creators. Benchmark upload frequency, identify format types, and see which formats drive views.
-            </p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 mt-6">
               {['Format mapping', 'Benchmarks', 'Performance ratios'].map(t => (
-                <span key={t} className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 border border-zinc-800/80 px-2 py-0.5 rounded bg-zinc-950/40 group-hover:border-zinc-800">{t}</span>
+                <span key={t} className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 border border-white/[0.04] px-2.5 py-1 rounded bg-black/40">{t}</span>
               ))}
             </div>
           </div>
           </RevealOnScroll>
 
-          {/* Card 4 */}
+          {/* Card 4: col-span-1 (Advanced Filtering) */}
           <RevealOnScroll delay={0.3}>
-          <div className="interactive-card feature-card-glow group relative p-8 rounded-3xl bg-zinc-950/60 border border-zinc-900 hover:border-zinc-800 transition-all duration-300 hover:-translate-y-1">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-rose/2 rounded-bl-full pointer-events-none group-hover:bg-brand-rose/5 transition-all duration-500" />
-            <span className="font-mono text-[9px] font-extrabold text-zinc-600 group-hover:text-brand-rose transition-colors uppercase tracking-widest block mb-4">04 // FILTERING</span>
-            <div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xl mb-6 group-hover:border-brand-rose/30 group-hover:bg-zinc-950 transition-colors">
-              <Search className="w-5 h-5 text-brand-rose" />
+          <div className="interactive-card group relative p-8 rounded-3xl bg-zinc-950/60 border border-white/[0.08] hover:border-brand-rose/30 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between shadow-[0_15px_35px_rgba(0,0,0,0.8)] overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-rose/5 rounded-bl-full pointer-events-none group-hover:bg-brand-rose/8 transition-all duration-500 filter blur-xl" />
+            <div>
+              <span className="font-mono text-[9px] font-extrabold text-zinc-500 group-hover:text-brand-rose transition-colors uppercase tracking-widest block mb-4">04 // FILTERING</span>
+              <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xl mb-6 group-hover:border-brand-rose/30 group-hover:bg-zinc-950 transition-colors">
+                <Search className="w-5 h-5 text-brand-rose" />
+              </div>
+              <h3 className="font-display font-extrabold text-xl text-white mb-3 text-left">Advanced Search</h3>
+              <p className="text-zinc-400 text-xs leading-relaxed font-normal text-left">
+                Filter uploads by duration, location, and date. Sort by our virality score to find videos that resonated.
+              </p>
             </div>
-            <h3 className="font-display font-bold text-lg text-white mb-3">Advanced Search</h3>
-            <p className="text-zinc-400 text-xs leading-relaxed mb-6 font-normal">
-              Search and filter competitor uploads by duration, location, and date. Sort by our performance-adjusted virality score to find videos that resonated with audiences.
-            </p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 mt-6">
               {['Virality factor', 'Format filter', 'Precision search'].map(t => (
-                <span key={t} className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 border border-zinc-800/80 px-2 py-0.5 rounded bg-zinc-950/40 group-hover:border-zinc-800">{t}</span>
+                <span key={t} className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 border border-white/[0.04] px-2.5 py-1 rounded bg-black/40">{t}</span>
               ))}
             </div>
           </div>
           </RevealOnScroll>
 
-          {/* Card 5 */}
+          {/* Card 5: col-span-1 (Research Notebook) */}
           <RevealOnScroll delay={0.4}>
-          <div className="interactive-card feature-card-glow group relative p-8 rounded-3xl bg-zinc-950/60 border border-zinc-900 hover:border-zinc-800 transition-all duration-300 hover:-translate-y-1">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-volt/2 rounded-bl-full pointer-events-none group-hover:bg-brand-volt/5 transition-all duration-500" />
-            <span className="font-mono text-[9px] font-extrabold text-zinc-600 group-hover:text-brand-volt transition-colors uppercase tracking-widest block mb-4">05 // WORKSPACE</span>
-            <div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xl mb-6 group-hover:border-brand-volt/30 group-hover:bg-zinc-950 transition-colors">
-              <BookOpen className="w-5 h-5 text-brand-volt" />
+          <div className="interactive-card group relative p-8 rounded-3xl bg-zinc-950/60 border border-white/[0.08] hover:border-brand-volt/30 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between shadow-[0_15px_35px_rgba(0,0,0,0.8)] overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-volt/5 rounded-bl-full pointer-events-none group-hover:bg-brand-volt/8 transition-all duration-500 filter blur-xl" />
+            <div>
+              <span className="font-mono text-[9px] font-extrabold text-zinc-500 group-hover:text-brand-volt transition-colors uppercase tracking-widest block mb-4">05 // WORKSPACE</span>
+              <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xl mb-6 group-hover:border-brand-volt/30 group-hover:bg-zinc-950 transition-colors">
+                <BookOpen className="w-5 h-5 text-brand-volt" />
+              </div>
+              <h3 className="font-display font-extrabold text-xl text-white mb-3 text-left">Research Notebook</h3>
+              <p className="text-zinc-400 text-xs leading-relaxed font-normal text-left">
+                Save key insights, high-momentum topics, and competitor references. Draft outlines in a dedicated notebook.
+              </p>
             </div>
-            <h3 className="font-display font-bold text-lg text-white mb-3">Research Notebook</h3>
-            <p className="text-zinc-400 text-xs leading-relaxed mb-6 font-normal">
-              Save key insights, high-momentum topics, and competitor references. Draft video hooks and store outlines in a dedicated markdown notebook.
-            </p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 mt-6">
               {['Topic folders', 'Markdown notes', 'Title drafts'].map(t => (
-                <span key={t} className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 border border-zinc-800/80 px-2 py-0.5 rounded bg-zinc-950/40 group-hover:border-zinc-800">{t}</span>
+                <span key={t} className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 border border-white/[0.04] px-2.5 py-1 rounded bg-black/40">{t}</span>
               ))}
             </div>
           </div>
-
           </RevealOnScroll>
 
-          {/* Card 6 */}
+          {/* Card 6: col-span-3 (Smart Digests) */}
           <RevealOnScroll delay={0.5}>
-          <div className="interactive-card feature-card-glow group relative p-8 rounded-3xl bg-zinc-950/60 border border-zinc-900 hover:border-zinc-800 transition-all duration-300 hover:-translate-y-1">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-mint/2 rounded-bl-full pointer-events-none group-hover:bg-brand-mint/5 transition-all duration-500" />
-            <span className="font-mono text-[9px] font-extrabold text-zinc-600 group-hover:text-brand-mint transition-colors uppercase tracking-widest block mb-4">06 // DIGESTS</span>
-            <div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xl mb-6 group-hover:border-brand-mint/30 group-hover:bg-zinc-950 transition-colors">
-              <Cpu className="w-5 h-5 text-brand-mint" />
+          <div className="interactive-card group relative p-8 rounded-3xl bg-zinc-950/60 border border-white/[0.08] hover:border-brand-mint/30 transition-all duration-300 hover:-translate-y-1 md:col-span-3 overflow-hidden flex flex-col justify-between shadow-[0_15px_35px_rgba(0,0,0,0.8)]">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-brand-mint/5 rounded-bl-full pointer-events-none group-hover:bg-brand-mint/8 transition-all duration-500 filter blur-2xl" />
+            <div>
+              <span className="font-mono text-[9px] font-extrabold text-zinc-500 group-hover:text-brand-mint transition-colors uppercase tracking-widest block mb-4">06 // DIGESTS</span>
+              <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between">
+                <div className="space-y-3 flex-1 text-left">
+                  <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xl group-hover:border-brand-mint/30 group-hover:bg-zinc-950 transition-colors">
+                    <Cpu className="w-5 h-5 text-brand-mint" />
+                  </div>
+                  <h3 className="font-display font-extrabold text-xl text-white">Smart Notifications</h3>
+                  <p className="text-zinc-400 text-xs leading-relaxed font-normal">
+                    Get competitor digests and tag updates sent directly to your inbox. Stay updated on market changes without needing to open the workspace.
+                  </p>
+                </div>
+                {/* Visual email mockup */}
+                <div className="w-full lg:w-64 bg-black/40 border border-zinc-900 rounded-xl p-3.5 space-y-2 shrink-0 text-left font-sans shadow-inner">
+                  <div className="flex items-center justify-between border-b border-zinc-900 pb-2 mb-1.5 text-[8px] font-mono text-zinc-500">
+                    <span>From: intelligence@svay.space</span>
+                    <span>Just now</span>
+                  </div>
+                  <h4 className="text-[10px] font-extrabold text-white">Weekly Competitor Matrix Alert</h4>
+                  <p className="text-[8px] text-zinc-400 leading-normal">
+                    🔥 <span className="text-brand-rose font-bold">AI Agents</span> format has spiked by <strong>+147%</strong> views this week. We recommend outlining a draft immediately.
+                  </p>
+                </div>
+              </div>
             </div>
-            <h3 className="font-display font-bold text-lg text-white mb-3">Smart Notifications</h3>
-            <p className="text-zinc-400 text-xs leading-relaxed mb-6 font-normal">
-              Get competitor digests and tag updates sent directly to your inbox. Stay updated on market changes without needing to open the workspace.
-            </p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 mt-6">
               {['Email updates', 'Breakout summaries', 'Custom timing'].map(t => (
-                <span key={t} className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 border border-zinc-800/80 px-2 py-0.5 rounded bg-zinc-950/40 group-hover:border-zinc-800">{t}</span>
+                <span key={t} className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 border border-white/[0.04] px-2.5 py-1 rounded bg-black/40">{t}</span>
               ))}
+            </div>
+          </div>
+          </RevealOnScroll>
+        </div>
+      </section>
+
+      {/* ── CREATOR TESTIMONIALS (SOCIAL PROOF) ── */}
+      <section className="relative z-10 py-16 px-4 md:px-8 max-w-5xl mx-auto">
+        <RevealOnScroll>
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 bg-brand-rose/10 border border-brand-rose/20 px-3.5 py-1.5 rounded-full mb-4">
+            <Users className="w-3.5 h-3.5 text-brand-rose" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-brand-rose">Creator Feedback</span>
+          </div>
+          <h2 className="font-display font-extrabold text-3.5xl md:text-4.5xl tracking-tight text-white mb-4">
+            What creators are saying
+          </h2>
+          <p className="text-zinc-400 text-sm leading-relaxed max-w-sm mx-auto font-normal">
+            Hear from channels utilizing Svay to optimize their workflow.
+          </p>
+        </div>
+        </RevealOnScroll>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <RevealOnScroll delay={0.1}>
+          <div className="p-6 rounded-3xl bg-zinc-950/60 border border-white/[0.08] backdrop-blur-md relative overflow-hidden flex flex-col justify-between group hover:border-brand-volt/20 transition-all duration-300 shadow-[0_15px_30px_rgba(0,0,0,0.8)]">
+            <div className="absolute top-0 right-0 p-4 text-brand-volt opacity-5 group-hover:opacity-10 transition-opacity">
+              <Star className="w-12 h-12 fill-brand-volt" />
+            </div>
+            <p className="text-zinc-350 text-xs md:text-sm leading-relaxed font-normal italic mb-6 text-left">
+              "Before using Svay, our team was spending 10+ hours a week manually scraping competitor uploads. Now, we spot rising concepts in 5 minutes and outline our video pipeline with hard demand data. It's completely transformed our production rate."
+            </p>
+            <div className="flex items-center gap-3">
+              <img
+                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&h=80&q=80"
+                alt="Creator Profile"
+                className="w-10 h-10 rounded-full object-cover border border-zinc-800"
+              />
+              <div className="text-left">
+                <p className="text-xs font-black text-white">Sarah Jenkins</p>
+                <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Tech Reviewer · 340K subs</p>
+              </div>
+            </div>
+          </div>
+          </RevealOnScroll>
+
+          <RevealOnScroll delay={0.2}>
+          <div className="p-6 rounded-3xl bg-zinc-950/60 border border-white/[0.08] backdrop-blur-md relative overflow-hidden flex flex-col justify-between group hover:border-brand-mint/20 transition-all duration-300 shadow-[0_15px_30px_rgba(0,0,0,0.8)]">
+            <div className="absolute top-0 right-0 p-4 text-brand-mint opacity-5 group-hover:opacity-10 transition-opacity">
+              <Star className="w-12 h-12 fill-brand-mint" />
+            </div>
+            <p className="text-zinc-350 text-xs md:text-sm leading-relaxed font-normal italic mb-6 text-left">
+              "We used to rely purely on gut feeling for titles and topics. Svay's Virality Index showed us exactly what format gaps we were missing. We locked in our early adopter price and it's already paid for itself 10x over."
+            </p>
+            <div className="flex items-center gap-3">
+              <img
+                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&h=80&q=80"
+                alt="Creator Profile"
+                className="w-10 h-10 rounded-full object-cover border border-zinc-800"
+              />
+              <div className="text-left">
+                <p className="text-xs font-black text-white">David Chen</p>
+                <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Productivity Hacks · 1.2M subs</p>
+              </div>
             </div>
           </div>
           </RevealOnScroll>
@@ -1081,8 +1250,11 @@ export default function LandingPage() {
           {/* Left Pricing Panel */}
           <div className="md:col-span-6 flex flex-col justify-between">
             <div>
-              <div className="flex items-center gap-2 text-brand-volt font-black uppercase text-[10px] tracking-widest mb-6">
-                <span className="w-1.5 h-1.5 rounded-full bg-brand-volt" /> Svay Pro {billingInterval === "yearly" ? "Yearly" : "Monthly"}
+              <div className="flex flex-wrap items-center gap-2 mb-6">
+                <div className="flex items-center gap-2 text-brand-volt font-black uppercase text-[10px] tracking-widest">
+                  <span className="w-1.5 h-1.5 rounded-full bg-brand-volt" /> Svay Pro {billingInterval === "yearly" ? "Yearly" : "Monthly"}
+                </div>
+                <span className="bg-brand-volt/10 border border-brand-volt/20 text-brand-volt font-black text-[8px] px-2 py-0.5 rounded-full tracking-wide uppercase select-none">Early Adopter Rate Lock</span>
               </div>
               
               <div className="flex items-baseline gap-1.5 mb-2">
@@ -1093,19 +1265,24 @@ export default function LandingPage() {
                 <span className="font-mono text-zinc-500 text-xs font-bold">/ month</span>
               </div>
 
-              {/* strike price */}
-              <div className="flex items-center gap-2 mb-6">
-                {billingInterval === "monthly" ? (
-                  <>
-                    <span className="text-zinc-500 line-through text-sm font-bold">₹1,499/mo</span>
-                    <span className="bg-brand-rose/15 text-brand-rose border border-brand-rose/25 font-black text-[9px] px-2 py-0.5 rounded tracking-wide uppercase">SAVE 33%</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-zinc-500 line-through text-sm font-bold">₹999/mo</span>
-                    <span className="bg-brand-rose/15 text-brand-rose border border-brand-rose/25 font-black text-[9px] px-2 py-0.5 rounded tracking-wide uppercase">SAVE 30%</span>
-                  </>
-                )}
+              {/* strike price & clarity info */}
+              <div className="flex flex-col gap-1.5 mb-6 text-left">
+                <div className="flex items-center gap-2">
+                  {billingInterval === "monthly" ? (
+                    <>
+                      <span className="text-zinc-500 line-through text-sm font-bold">₹1,499/mo</span>
+                      <span className="bg-brand-rose/15 text-brand-rose border border-brand-rose/25 font-black text-[9px] px-2 py-0.5 rounded tracking-wide uppercase">SAVE 33%</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-zinc-500 line-through text-sm font-bold">₹999/mo</span>
+                      <span className="bg-brand-rose/15 text-brand-rose border border-brand-rose/25 font-black text-[9px] px-2 py-0.5 rounded tracking-wide uppercase">SAVE 30%</span>
+                    </>
+                  )}
+                </div>
+                <p className="text-[10px] text-zinc-500 font-semibold tracking-wide leading-relaxed">
+                  Subscription plan. Rate locked-in for life. Your price will never increase.
+                </p>
               </div>
 
               <div className="flex items-center gap-2 text-xs font-extrabold text-brand-mint mb-8">
