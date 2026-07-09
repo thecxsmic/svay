@@ -518,18 +518,72 @@ export default function LandingPage() {
             <div className="flex items-center gap-3 select-none pl-1 sm:pl-4 sm:border-l sm:border-zinc-800">
               <div className="flex -space-x-2">
                 {[
-                  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&h=100&q=80",
-                  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&h=100&q=80",
-                  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&h=100&q=80",
-                  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&h=100&q=80",
-                ].map((src, i) => (
-                  <img
-                    key={i}
-                    src={src}
-                    alt="Creator Avatar"
-                    className="w-7 h-7 rounded-full border-2 border-black object-cover relative z-10"
-                  />
-                ))}
+                  // Avatar 1: Sarah / Tech
+                  <div key="av1" className="w-7 h-7 rounded-full border-2 border-black overflow-hidden bg-zinc-900 shrink-0 relative z-10">
+                    <svg viewBox="0 0 100 100" className="w-full h-full">
+                      <defs>
+                        <linearGradient id="avGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#ff4f6d" />
+                          <stop offset="100%" stopColor="#7c3aed" />
+                        </linearGradient>
+                      </defs>
+                      <circle cx="50" cy="50" r="50" fill="url(#avGrad1)" />
+                      <circle cx="50" cy="45" r="18" fill="white" fillOpacity="0.9" />
+                      <path d="M25 80c0-15 10-22 25-22s25 7 25 22" fill="white" fillOpacity="0.9" />
+                      <rect x="22" y="38" width="8" height="16" rx="4" fill="#00f0ff" />
+                      <rect x="70" y="38" width="8" height="16" rx="4" fill="#00f0ff" />
+                      <path d="M26 38c0-12 10-18 24-18s24 6 24 18" stroke="#00f0ff" strokeWidth="4" fill="none" />
+                    </svg>
+                  </div>,
+                  // Avatar 2: David / Productivity
+                  <div key="av2" className="w-7 h-7 rounded-full border-2 border-black overflow-hidden bg-zinc-900 shrink-0 relative z-10">
+                    <svg viewBox="0 0 100 100" className="w-full h-full">
+                      <defs>
+                        <linearGradient id="avGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#00f0ff" />
+                          <stop offset="100%" stopColor="#0052ff" />
+                        </linearGradient>
+                      </defs>
+                      <circle cx="50" cy="50" r="50" fill="url(#avGrad2)" />
+                      <circle cx="50" cy="45" r="16" fill="black" fillOpacity="0.4" />
+                      <path d="M28 78c0-12 10-18 22-18s22 6 22 18" fill="black" fillOpacity="0.4" />
+                      <rect x="34" y="40" width="13" height="9" rx="2" stroke="#ff4f6d" strokeWidth="2.5" fill="none" />
+                      <rect x="53" y="40" width="13" height="9" rx="2" stroke="#ff4f6d" strokeWidth="2.5" fill="none" />
+                      <line x1="47" y1="44" x2="53" y2="44" stroke="#ff4f6d" strokeWidth="2.5" />
+                    </svg>
+                  </div>,
+                  // Avatar 3: Orange / Cap
+                  <div key="av3" className="w-7 h-7 rounded-full border-2 border-black overflow-hidden bg-zinc-900 shrink-0 relative z-10">
+                    <svg viewBox="0 0 100 100" className="w-full h-full">
+                      <defs>
+                        <linearGradient id="avGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#ff9900" />
+                          <stop offset="100%" stopColor="#ff4f6d" />
+                        </linearGradient>
+                      </defs>
+                      <circle cx="50" cy="50" r="50" fill="url(#avGrad3)" />
+                      <circle cx="50" cy="48" r="16" fill="white" fillOpacity="0.85" />
+                      <path d="M28 80c0-12 10-18 22-18s22 6 22 18" fill="white" fillOpacity="0.85" />
+                      <path d="M32 38c0-8 8-12 18-12s18 4 18 12v3H32v-3z" fill="#00f0ff" />
+                      <circle cx="50" cy="23" r="3" fill="#00f0ff" />
+                    </svg>
+                  </div>,
+                  // Avatar 4: Purple / Spark
+                  <div key="av4" className="w-7 h-7 rounded-full border-2 border-black overflow-hidden bg-zinc-900 shrink-0 relative z-10">
+                    <svg viewBox="0 0 100 100" className="w-full h-full">
+                      <defs>
+                        <linearGradient id="avGrad4" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#7c3aed" />
+                          <stop offset="100%" stopColor="#00f0ff" />
+                        </linearGradient>
+                      </defs>
+                      <circle cx="50" cy="50" r="50" fill="url(#avGrad4)" />
+                      <circle cx="50" cy="45" r="15" fill="black" fillOpacity="0.3" />
+                      <path d="M30 76c0-10 8-16 20-16s20 6 20 16" fill="black" fillOpacity="0.3" />
+                      <polygon points="50,15 53,23 61,23 55,28 57,36 50,31 43,36 45,28 39,23 47,23" fill="#ff4f6d" transform="scale(0.4) translate(75, 40)" />
+                    </svg>
+                  </div>
+                ]}
               </div>
               <div className="text-left">
                 <div className="flex items-center gap-0.5">
@@ -1087,11 +1141,22 @@ export default function LandingPage() {
               "Before using Svay, our team was spending 10+ hours a week manually scraping competitor uploads. Now, we spot rising concepts in 5 minutes and outline our video pipeline with hard demand data. It's completely transformed our production rate."
             </p>
             <div className="flex items-center gap-3">
-              <img
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&h=80&q=80"
-                alt="Creator Profile"
-                className="w-10 h-10 rounded-full object-cover border border-zinc-800"
-              />
+              <div className="w-10 h-10 rounded-full border border-zinc-800 overflow-hidden bg-zinc-900 shrink-0">
+                <svg viewBox="0 0 100 100" className="w-full h-full">
+                  <defs>
+                    <linearGradient id="testGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#ff4f6d" />
+                      <stop offset="100%" stopColor="#7c3aed" />
+                    </linearGradient>
+                  </defs>
+                  <circle cx="50" cy="50" r="50" fill="url(#testGrad1)" />
+                  <circle cx="50" cy="45" r="18" fill="white" fillOpacity="0.9" />
+                  <path d="M25 80c0-15 10-22 25-22s25 7 25 22" fill="white" fillOpacity="0.9" />
+                  <rect x="22" y="38" width="8" height="16" rx="4" fill="#00f0ff" />
+                  <rect x="70" y="38" width="8" height="16" rx="4" fill="#00f0ff" />
+                  <path d="M26 38c0-12 10-18 24-18s24 6 24 18" stroke="#00f0ff" strokeWidth="4" fill="none" />
+                </svg>
+              </div>
               <div className="text-left">
                 <p className="text-xs font-black text-white">Sarah Jenkins</p>
                 <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Tech Reviewer · 340K subs</p>
@@ -1109,11 +1174,22 @@ export default function LandingPage() {
               "We used to rely purely on gut feeling for titles and topics. Svay's Virality Index showed us exactly what format gaps we were missing. We locked in our early adopter price and it's already paid for itself 10x over."
             </p>
             <div className="flex items-center gap-3">
-              <img
-                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&h=80&q=80"
-                alt="Creator Profile"
-                className="w-10 h-10 rounded-full object-cover border border-zinc-800"
-              />
+              <div className="w-10 h-10 rounded-full border border-zinc-800 overflow-hidden bg-zinc-900 shrink-0">
+                <svg viewBox="0 0 100 100" className="w-full h-full">
+                  <defs>
+                    <linearGradient id="testGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#00f0ff" />
+                      <stop offset="100%" stopColor="#0052ff" />
+                    </linearGradient>
+                  </defs>
+                  <circle cx="50" cy="50" r="50" fill="url(#testGrad2)" />
+                  <circle cx="50" cy="45" r="16" fill="black" fillOpacity="0.4" />
+                  <path d="M28 78c0-12 10-18 22-18s22 6 22 18" fill="black" fillOpacity="0.4" />
+                  <rect x="34" y="40" width="13" height="9" rx="2" stroke="#ff4f6d" strokeWidth="2.5" fill="none" />
+                  <rect x="53" y="40" width="13" height="9" rx="2" stroke="#ff4f6d" strokeWidth="2.5" fill="none" />
+                  <line x1="47" y1="44" x2="53" y2="44" stroke="#ff4f6d" strokeWidth="2.5" />
+                </svg>
+              </div>
               <div className="text-left">
                 <p className="text-xs font-black text-white">David Chen</p>
                 <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Productivity Hacks · 1.2M subs</p>
