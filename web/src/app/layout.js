@@ -117,8 +117,9 @@ export default async function RootLayout({ children }) {
     <html
       lang="en"
       className={`${audiowide.variable} ${montserratAlternates.variable} ${righteous.variable} h-full antialiased dark`}
+      suppressHydrationWarning
     >
-      <body className="h-full bg-black text-[#ededed] selection:bg-[#0070f3] selection:text-white font-sans">
+      <body className="h-full text-[#ededed] selection:bg-[#0070f3] selection:text-white font-sans" style={{background: 'linear-gradient(160deg, #08091a 0%, #050510 25%, #07030e 50%, #060410 75%, #030308 100%)'}}>
         <Script
           src="https://cloud.umami.is/script.js"
           data-website-id="0e5f3f30-23db-41cf-b7d0-d7abfd372536"

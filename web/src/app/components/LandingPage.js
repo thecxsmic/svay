@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { motion, useInView } from 'framer-motion';
+import { motion, useInView, AnimatePresence } from 'framer-motion';
 import { 
   Zap, Target, TrendingUp, Search, Cpu, ArrowRight, Check, Play, Sparkles, 
   Clock, Star, ArrowUpRight, HelpCircle, ChevronDown, Monitor, 
@@ -32,10 +32,16 @@ const RevealOnScroll = ({ children, delay = 0 }) => {
 const AnimatedCounter = ({ target, suffix = '', duration = 1500 }) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-40px' });
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState(target);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (!isInView) return;
+    setMounted(true);
+    setCount(0);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted || !isInView) return;
     let startTime = null;
     const animate = (timestamp) => {
       if (!startTime) startTime = timestamp;
@@ -45,12 +51,16 @@ const AnimatedCounter = ({ target, suffix = '', duration = 1500 }) => {
       if (progress < 1) requestAnimationFrame(animate);
     };
     requestAnimationFrame(animate);
-  }, [isInView, target, duration]);
+  }, [isInView, target, duration, mounted]);
 
-  return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
+  return <span ref={ref}>{mounted ? count.toLocaleString() : target.toLocaleString()}{suffix}</span>;
 };
 
 export default function LandingPage() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   const enterDemo = (e) => {
     if (e) e.preventDefault();
@@ -86,28 +96,36 @@ export default function LandingPage() {
   // Countdown Timer states (Target: July 15, 2026)
   const [timeLeft, setTimeLeft] = useState({ days: 14, hours: 0, minutes: 0, seconds: 0 });
 
-  // Typing effect for hero badge
-  const badgePhrases = ['Real-Time Creator Intelligence', 'AI-Powered Trend Detection', 'Competitor Analysis Engine'];
-  const [badgeText, setBadgeText] = useState('');
-  const [phraseIdx, setPhraseIdx] = useState(0);
+  // Typewriter effect for hero text loop
+  const actionWords = ['analyze.', 'predict.', 'outperform.', 'dominate.'];
+  const [actionWord, setActionWord] = useState('');
+  const [actionIdx, setActionIdx] = useState(0);
   const [charIdx, setCharIdx] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Hero loop text state
-  const actionWords = ['record.', 'upload.', 'publish.', 'create.'];
-  const [actionWord, setActionWord] = useState('record.');
-  const [actionIdx, setActionIdx] = useState(0);
-
   useEffect(() => {
-    const interval = setInterval(() => {
-      setActionIdx((prev) => {
-        const next = (prev + 1) % actionWords.length;
-        setActionWord(actionWords[next]);
-        return next;
-      });
-    }, 2500);
-    return () => clearInterval(interval);
-  }, []);
+    const currentWord = actionWords[actionIdx];
+    const typingSpeed = isDeleting ? 30 : 60;
+
+    if (!isDeleting && charIdx === currentWord.length) {
+      // Pause at the end of the typed word
+      const timeout = setTimeout(() => setIsDeleting(true), 1800);
+      return () => clearTimeout(timeout);
+    }
+
+    if (isDeleting && charIdx === 0) {
+      setIsDeleting(false);
+      setActionIdx((prev) => (prev + 1) % actionWords.length);
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      setCharIdx((prev) => prev + (isDeleting ? -1 : 1));
+      setActionWord(currentWord.substring(0, charIdx + (isDeleting ? -1 : 1)));
+    }, typingSpeed);
+
+    return () => clearTimeout(timeout);
+  }, [charIdx, isDeleting, actionIdx]);
 
   // Parallax scroll state
   const [scrollY, setScrollY] = useState(0);
@@ -187,30 +205,7 @@ export default function LandingPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Typing effect cycle
-  useEffect(() => {
-    const currentPhrase = badgePhrases[phraseIdx];
-    const speed = isDeleting ? 30 : 60;
 
-    if (!isDeleting && charIdx === currentPhrase.length) {
-      // Pause at end of phrase
-      const timeout = setTimeout(() => setIsDeleting(true), 1800);
-      return () => clearTimeout(timeout);
-    }
-
-    if (isDeleting && charIdx === 0) {
-      setIsDeleting(false);
-      setPhraseIdx((prev) => (prev + 1) % badgePhrases.length);
-      return;
-    }
-
-    const timeout = setTimeout(() => {
-      setCharIdx((prev) => prev + (isDeleting ? -1 : 1));
-      setBadgeText(currentPhrase.substring(0, charIdx + (isDeleting ? -1 : 1)));
-    }, speed);
-
-    return () => clearTimeout(timeout);
-  }, [charIdx, isDeleting, phraseIdx]);
 
   // Countdown timer handler targeting July 15, 2026
   useEffect(() => {
@@ -268,83 +263,7 @@ export default function LandingPage() {
   }, [billingInterval]);
 
 
-  // Canvas particle background
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    let W, H;
-    let particles = [];
-    
-    const initCanvas = () => {
-      W = canvas.width = window.innerWidth;
-      H = canvas.height = window.innerHeight;
-      particles = [];
-      const particleCount = Math.min(Math.floor(W / 15), 80);
-      
-      for (let i = 0; i < particleCount; i++) {
-        particles.push({
-          x: Math.random() * W,
-          y: Math.random() * H,
-          vx: (Math.random() - 0.5) * 0.3,
-          vy: (Math.random() - 0.5) * 0.3,
-          r: Math.random() * 1.5 + 0.5,
-          color: Math.random() < 0.7 ? '0, 240, 255' : '0, 82, 255', // Cyan or Blue
-          alpha: Math.random() * 0.2 + 0.05
-        });
-      }
-    };
 
-    initCanvas();
-    window.addEventListener('resize', initCanvas);
-
-    let animId;
-    const draw = () => {
-      ctx.clearRect(0, 0, W, H);
-      
-      // Update & Draw particles
-      particles.forEach((p, idx) => {
-        p.x += p.vx;
-        p.y += p.vy;
-        
-        if (p.x < 0) p.x = W;
-        if (p.x > W) p.x = 0;
-        if (p.y < 0) p.y = H;
-        if (p.y > H) p.y = 0;
-        
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${p.color}, ${p.alpha})`;
-        ctx.fill();
-        
-        // Connections
-        for (let j = idx + 1; j < particles.length; j++) {
-          const p2 = particles[j];
-          const dx = p.x - p2.x;
-          const dy = p.y - p2.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          
-          if (dist < 130) {
-            ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(p2.x, p2.y);
-            const connectionAlpha = 0.08 * (1 - dist / 130);
-            ctx.strokeStyle = `rgba(0, 240, 255, ${connectionAlpha})`;
-            ctx.lineWidth = 0.5;
-            ctx.stroke();
-          }
-        }
-      });
-      
-      animId = requestAnimationFrame(draw);
-    };
-    
-    draw();
-    return () => {
-      window.removeEventListener('resize', initCanvas);
-      cancelAnimationFrame(animId);
-    };
-  }, []);
 
   // Card 3D tilt effect handler
   const handleCardMouseMove = (e) => {
@@ -369,7 +288,20 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-x-hidden">
+    <div className="relative min-h-screen w-full overflow-x-hidden text-white" style={{background: 'linear-gradient(160deg, #08091a 0%, #050510 25%, #07030e 50%, #060410 75%, #030308 100%)'}}>
+      {/* === STATIC AMBIENT GRADIENT ZONES (full-page) === */}
+      <div className="fixed inset-0 pointer-events-none z-0" aria-hidden>
+        {/* Zone 1 – top-left cyan bloom */}
+        <div className="absolute top-[-10%] left-[-5%] w-[700px] h-[700px] rounded-full" style={{background: 'radial-gradient(ellipse, rgba(0,240,255,0.05) 0%, transparent 65%)', filter: 'blur(40px)'}} />
+        {/* Zone 2 – top-right indigo bloom */}
+        <div className="absolute top-[-5%] right-[-10%] w-[600px] h-[600px] rounded-full" style={{background: 'radial-gradient(ellipse, rgba(108,99,255,0.05) 0%, transparent 65%)', filter: 'blur(50px)'}} />
+        {/* Zone 3 – mid-left blue bloom */}
+        <div className="absolute top-[35%] left-[-8%] w-[550px] h-[550px] rounded-full" style={{background: 'radial-gradient(ellipse, rgba(0,82,255,0.06) 0%, transparent 65%)', filter: 'blur(60px)'}} />
+        {/* Zone 4 – mid-right rose bloom */}
+        <div className="absolute top-[55%] right-[-5%] w-[500px] h-[500px] rounded-full" style={{background: 'radial-gradient(ellipse, rgba(255,79,109,0.06) 0%, transparent 65%)', filter: 'blur(55px)'}} />
+        {/* Zone 5 – bottom center volt bloom */}
+        <div className="absolute bottom-[-5%] left-1/2 -translate-x-1/2 w-[800px] h-[400px] rounded-full" style={{background: 'radial-gradient(ellipse, rgba(0,240,255,0.04) 0%, transparent 65%)', filter: 'blur(70px)'}} />
+      </div>
       {/* Custom Pointer following ring (hidden on mobile) */}
       {!isMobile && (
         <>
@@ -389,25 +321,54 @@ export default function LandingPage() {
         </>
       )}
 
-      {/* Floating blur orbs - Visual background accent */}
-      <div className="absolute top-[10%] right-[10%] w-96 h-96 bg-brand-volt/5 rounded-full filter blur-[100px] pointer-events-none animate-pulse-slow z-0" />
-      <div className="absolute top-[40%] left-[5%] w-[450px] h-[450px] bg-brand-mint/4 rounded-full filter blur-[120px] pointer-events-none animate-spin-slow z-0" />
-      <div className="absolute bottom-[15%] right-[5%] w-[350px] h-[350px] bg-brand-rose/4 rounded-full filter blur-[90px] pointer-events-none animate-pulse-slow z-0" />
+      {/* Liquid morphing blobs - Dynamic background gradient meshes */}
+      {mounted && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+          {/* Blob 1 – top-right cyan/teal */}
+          <motion.div
+            animate={{ x: [0, 60, -30, 0], y: [0, -80, 50, 0], scale: [1, 1.2, 0.9, 1] }}
+            transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-[5%] right-[8%] w-[600px] h-[600px] rounded-full pointer-events-none"
+            style={{background: 'radial-gradient(ellipse, rgba(0,240,255,0.12) 0%, rgba(0,240,255,0.02) 50%, transparent 70%)', filter: 'blur(80px)'}}
+          />
+          {/* Blob 2 – mid-left blue/indigo */}
+          <motion.div
+            animate={{ x: [0, -60, 45, 0], y: [0, 70, -80, 0], scale: [1, 0.85, 1.15, 1] }}
+            transition={{ duration: 28, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-[38%] left-[3%] w-[700px] h-[700px] rounded-full pointer-events-none"
+            style={{background: 'radial-gradient(ellipse, rgba(108,99,255,0.35) 0%, rgba(0,82,255,0.1) 50%, transparent 70%)', filter: 'blur(90px)'}}
+          />
+          {/* Blob 3 – bottom-right rose/volt */}
+          <motion.div
+            animate={{ x: [0, 45, -45, 0], y: [0, -55, 65, 0], scale: [1, 1.25, 0.85, 1] }}
+            transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute bottom-[10%] right-[4%] w-[550px] h-[550px] rounded-full pointer-events-none"
+            style={{background: 'radial-gradient(ellipse, rgba(255,79,109,0.32) 0%, rgba(0,240,255,0.1) 55%, transparent 70%)', filter: 'blur(85px)'}}
+          />
+          {/* Blob 4 – center slow drifter */}
+          <motion.div
+            animate={{ x: [0, -30, 30, 0], y: [0, 40, -40, 0], scale: [1, 1.1, 0.95, 1] }}
+            transition={{ duration: 35, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-[60%] left-[35%] w-[500px] h-[500px] rounded-full pointer-events-none"
+            style={{background: 'radial-gradient(ellipse, rgba(0,82,255,0.22) 0%, transparent 65%)', filter: 'blur(100px)'}}
+          />
+        </div>
+      )}
 
-      {/* Dynamic particles and tech Grid overlay */}
-      <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0 opacity-70" />
-      <div className="fixed inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:4.5rem_4.5rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none z-0" />
+      {/* Tech Grid overlay */}
+      <div className="fixed inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.045)_1px,transparent_1px)] bg-[size:4.5rem_4.5rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none z-0" />
       
       {/* Background grain texture */}
       <div className="bg-grain" />
 
       {/* ── HEADER (GLASSMORPHIC FLOATING ISLAND) ── */}
       <header className="fixed top-0 left-0 right-0 w-full max-w-[100vw] z-50 px-3 sm:px-4 md:px-8 py-4 transition-all duration-300">
-        <div className={`max-w-5xl w-full mx-auto px-4 sm:px-6 py-3 flex flex-col lg:flex-row lg:items-center justify-between gap-0 lg:gap-4 rounded-2xl bg-black/85 border ${scrolled ? 'border-brand-volt/20 shadow-[0_8px_32px_rgba(0,240,255,0.05)]' : 'border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.8)]'} backdrop-blur-md transition-[border-color,background-color,box-shadow] duration-200`}>
+        <div className={`max-w-5xl w-full mx-auto px-4 sm:px-6 py-3 flex flex-col lg:flex-row lg:items-center justify-between gap-0 lg:gap-4 rounded-2xl transition-[border-color,background-color,box-shadow] duration-200 liquid-glass relative overflow-hidden ${scrolled ? 'border-brand-volt/25 shadow-[0_8px_32px_rgba(0,240,255,0.05)]' : 'border-white/[0.1] shadow-[0_8px_32px_rgba(0,0,0,0.8)]'}`}>
+          <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.02] via-transparent to-transparent pointer-events-none" />
           <div className="flex items-center justify-between w-full lg:w-auto py-1">
             {/* Logo */}
             <a href="#" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2.5 group">
-              <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-brand-volt via-[#00b0ff] to-brand-mint shadow-[0_0_15px_rgba(0,240,255,0.25)] group-hover:shadow-[0_0_25px_rgba(0,240,255,0.45)] transition-all" />
+              <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-brand-volt via-[#00b0ff] to-brand-mint shadow-[0_0_15px_rgba(0,240,255,0.25)] group-hover:shadow-[0_0_25px_rgba(0,240,255,0.45)] transition-all animate-logo-gradient" />
               <span className="font-logo font-black text-lg text-white tracking-tight">SVAY</span>
             </a>
 
@@ -421,7 +382,7 @@ export default function LandingPage() {
           </div>
 
           {/* Links */}
-          <nav className={`${mobileMenuOpen ? 'flex' : 'hidden lg:flex'} flex-col lg:flex-row items-start lg:items-center gap-1.5 lg:gap-8 text-[11px] font-bold uppercase tracking-wider text-zinc-400 w-full lg:w-auto pt-4 pb-2 lg:py-0 border-t border-zinc-900/80 lg:border-t-0 mt-3 lg:mt-0`}>
+          <nav className={`${mobileMenuOpen ? 'flex' : 'hidden lg:flex'} flex-col lg:flex-row items-start lg:items-center gap-1.5 lg:gap-8 text-[11px] font-bold uppercase tracking-wider text-zinc-400 w-full lg:w-auto pt-4 pb-2 lg:py-0 lg:border-t-0 mt-3 lg:mt-0`}>
             <a href="#features" onClick={() => setMobileMenuOpen(false)} className="hover:text-white transition-colors py-2 px-3 lg:py-1 lg:px-0 w-full lg:w-auto rounded-xl hover:bg-white/5 lg:hover:bg-transparent relative group flex items-center">
               Features
               <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-brand-volt transition-all group-hover:w-full hidden lg:block" />
@@ -441,20 +402,18 @@ export default function LandingPage() {
           </nav>
 
           {/* Action Button */}
-          <div className={`${mobileMenuOpen ? 'flex' : 'hidden lg:flex'} flex-col lg:flex-row items-stretch lg:items-center gap-3 w-full lg:w-auto pt-3 pb-1 lg:py-0 border-t border-zinc-900/80 lg:border-t-0 mt-2 lg:mt-0`}>
+          <div className={`${mobileMenuOpen ? 'flex' : 'hidden lg:flex'} flex-col lg:flex-row items-stretch lg:items-center gap-3 w-full lg:w-auto pt-3 pb-1 lg:py-0 lg:border-t-0 mt-2 lg:mt-0`}>
             <button 
               onClick={() => { setMobileMenuOpen(false); window.location.href = "/sign-in"; }} 
-              className="px-5 py-3 lg:py-2.5 rounded-xl border border-zinc-800 text-zinc-300 hover:text-white text-[11px] font-extrabold uppercase tracking-wider hover:bg-zinc-900 transition-all cursor-pointer text-center"
+              className="px-5 py-3 lg:py-2.5 rounded-xl text-zinc-350 hover:text-white text-[11px] font-extrabold uppercase tracking-wider transition-all cursor-pointer text-center liquid-glass hover:border-brand-volt/30"
             >
               Sign In
             </button>
             <button 
               onClick={() => { setMobileMenuOpen(false); window.location.href = "/sign-in"; }} 
-              className="relative inline-flex items-center justify-center p-0.5 overflow-hidden text-[11px] font-bold uppercase tracking-wider text-black rounded-xl group bg-gradient-to-br from-brand-volt to-brand-mint group-hover:from-brand-volt group-hover:to-brand-mint hover:text-black focus:ring-4 focus:outline-none focus:ring-lime-800 transition-all duration-300 w-full lg:w-auto cursor-pointer"
+              className="px-5 py-2.5 lg:py-2 rounded-xl text-black hover:text-white bg-gradient-to-r from-brand-volt to-brand-mint hover:from-brand-volt hover:to-[#00f0ff] font-extrabold text-[11px] uppercase tracking-wider transition-all duration-300 w-full lg:w-auto cursor-pointer flex items-center justify-center gap-1.5 shadow-[0_0_20px_rgba(0,240,255,0.25),inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/10 hover:shadow-[0_0_30px_rgba(0,240,255,0.45)] hover:-translate-y-0.5"
             >
-              <span className="relative px-5 py-2.5 lg:py-2 transition-all ease-in duration-75 bg-brand-volt rounded-xl group-hover:bg-opacity-0 group-hover:text-white text-black font-extrabold flex items-center justify-center gap-1.5 w-full lg:w-auto">
-                Start Trial <ArrowRight className="w-3.5 h-3.5" />
-              </span>
+              Start Trial <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
@@ -462,39 +421,33 @@ export default function LandingPage() {
 
       {/* ── HERO SECTION ── */}
       <section className="relative z-10 pt-32 pb-24 md:pt-40 md:pb-36 px-4 md:px-8 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-6 lg:gap-8 items-center">
+        {/* Hero Background Gradient Sweeps */}
+        <div className="absolute inset-0 bg-gradient-to-tr from-[#00f0ff]/[0.01] via-[#0052ff]/[0.01] to-transparent pointer-events-none z-0" />
+
         {/* Hero Info */}
-        <div className="md:col-span-6 lg:col-span-7 flex flex-col items-start text-left">
+        <div className="md:col-span-6 lg:col-span-7 flex flex-col items-start text-left relative z-10">
           {/* Badge */}
           <div className="inline-flex items-center gap-2 bg-brand-volt/10 border border-brand-volt/20 px-3.5 py-1.5 rounded-full mb-8 shadow-[0_0_15px_rgba(0,240,255,0.03)]">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-volt opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-volt"></span>
             </span>
-            <span className="text-[10px] font-black uppercase tracking-widest text-brand-volt">{badgeText}<span className="animate-pulse">|</span></span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-brand-volt">Real-Time Creator Intelligence</span>
           </div>
 
           {/* Main Title */}
           <h1 className="font-display font-extrabold text-5xl md:text-4xl lg:text-5xl xl:text-7xl leading-[1.0] tracking-tight text-white mb-4 md:mb-6">
             Know what performs.<br/>
             Before you hit<br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0052ff] via-[#00d2ff] to-[#7c3aed] drop-shadow-[0_0_15px_rgba(0,240,255,0.1)] text-glow-volt inline-flex min-w-[200px]">
-              <AnimatePresence mode="wait">
-                <motion.span
-                  key={actionWord}
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -15 }}
-                  transition={{ duration: 0.25, ease: 'easeOut' }}
-                >
-                  {actionWord}
-                </motion.span>
-              </AnimatePresence>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-volt via-brand-mint to-brand-rose animate-logo-gradient inline-flex min-w-[200px]">
+              {mounted ? actionWord : 'analyze.'}
+              {mounted && <span className="text-white animate-pulse font-normal ml-0.5">|</span>}
             </span>
           </h1>
 
           {/* Description */}
-          <p className="text-zinc-400 text-base md:text-xs lg:text-sm xl:text-base leading-relaxed max-w-xl mb-6 md:mb-8 xl:mb-10 font-normal">
-            Stop guessing what your audience wants. Svay tracks your competitors' top-performing formats, catches breakout topics as they begin to spike, and helps you structure video ideas backed by real demand data.
+          <p className="text-zinc-400 text-base md:text-xs lg:text-sm xl:text-base leading-relaxed max-w-xl mb-6 md:mb-8 xl:mb-10 font-normal text-left">
+            Get out of view slumps. Stop spending 10 hours brainstorming video ideas that flop. Svay gives you high-probability video concepts backed by real-time competitor velocity and trend indicators. Out-publish, out-perform, and dominate your niche.
           </p>
 
           {/* Action Buttons & Social Proof */}
@@ -502,13 +455,13 @@ export default function LandingPage() {
             <div className="flex flex-wrap items-center gap-4 shrink-0">
               <button 
                 onClick={() => { window.location.href = "/sign-in"; }}
-                className="px-6 md:px-5 lg:px-8 py-3 md:py-2.5 lg:py-4 bg-brand-volt hover:bg-[#33f3ff] text-black font-extrabold text-sm md:text-xs lg:text-sm uppercase tracking-wider rounded-xl transition-all shadow-[0_0_30px_rgba(0,240,255,0.25)] hover:shadow-[0_0_40px_rgba(0,240,255,0.45)] hover:-translate-y-0.5 text-center flex items-center justify-center gap-2 cursor-pointer"
+                className="px-6 md:px-5 lg:px-8 py-3 md:py-2.5 lg:py-4 bg-gradient-to-r from-brand-volt to-brand-mint hover:from-[#33f3ff] hover:to-[#00ffca] text-black font-extrabold text-sm md:text-xs lg:text-sm uppercase tracking-wider rounded-xl transition-all shadow-[0_0_30px_rgba(0,240,255,0.25)] hover:shadow-[0_0_45px_rgba(0,240,255,0.45),inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/10 hover:-translate-y-0.5 text-center flex items-center justify-center gap-2 cursor-pointer"
               >
-                Get Started <ArrowRight className="w-4 h-4" />
+                Claim 7-Day Free Access <ArrowRight className="w-4 h-4" />
               </button>
               <button 
                 onClick={enterDemo}
-                className="px-6 md:px-5 lg:px-8 py-3 md:py-2.5 lg:py-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-white font-extrabold text-sm md:text-xs lg:text-sm uppercase tracking-wider rounded-xl transition-all text-center flex items-center justify-center gap-2 hover:-translate-y-0.5 cursor-pointer"
+                className="px-6 md:px-5 lg:px-8 py-3 md:py-2.5 lg:py-4 text-white font-extrabold text-sm md:text-xs lg:text-sm uppercase tracking-wider rounded-xl transition-all text-center flex items-center justify-center gap-2 hover:-translate-y-0.5 cursor-pointer liquid-glass hover:border-brand-volt/40 hover:shadow-[0_15px_30px_rgba(0,0,0,0.5)]"
               >
                 <Play className="w-4 h-4 fill-white" /> See Demo
               </button>
@@ -516,20 +469,74 @@ export default function LandingPage() {
 
             {/* Social Proof Avatar Stack */}
             <div className="flex items-center gap-3 select-none pl-1 sm:pl-4 sm:border-l sm:border-zinc-800">
-              <div className="flex -space-x-2">
+              <div className="flex -space-x-2 relative z-10">
                 {[
-                  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&h=100&q=80",
-                  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&h=100&q=80",
-                  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&h=100&q=80",
-                  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&h=100&q=80",
-                ].map((src, i) => (
-                  <img
-                    key={i}
-                    src={src}
-                    alt="Creator Avatar"
-                    className="w-7 h-7 rounded-full border-2 border-black object-cover relative z-10"
-                  />
-                ))}
+                  // Avatar 1: Sarah / Tech
+                  <div key="av1" className="w-7 h-7 rounded-full border-2 border-black overflow-hidden bg-zinc-900 shrink-0">
+                    <svg viewBox="0 0 100 100" className="w-full h-full">
+                      <defs>
+                        <linearGradient id="avGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#ff4f6d" />
+                          <stop offset="100%" stopColor="#7c3aed" />
+                        </linearGradient>
+                      </defs>
+                      <circle cx="50" cy="50" r="50" fill="url(#avGrad1)" />
+                      <circle cx="50" cy="45" r="18" fill="white" fillOpacity="0.9" />
+                      <path d="M25 80c0-15 10-22 25-22s25 7 25 22" fill="white" fillOpacity="0.9" />
+                      <rect x="22" y="38" width="8" height="16" rx="4" fill="#00f0ff" />
+                      <rect x="70" y="38" width="8" height="16" rx="4" fill="#00f0ff" />
+                      <path d="M26 38c0-12 10-18 24-18s24 6 24 18" stroke="#00f0ff" strokeWidth="4" fill="none" />
+                    </svg>
+                  </div>,
+                  // Avatar 2: David / Productivity
+                  <div key="av2" className="w-7 h-7 rounded-full border-2 border-black overflow-hidden bg-zinc-900 shrink-0">
+                    <svg viewBox="0 0 100 100" className="w-full h-full">
+                      <defs>
+                        <linearGradient id="avGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#00f0ff" />
+                          <stop offset="100%" stopColor="#0052ff" />
+                        </linearGradient>
+                      </defs>
+                      <circle cx="50" cy="50" r="50" fill="url(#avGrad2)" />
+                      <circle cx="50" cy="45" r="16" fill="black" fillOpacity="0.4" />
+                      <path d="M28 78c0-12 10-18 22-18s22 6 22 18" fill="black" fillOpacity="0.4" />
+                      <rect x="34" y="40" width="13" height="9" rx="2" stroke="#ff4f6d" strokeWidth="2.5" fill="none" />
+                      <rect x="53" y="40" width="13" height="9" rx="2" stroke="#ff4f6d" strokeWidth="2.5" fill="none" />
+                      <line x1="47" y1="44" x2="53" y2="44" stroke="#ff4f6d" strokeWidth="2.5" />
+                    </svg>
+                  </div>,
+                  // Avatar 3: Orange / Cap
+                  <div key="av3" className="w-7 h-7 rounded-full border-2 border-black overflow-hidden bg-zinc-900 shrink-0">
+                    <svg viewBox="0 0 100 100" className="w-full h-full">
+                      <defs>
+                        <linearGradient id="avGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#ff9900" />
+                          <stop offset="100%" stopColor="#ff4f6d" />
+                        </linearGradient>
+                      </defs>
+                      <circle cx="50" cy="50" r="50" fill="url(#avGrad3)" />
+                      <circle cx="50" cy="48" r="16" fill="white" fillOpacity="0.85" />
+                      <path d="M28 80c0-12 10-18 22-18s22 6 22 18" fill="white" fillOpacity="0.85" />
+                      <path d="M32 38c0-8 8-12 18-12s18 4 18 12v3H32v-3z" fill="#00f0ff" />
+                      <circle cx="50" cy="23" r="3" fill="#00f0ff" />
+                    </svg>
+                  </div>,
+                  // Avatar 4: Purple / Spark
+                  <div key="av4" className="w-7 h-7 rounded-full border-2 border-black overflow-hidden bg-zinc-900 shrink-0">
+                    <svg viewBox="0 0 100 100" className="w-full h-full">
+                      <defs>
+                        <linearGradient id="avGrad4" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#7c3aed" />
+                          <stop offset="100%" stopColor="#00f0ff" />
+                        </linearGradient>
+                      </defs>
+                      <circle cx="50" cy="50" r="50" fill="url(#avGrad4)" />
+                      <circle cx="50" cy="45" r="15" fill="black" fillOpacity="0.3" />
+                      <path d="M30 76c0-10 8-16 20-16s20 6 20 16" fill="black" fillOpacity="0.3" />
+                      <polygon points="50,15 53,23 61,23 55,28 57,36 50,31 43,36 45,28 39,23 47,23" fill="#ff4f6d" transform="scale(0.4) translate(75, 40)" />
+                    </svg>
+                  </div>
+                ]}
               </div>
               <div className="text-left">
                 <div className="flex items-center gap-0.5">
@@ -567,12 +574,12 @@ export default function LandingPage() {
             ref={heroCardRef}
             onMouseMove={handleCardMouseMove}
             onMouseLeave={handleCardMouseLeave}
-            className="w-full max-w-[360px] lg:max-w-[420px] rounded-3xl p-5 lg:p-6 bg-zinc-950/80 border border-white/[0.08] backdrop-blur-xl relative overflow-hidden transition-all duration-200"
+            className="w-full max-w-[360px] lg:max-w-[420px] rounded-3xl p-5 lg:p-6 liquid-glass relative overflow-hidden transition-all duration-200"
             style={{ 
               transform: cardTransform,
-              boxShadow: '0 30px 80px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.05), 0 0 50px rgba(0,240,255,0.04)'
             }}
           >
+            <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.02] via-transparent to-transparent pointer-events-none" />
             {/* Top decorative accent bar */}
             <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-brand-volt to-brand-mint opacity-85" />
             
@@ -627,12 +634,17 @@ export default function LandingPage() {
                       +{val}%
                     </div>
                     {/* Bar */}
-                    <div 
-                      className="w-full bg-gradient-to-t from-brand-volt/10 via-brand-volt/40 to-brand-volt group-hover:from-brand-volt/20 group-hover:to-[#33f3ff] rounded-t-[3px] transition-all duration-500 cursor-pointer origin-bottom shadow-[0_0_10px_rgba(0,240,255,0.15)] group-hover:shadow-[0_0_15px_rgba(0,240,255,0.35)]"
-                      style={{ 
-                        height: `${val}%`, 
-                        animationDelay: `${idx * 0.05}s`
-                      }} 
+                    <motion.div 
+                      initial={{ height: "0%" }}
+                      whileInView={{ height: `${val}%` }}
+                      viewport={{ once: true }}
+                      transition={{ 
+                        type: "spring", 
+                        stiffness: 90, 
+                        damping: 14,
+                        delay: idx * 0.04
+                      }}
+                      className="w-full bg-gradient-to-t from-brand-volt/10 via-brand-volt/40 to-brand-volt group-hover:from-brand-volt/20 group-hover:to-[#33f3ff] rounded-t-[3px] cursor-pointer origin-bottom shadow-[0_0_10px_rgba(0,240,255,0.15)] group-hover:shadow-[0_0_15px_rgba(0,240,255,0.35)]"
                     />
                   </div>
                 ))}
@@ -709,7 +721,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── LIVE INTERACTIVE SCALING TICKER ── */}
-      <section className="border-y border-zinc-900 bg-black/40 backdrop-blur-sm py-4 overflow-hidden relative z-10">
+      <section className="py-4 overflow-hidden relative z-10 bg-white/[0.02] backdrop-blur-2xl border-y border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),inset_0_-1px_0_rgba(255,255,255,0.1)]">
         <div className="marquee-track flex gap-16 whitespace-nowrap flex-row w-max">
           <div className="flex gap-16 text-zinc-500 font-mono text-[11px] font-bold uppercase tracking-wider">
             <span>🚀 <strong className="text-brand-volt">48,200+</strong> channels analyzed today</span>
@@ -739,7 +751,8 @@ export default function LandingPage() {
       {/* ── LIVE DEMO PREVIEW (ENTER DEMO ACCOUNT CONSOLE) ── */}
       <section id="demo" className="relative z-10 py-24 px-4 md:px-8 max-w-5xl mx-auto scroll-mt-20">
         <RevealOnScroll>
-        <div className="rounded-[2.5rem] border border-white/[0.08] bg-zinc-950/60 shadow-[0_24px_80px_rgba(0,0,0,0.9)] overflow-hidden p-8 md:p-14 relative group">
+        <div className="rounded-[2.5rem] p-8 md:p-14 relative group liquid-glass overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.02] via-transparent to-transparent pointer-events-none" />
           {/* Accent lighting */}
           <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-brand-volt to-transparent opacity-70" />
           <div className="absolute -top-48 left-1/2 -translate-x-1/2 w-96 h-96 bg-brand-volt/5 rounded-full filter blur-[80px] pointer-events-none group-hover:bg-brand-volt/10 transition-colors duration-700" />
@@ -785,13 +798,13 @@ export default function LandingPage() {
               <div className="pt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
                 <button
                   onClick={enterDemo}
-                  className="px-8 py-4 bg-brand-volt hover:bg-[#33f3ff] text-black font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-[0_0_30px_rgba(0,240,255,0.15)] hover:shadow-[0_0_40px_rgba(0,240,255,0.35)] hover:-translate-y-0.5 text-center flex items-center justify-center gap-2 cursor-pointer"
+                  className="px-8 py-4 bg-gradient-to-r from-brand-volt to-brand-mint hover:from-[#33f3ff] hover:to-[#00f0ff] text-black font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-[0_0_30px_rgba(0,240,255,0.25)] hover:shadow-[0_0_45px_rgba(0,240,255,0.45),inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/10 hover:-translate-y-0.5 text-center flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Monitor className="w-4 h-4" /> Enter Sandbox
                 </button>
                 <a
                   href="#pricing"
-                  className="px-8 py-4 bg-zinc-900/60 hover:bg-zinc-900 border border-zinc-800/80 hover:border-zinc-700 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all text-center flex items-center justify-center gap-2 hover:-translate-y-0.5"
+                  className="px-8 py-4 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all text-center flex items-center justify-center gap-2 hover:-translate-y-0.5 cursor-pointer liquid-glass hover:border-brand-volt/40 hover:shadow-[0_15px_30px_rgba(0,0,0,0.5)]"
                 >
                   Pro Plans
                 </a>
@@ -828,7 +841,7 @@ export default function LandingPage() {
                       <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-widest mb-1">Subscriber count</p>
                       <p className="font-mono text-xl font-extrabold text-white">124,500</p>
                     </div>
-                    <span className="text-[9px] font-mono font-bold text-brand-mint bg-brand-mint/10 border border-brand-mint/20 px-2 py-0.5 rounded-md">
+                    <span className="text-[9px] font-mono font-bold text-blue-400 bg-blue-500/10 border border-blue-500/25 px-2 py-0.5 rounded-md">
                       +1.8K today
                     </span>
                   </div>
@@ -843,7 +856,13 @@ export default function LandingPage() {
                       </span>
                     </div>
                     <div className="h-1.5 bg-zinc-950 rounded-full overflow-hidden p-[1px] border border-zinc-900">
-                      <div className="h-full bg-gradient-to-r from-brand-volt to-brand-mint rounded-full animate-pulse shadow-[0_0_8px_#00f0ff]" style={{ width: '75%' }} />
+                      <motion.div 
+                        initial={{ width: "0%" }}
+                        whileInView={{ width: "75%" }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 1.5, ease: "easeOut", delay: 0.3 }}
+                        className="h-full bg-gradient-to-r from-brand-volt to-brand-mint rounded-full shadow-[0_0_8px_#00f0ff]" 
+                      />
                     </div>
                   </div>
                 </div>
@@ -871,28 +890,36 @@ export default function LandingPage() {
 
       {/* ── CORE CAPABILITIES (FEATURES GRID) ── */}
       <section id="features" className="relative z-10 py-24 px-4 md:px-8 max-w-7xl mx-auto scroll-mt-20">
+        {/* Atmospheric Radial Glows (Mesh Gradients) */}
+        <div className="absolute top-1/4 left-1/4 -translate-y-1/2 w-96 h-96 bg-brand-volt/3 rounded-full filter blur-[110px] pointer-events-none z-0" />
+        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-brand-rose/[0.02] rounded-full filter blur-[120px] pointer-events-none z-0" />
+
         {/* Title */}
         <RevealOnScroll>
-        <div className="max-w-3xl mb-16 text-left">
+        <div className="max-w-3xl mb-16 text-left relative z-10">
           <div className="inline-flex items-center gap-2 bg-brand-volt/10 border border-brand-volt/20 px-3.5 py-1.5 rounded-full mb-4">
             <Cpu className="w-3.5 h-3.5 text-brand-volt" />
             <span className="text-[10px] font-black uppercase tracking-widest text-brand-volt">Core Capabilities</span>
           </div>
-          <h2 className="font-display font-extrabold text-4xl md:text-5xl tracking-tight text-white mb-6">
+          <h2 className="font-display font-extrabold text-4xl md:text-5xl tracking-[-0.03em] text-white mb-6">
             Find your next viral topic.<br/>Backed by <em className="text-brand-volt not-italic text-glow-volt">performance data</em>.
           </h2>
-          <p className="text-zinc-400 text-sm md:text-base leading-relaxed max-w-lg">
+          <p className="text-zinc-400 opacity-80 text-sm md:text-base leading-relaxed max-w-lg font-normal">
             Move past basic view counters. Svay maps the actual momentum, formatting, and keyword relationships driving successful channels in your space.
           </p>
         </div>
         </RevealOnScroll>
 
         {/* Feature Bento Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
           {/* Card 1: col-span-2 (Analytics & Tracking) */}
           <RevealOnScroll delay={0}>
-          <div className="interactive-card group relative p-8 rounded-3xl bg-zinc-950/60 border border-white/[0.08] hover:border-brand-volt/30 transition-all duration-300 hover:-translate-y-1 md:col-span-2 overflow-hidden flex flex-col justify-between shadow-[0_15px_35px_rgba(0,0,0,0.8)]">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-brand-volt/5 rounded-bl-full pointer-events-none group-hover:bg-brand-volt/8 transition-all duration-500 filter blur-xl" />
+          <div 
+            className="interactive-card group relative p-8 rounded-3xl transition-all duration-300 hover:-translate-y-1 md:col-span-2 overflow-hidden flex flex-col justify-between liquid-glass hover:border-brand-volt/30 hover:shadow-[0_20px_50px_rgba(0,240,255,0.04)]"
+          >
+            <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.02] via-transparent to-transparent pointer-events-none" />
+            <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-brand-volt/20 to-transparent pointer-events-none" />
+            <div className="absolute top-0 right-0 w-48 h-48 bg-brand-volt/4 rounded-bl-full pointer-events-none group-hover:bg-brand-volt/6 transition-all duration-500 filter blur-xl" />
             <div>
               <span className="font-mono text-[9px] font-extrabold text-zinc-500 group-hover:text-brand-volt transition-colors uppercase tracking-widest block mb-4">01 // VELOCITY TRACKING</span>
               <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center">
@@ -901,13 +928,13 @@ export default function LandingPage() {
                     <BarChart3 className="w-5 h-5 text-brand-volt" />
                   </div>
                   <h3 className="font-display font-extrabold text-xl text-white">Analytics & Tracking</h3>
-                  <p className="text-zinc-400 text-xs leading-relaxed font-normal">
+                  <p className="text-zinc-400 opacity-80 text-xs leading-relaxed font-normal">
                     Monitor views and upload habits across your niche. Receive clear insights on subscriber growth trends and channel milestones without constantly checking analytics.
                   </p>
                 </div>
                 {/* Visual mockup inside card */}
-                <div className="w-full lg:w-48 bg-black/40 border border-zinc-900 rounded-xl p-3.5 space-y-2 shrink-0 text-[8px] font-mono text-left">
-                  <div className="flex justify-between border-b border-zinc-900 pb-1.5">
+                <div className="w-full lg:w-48 bg-black/40 border border-zinc-900/60 rounded-xl p-3.5 space-y-2 shrink-0 text-[8px] font-mono text-left">
+                  <div className="flex justify-between border-b border-zinc-900/80 pb-1.5">
                     <span className="text-zinc-500 uppercase font-black">Velocity Stat</span>
                     <span className="text-brand-volt font-black">ACTIVE</span>
                   </div>
@@ -920,7 +947,13 @@ export default function LandingPage() {
                     <span className="text-brand-volt font-extrabold">+14.2%</span>
                   </div>
                   <div className="h-1 bg-zinc-900 rounded-full overflow-hidden mt-1">
-                    <div className="h-full bg-brand-volt rounded-full" style={{ width: '65%' }} />
+                    <motion.div 
+                      initial={{ width: "0%" }}
+                      whileInView={{ width: '65%' }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 1.2, ease: "easeOut", delay: 0.2 }}
+                      className="h-full bg-brand-volt rounded-full" 
+                    />
                   </div>
                 </div>
               </div>
@@ -935,15 +968,19 @@ export default function LandingPage() {
 
           {/* Card 2: col-span-1 (Trend Radar) */}
           <RevealOnScroll delay={0.1}>
-          <div className="interactive-card group relative p-8 rounded-3xl bg-zinc-950/60 border border-white/[0.08] hover:border-brand-rose/30 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between shadow-[0_15px_35px_rgba(0,0,0,0.8)] overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-rose/5 rounded-bl-full pointer-events-none group-hover:bg-brand-rose/8 transition-all duration-500 filter blur-xl" />
+          <div 
+            className="interactive-card group relative p-8 rounded-3xl transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between overflow-hidden liquid-glass hover:border-brand-rose/30 hover:shadow-[0_20px_50px_rgba(255,79,109,0.04)]"
+          >
+            <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.02] via-transparent to-transparent pointer-events-none" />
+            <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-brand-rose/20 to-transparent pointer-events-none" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-rose/4 rounded-bl-full pointer-events-none group-hover:bg-brand-rose/6 transition-all duration-500 filter blur-xl" />
             <div>
               <span className="font-mono text-[9px] font-extrabold text-zinc-500 group-hover:text-brand-rose transition-colors uppercase tracking-widest block mb-4">02 // EARLY DETECTION</span>
               <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xl mb-6 group-hover:border-brand-rose/30 group-hover:bg-zinc-950 transition-colors">
                 <Zap className="w-5 h-5 text-brand-rose" />
               </div>
               <h3 className="font-display font-extrabold text-xl text-white mb-3 text-left">Trend Radar</h3>
-              <p className="text-zinc-400 text-xs leading-relaxed font-normal text-left">
+              <p className="text-zinc-400 opacity-80 text-xs leading-relaxed font-normal text-left">
                 Detect rising search queries and tags early. Spot spikes in audience demand so you can outline videos before topics saturate.
               </p>
             </div>
@@ -957,15 +994,19 @@ export default function LandingPage() {
 
           {/* Card 3: col-span-1 (Competitor Matrix) */}
           <RevealOnScroll delay={0.2}>
-          <div className="interactive-card group relative p-8 rounded-3xl bg-zinc-950/60 border border-white/[0.08] hover:border-brand-mint/30 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between shadow-[0_15px_35px_rgba(0,0,0,0.8)] overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-mint/5 rounded-bl-full pointer-events-none group-hover:bg-brand-mint/8 transition-all duration-500 filter blur-xl" />
+          <div 
+            className="interactive-card group relative p-8 rounded-3xl transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between overflow-hidden liquid-glass hover:border-brand-mint/30 hover:shadow-[0_20px_50px_rgba(0,82,255,0.04)]"
+          >
+            <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.02] via-transparent to-transparent pointer-events-none" />
+            <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-brand-mint/20 to-transparent pointer-events-none" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-mint/4 rounded-bl-full pointer-events-none group-hover:bg-brand-mint/6 transition-all duration-500 filter blur-xl" />
             <div>
               <span className="font-mono text-[9px] font-extrabold text-zinc-500 group-hover:text-brand-mint transition-colors uppercase tracking-widest block mb-4">03 // INTEL</span>
               <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xl mb-6 group-hover:border-brand-mint/30 group-hover:bg-zinc-950 transition-colors">
                 <Users className="w-5 h-5 text-brand-mint" />
               </div>
               <h3 className="font-display font-extrabold text-xl text-white mb-3 text-left">Competitor Matrix</h3>
-              <p className="text-zinc-400 text-xs leading-relaxed font-normal text-left">
+              <p className="text-zinc-400 opacity-80 text-xs leading-relaxed font-normal text-left">
                 Compare your channel with direct competitors. Benchmark upload frequency, formats, and find what drives views.
               </p>
             </div>
@@ -979,15 +1020,19 @@ export default function LandingPage() {
 
           {/* Card 4: col-span-1 (Advanced Filtering) */}
           <RevealOnScroll delay={0.3}>
-          <div className="interactive-card group relative p-8 rounded-3xl bg-zinc-950/60 border border-white/[0.08] hover:border-brand-rose/30 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between shadow-[0_15px_35px_rgba(0,0,0,0.8)] overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-rose/5 rounded-bl-full pointer-events-none group-hover:bg-brand-rose/8 transition-all duration-500 filter blur-xl" />
+          <div 
+            className="interactive-card group relative p-8 rounded-3xl transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between overflow-hidden liquid-glass hover:border-brand-rose/30 hover:shadow-[0_20px_50px_rgba(255,79,109,0.04)]"
+          >
+            <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.02] via-transparent to-transparent pointer-events-none" />
+            <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-brand-rose/20 to-transparent pointer-events-none" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-rose/4 rounded-bl-full pointer-events-none group-hover:bg-brand-rose/6 transition-all duration-500 filter blur-xl" />
             <div>
               <span className="font-mono text-[9px] font-extrabold text-zinc-500 group-hover:text-brand-rose transition-colors uppercase tracking-widest block mb-4">04 // FILTERING</span>
               <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xl mb-6 group-hover:border-brand-rose/30 group-hover:bg-zinc-950 transition-colors">
                 <Search className="w-5 h-5 text-brand-rose" />
               </div>
               <h3 className="font-display font-extrabold text-xl text-white mb-3 text-left">Advanced Search</h3>
-              <p className="text-zinc-400 text-xs leading-relaxed font-normal text-left">
+              <p className="text-zinc-400 opacity-80 text-xs leading-relaxed font-normal text-left">
                 Filter uploads by duration, location, and date. Sort by our virality score to find videos that resonated.
               </p>
             </div>
@@ -1001,15 +1046,19 @@ export default function LandingPage() {
 
           {/* Card 5: col-span-1 (Research Notebook) */}
           <RevealOnScroll delay={0.4}>
-          <div className="interactive-card group relative p-8 rounded-3xl bg-zinc-950/60 border border-white/[0.08] hover:border-brand-volt/30 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between shadow-[0_15px_35px_rgba(0,0,0,0.8)] overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-volt/5 rounded-bl-full pointer-events-none group-hover:bg-brand-volt/8 transition-all duration-500 filter blur-xl" />
+          <div 
+            className="interactive-card group relative p-8 rounded-3xl transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between overflow-hidden liquid-glass hover:border-brand-volt/30 hover:shadow-[0_20px_50px_rgba(0,240,255,0.04)]"
+          >
+            <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.02] via-transparent to-transparent pointer-events-none" />
+            <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-brand-volt/20 to-transparent pointer-events-none" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-volt/4 rounded-bl-full pointer-events-none group-hover:bg-brand-volt/6 transition-all duration-500 filter blur-xl" />
             <div>
               <span className="font-mono text-[9px] font-extrabold text-zinc-500 group-hover:text-brand-volt transition-colors uppercase tracking-widest block mb-4">05 // WORKSPACE</span>
               <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xl mb-6 group-hover:border-brand-volt/30 group-hover:bg-zinc-950 transition-colors">
                 <BookOpen className="w-5 h-5 text-brand-volt" />
               </div>
               <h3 className="font-display font-extrabold text-xl text-white mb-3 text-left">Research Notebook</h3>
-              <p className="text-zinc-400 text-xs leading-relaxed font-normal text-left">
+              <p className="text-zinc-400 opacity-80 text-xs leading-relaxed font-normal text-left">
                 Save key insights, high-momentum topics, and competitor references. Draft outlines in a dedicated notebook.
               </p>
             </div>
@@ -1023,8 +1072,12 @@ export default function LandingPage() {
 
           {/* Card 6: col-span-3 (Smart Digests) */}
           <RevealOnScroll delay={0.5}>
-          <div className="interactive-card group relative p-8 rounded-3xl bg-zinc-950/60 border border-white/[0.08] hover:border-brand-mint/30 transition-all duration-300 hover:-translate-y-1 md:col-span-3 overflow-hidden flex flex-col justify-between shadow-[0_15px_35px_rgba(0,0,0,0.8)]">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-brand-mint/5 rounded-bl-full pointer-events-none group-hover:bg-brand-mint/8 transition-all duration-500 filter blur-2xl" />
+          <div 
+            className="interactive-card group relative p-8 rounded-3xl transition-all duration-300 hover:-translate-y-1 md:col-span-3 overflow-hidden flex flex-col justify-between liquid-glass hover:border-brand-mint/30 hover:shadow-[0_20px_50px_rgba(0,82,255,0.04)]"
+          >
+            <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.02] via-transparent to-transparent pointer-events-none" />
+            <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-brand-mint/20 to-transparent pointer-events-none" />
+            <div className="absolute top-0 right-0 w-64 h-64 bg-brand-mint/4 rounded-bl-full pointer-events-none group-hover:bg-brand-mint/6 transition-all duration-500 filter blur-2xl" />
             <div>
               <span className="font-mono text-[9px] font-extrabold text-zinc-500 group-hover:text-brand-mint transition-colors uppercase tracking-widest block mb-4">06 // DIGESTS</span>
               <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between">
@@ -1033,13 +1086,13 @@ export default function LandingPage() {
                     <Cpu className="w-5 h-5 text-brand-mint" />
                   </div>
                   <h3 className="font-display font-extrabold text-xl text-white">Smart Notifications</h3>
-                  <p className="text-zinc-400 text-xs leading-relaxed font-normal">
+                  <p className="text-zinc-400 opacity-80 text-xs leading-relaxed font-normal">
                     Get competitor digests and tag updates sent directly to your inbox. Stay updated on market changes without needing to open the workspace.
                   </p>
                 </div>
                 {/* Visual email mockup */}
-                <div className="w-full lg:w-64 bg-black/40 border border-zinc-900 rounded-xl p-3.5 space-y-2 shrink-0 text-left font-sans shadow-inner">
-                  <div className="flex items-center justify-between border-b border-zinc-900 pb-2 mb-1.5 text-[8px] font-mono text-zinc-500">
+                <div className="w-full lg:w-64 bg-white/[0.02] border border-white/10 rounded-xl p-3.5 space-y-2 shrink-0 text-left font-sans shadow-inner backdrop-blur-sm">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-1.5 text-[8px] font-mono text-zinc-500">
                     <span>From: intelligence@svay.space</span>
                     <span>Just now</span>
                   </div>
@@ -1079,7 +1132,9 @@ export default function LandingPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <RevealOnScroll delay={0.1}>
-          <div className="p-6 rounded-3xl bg-zinc-950/60 border border-white/[0.08] backdrop-blur-md relative overflow-hidden flex flex-col justify-between group hover:border-brand-volt/20 transition-all duration-300 shadow-[0_15px_30px_rgba(0,0,0,0.8)]">
+          <div className="p-6 rounded-3xl relative overflow-hidden flex flex-col justify-between group hover:border-brand-volt/20 transition-all duration-300 liquid-glass hover:shadow-[0_20px_50px_rgba(0,240,255,0.03)]">
+            <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.02] via-transparent to-transparent pointer-events-none" />
+            <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-brand-volt/20 to-transparent pointer-events-none" />
             <div className="absolute top-0 right-0 p-4 text-brand-volt opacity-5 group-hover:opacity-10 transition-opacity">
               <Star className="w-12 h-12 fill-brand-volt" />
             </div>
@@ -1087,11 +1142,22 @@ export default function LandingPage() {
               "Before using Svay, our team was spending 10+ hours a week manually scraping competitor uploads. Now, we spot rising concepts in 5 minutes and outline our video pipeline with hard demand data. It's completely transformed our production rate."
             </p>
             <div className="flex items-center gap-3">
-              <img
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&h=80&q=80"
-                alt="Creator Profile"
-                className="w-10 h-10 rounded-full object-cover border border-zinc-800"
-              />
+              <div className="w-10 h-10 rounded-full border border-zinc-800 overflow-hidden bg-zinc-900 shrink-0">
+                <svg viewBox="0 0 100 100" className="w-full h-full">
+                  <defs>
+                    <linearGradient id="testGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#ff4f6d" />
+                      <stop offset="100%" stopColor="#7c3aed" />
+                    </linearGradient>
+                  </defs>
+                  <circle cx="50" cy="50" r="50" fill="url(#testGrad1)" />
+                  <circle cx="50" cy="45" r="18" fill="white" fillOpacity="0.9" />
+                  <path d="M25 80c0-15 10-22 25-22s25 7 25 22" fill="white" fillOpacity="0.9" />
+                  <rect x="22" y="38" width="8" height="16" rx="4" fill="#00f0ff" />
+                  <rect x="70" y="38" width="8" height="16" rx="4" fill="#00f0ff" />
+                  <path d="M26 38c0-12 10-18 24-18s24 6 24 18" stroke="#00f0ff" strokeWidth="4" fill="none" />
+                </svg>
+              </div>
               <div className="text-left">
                 <p className="text-xs font-black text-white">Sarah Jenkins</p>
                 <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Tech Reviewer · 340K subs</p>
@@ -1101,7 +1167,9 @@ export default function LandingPage() {
           </RevealOnScroll>
 
           <RevealOnScroll delay={0.2}>
-          <div className="p-6 rounded-3xl bg-zinc-950/60 border border-white/[0.08] backdrop-blur-md relative overflow-hidden flex flex-col justify-between group hover:border-brand-mint/20 transition-all duration-300 shadow-[0_15px_30px_rgba(0,0,0,0.8)]">
+          <div className="p-6 rounded-3xl relative overflow-hidden flex flex-col justify-between group hover:border-brand-mint/20 transition-all duration-300 liquid-glass hover:shadow-[0_20px_50px_rgba(0,82,255,0.03)]">
+            <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.02] via-transparent to-transparent pointer-events-none" />
+            <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-brand-mint/20 to-transparent pointer-events-none" />
             <div className="absolute top-0 right-0 p-4 text-brand-mint opacity-5 group-hover:opacity-10 transition-opacity">
               <Star className="w-12 h-12 fill-brand-mint" />
             </div>
@@ -1109,11 +1177,22 @@ export default function LandingPage() {
               "We used to rely purely on gut feeling for titles and topics. Svay's Virality Index showed us exactly what format gaps we were missing. We locked in our early adopter price and it's already paid for itself 10x over."
             </p>
             <div className="flex items-center gap-3">
-              <img
-                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&h=80&q=80"
-                alt="Creator Profile"
-                className="w-10 h-10 rounded-full object-cover border border-zinc-800"
-              />
+              <div className="w-10 h-10 rounded-full border border-zinc-800 overflow-hidden bg-zinc-900 shrink-0">
+                <svg viewBox="0 0 100 100" className="w-full h-full">
+                  <defs>
+                    <linearGradient id="testGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#00f0ff" />
+                      <stop offset="100%" stopColor="#0052ff" />
+                    </linearGradient>
+                  </defs>
+                  <circle cx="50" cy="50" r="50" fill="url(#testGrad2)" />
+                  <circle cx="50" cy="45" r="16" fill="black" fillOpacity="0.4" />
+                  <path d="M28 78c0-12 10-18 22-18s22 6 22 18" fill="black" fillOpacity="0.4" />
+                  <rect x="34" y="40" width="13" height="9" rx="2" stroke="#ff4f6d" strokeWidth="2.5" fill="none" />
+                  <rect x="53" y="40" width="13" height="9" rx="2" stroke="#ff4f6d" strokeWidth="2.5" fill="none" />
+                  <line x1="47" y1="44" x2="53" y2="44" stroke="#ff4f6d" strokeWidth="2.5" />
+                </svg>
+              </div>
               <div className="text-left">
                 <p className="text-xs font-black text-white">David Chen</p>
                 <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Productivity Hacks · 1.2M subs</p>
@@ -1126,13 +1205,17 @@ export default function LandingPage() {
 
       {/* ── METALLIC PRICING (HIGH CONVERTING SaaS CARD) ── */}
       <section id="pricing" className="relative z-10 py-20 px-4 md:px-8 max-w-5xl mx-auto scroll-mt-20">
+        {/* Atmospheric Radial Glows */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-brand-volt/4 rounded-full filter blur-[120px] pointer-events-none z-0" />
+        <div className="absolute top-1/3 left-1/3 w-80 h-80 bg-brand-rose/[0.01] rounded-full filter blur-[100px] pointer-events-none z-0" />
+
         <RevealOnScroll>
-        <div className="text-center mb-12">
+        <div className="text-center mb-12 relative z-10">
           <div className="inline-flex items-center gap-2 bg-brand-volt/10 border border-brand-volt/20 px-3.5 py-1.5 rounded-full mb-4">
             <Star className="w-3.5 h-3.5 text-brand-volt fill-brand-volt" />
             <span className="text-[10px] font-black uppercase tracking-widest text-brand-volt">Simple Pricing</span>
           </div>
-          <h2 className="font-display font-extrabold text-4xl md:text-5xl tracking-tight text-white mb-4">
+          <h2 className="font-display font-extrabold text-4xl md:text-5xl tracking-[-0.03em] text-white mb-4">
             One simple plan. Full access.
           </h2>
           <p className="text-zinc-400 text-sm leading-relaxed max-w-sm mx-auto mb-8">
@@ -1141,7 +1224,7 @@ export default function LandingPage() {
 
           {/* Pricing Toggle */}
           <div className="flex justify-center mb-8">
-            <div className="bg-zinc-950/60 border border-zinc-800/80 p-1.5 rounded-2xl inline-flex gap-1 relative backdrop-blur-md shadow-inner">
+            <div className="p-1.5 rounded-2xl inline-flex gap-1 relative shadow-inner liquid-glass">
               <button
                 onClick={() => setBillingInterval("monthly")}
                 className={`py-2.5 px-6 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 relative z-10 cursor-pointer ${
@@ -1149,7 +1232,7 @@ export default function LandingPage() {
                 }`}
               >
                 Monthly
-                {billingInterval === "monthly" && (
+                {mounted && billingInterval === "monthly" && (
                   <motion.div
                     layoutId="activeBillingPill"
                     className="absolute inset-0 bg-brand-volt rounded-xl -z-10 shadow-[0_4px_20px_rgba(0,240,255,0.25)]"
@@ -1171,7 +1254,7 @@ export default function LandingPage() {
                 }`}>
                   Save 30%
                 </span>
-                {billingInterval === "yearly" && (
+                {mounted && billingInterval === "yearly" && (
                   <motion.div
                     layoutId="activeBillingPill"
                     className="absolute inset-0 bg-brand-volt rounded-xl -z-10 shadow-[0_4px_20px_rgba(0,240,255,0.25)]"
@@ -1186,7 +1269,8 @@ export default function LandingPage() {
 
         {/* early adopter banner */}
         <RevealOnScroll delay={0.1}>
-        <div className="rounded-3xl border border-white/[0.08] bg-zinc-950/60 backdrop-blur-xl overflow-hidden relative mb-8 shadow-[0_20px_50px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.05)]">
+        <div className="rounded-3xl relative mb-8 liquid-glass overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.02] via-transparent to-transparent pointer-events-none" />
           {/* Ambient Glows */}
           <div className="absolute -left-16 -top-16 w-36 h-36 bg-brand-rose/8 rounded-full filter blur-3xl pointer-events-none" />
           <div className="absolute -right-16 -bottom-16 w-36 h-36 bg-brand-volt/5 rounded-full filter blur-3xl pointer-events-none" />
@@ -1210,29 +1294,37 @@ export default function LandingPage() {
 
             {/* Countdown timer */}
             <div className="flex items-center gap-4 bg-black/40 border border-white/[0.06] p-3 md:p-4 rounded-2xl shrink-0 w-full lg:w-auto justify-between lg:justify-start shadow-inner backdrop-blur-md">
-              <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest leading-none font-bold">Offer ends in</span>
+              <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest leading-none">Offer ends in</span>
               <div className="flex items-center gap-3 font-mono font-bold text-sm">
                 {/* Days */}
                 <div className="flex flex-col items-center min-w-[28px]">
-                  <span className="text-base md:text-lg text-brand-volt text-glow-volt leading-none">{String(timeLeft.days).padStart(2, '0')}</span>
+                  <span className="text-base md:text-lg text-brand-volt text-glow-volt leading-none">
+                    {mounted ? String(timeLeft.days).padStart(2, '0') : '14'}
+                  </span>
                   <span className="text-[7px] text-zinc-500 font-bold uppercase tracking-wider mt-1.5">days</span>
                 </div>
                 <span className="text-zinc-700 font-sans text-sm pb-3.5 leading-none select-none">:</span>
                 {/* Hours */}
                 <div className="flex flex-col items-center min-w-[28px]">
-                  <span className="text-base md:text-lg text-brand-volt text-glow-volt leading-none">{String(timeLeft.hours).padStart(2, '0')}</span>
+                  <span className="text-base md:text-lg text-brand-volt text-glow-volt leading-none">
+                    {mounted ? String(timeLeft.hours).padStart(2, '0') : '00'}
+                  </span>
                   <span className="text-[7px] text-zinc-500 font-bold uppercase tracking-wider mt-1.5">hours</span>
                 </div>
                 <span className="text-zinc-700 font-sans text-sm pb-3.5 leading-none select-none">:</span>
                 {/* Minutes */}
                 <div className="flex flex-col items-center min-w-[28px]">
-                  <span className="text-base md:text-lg text-brand-volt text-glow-volt leading-none">{String(timeLeft.minutes).padStart(2, '0')}</span>
+                  <span className="text-base md:text-lg text-brand-volt text-glow-volt leading-none">
+                    {mounted ? String(timeLeft.minutes).padStart(2, '0') : '00'}
+                  </span>
                   <span className="text-[7px] text-zinc-500 font-bold uppercase tracking-wider mt-1.5">mins</span>
                 </div>
                 <span className="text-zinc-700 font-sans text-sm pb-3.5 leading-none select-none">:</span>
                 {/* Seconds */}
                 <div className="flex flex-col items-center min-w-[28px]">
-                  <span className="text-base md:text-lg text-brand-rose leading-none font-black animate-pulse">{String(timeLeft.seconds).padStart(2, '0')}</span>
+                  <span className="text-base md:text-lg text-brand-rose leading-none font-black animate-pulse">
+                    {mounted ? String(timeLeft.seconds).padStart(2, '0') : '00'}
+                  </span>
                   <span className="text-[7px] text-zinc-500 font-bold uppercase tracking-wider mt-1.5">secs</span>
                 </div>
               </div>
@@ -1243,7 +1335,8 @@ export default function LandingPage() {
 
         {/* Pricing Card */}
         <RevealOnScroll delay={0.2}>
-        <div className="rounded-3xl border border-brand-volt/20 bg-zinc-950/70 backdrop-blur-md overflow-hidden relative grid grid-cols-1 md:grid-cols-12 gap-8 p-8 md:p-12 shadow-[0_30px_60px_rgba(0,0,0,0.8),0_0_50px_rgba(0,240,255,0.02)]">
+        <div className="rounded-3xl overflow-hidden relative grid grid-cols-1 md:grid-cols-12 gap-8 p-8 md:p-12 liquid-glass-glow">
+          <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.03] via-transparent to-transparent pointer-events-none" />
           {/* Top highlight bar */}
           <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-brand-volt to-brand-mint" />
           
@@ -1285,22 +1378,22 @@ export default function LandingPage() {
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 text-xs font-extrabold text-brand-mint mb-8">
-                <Check className="w-4 h-4" /> Start your 7-day free trial · Cancel anytime
+              <div className="flex items-center gap-2 text-xs font-extrabold text-brand-volt mb-8">
+                <Check className="w-4 h-4" /> No Credit Card Required Upfront · Cancel in 2 clicks
               </div>
             </div>
 
             <div>
               <button 
                 onClick={handleStartTrial}
-                className="w-full py-4.5 bg-brand-volt hover:bg-[#33f3ff] text-black font-extrabold text-sm uppercase tracking-wider rounded-2xl transition-all shadow-[0_0_35px_rgba(0,240,255,0.3)] hover:shadow-[0_0_50px_rgba(0,240,255,0.55)] hover:-translate-y-0.5 cursor-pointer"
+                className="w-full py-4.5 bg-gradient-to-r from-brand-volt to-brand-mint hover:from-[#33f3ff] hover:to-[#00f0ff] text-black font-extrabold text-sm uppercase tracking-wider rounded-2xl transition-all shadow-[0_0_35px_rgba(0,240,255,0.3)] hover:shadow-[0_0_55px_rgba(0,240,255,0.55),inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/10 hover:-translate-y-0.5 cursor-pointer flex items-center justify-center gap-2"
               >
-                Start Trial
+                Unlock My 7-Day Free Trial
               </button>
-              <p className="text-[10px] text-zinc-500 text-center mt-3 font-semibold tracking-wide">
+              <p className="text-[10px] text-zinc-500 text-center mt-3 font-semibold tracking-wide leading-relaxed">
                 {billingInterval === "yearly" 
-                  ? "Billed annually at ₹8,388/year (₹699/mo) · Cancel at any time · Secure checkout powered by Razorpay"
-                  : "Thereafter ₹999/month · Cancel at any time · Secure checkout powered by Razorpay"}
+                  ? "Billed annually at ₹8,388/year (₹699/mo) · Cancel at any time. Supports UPI, NetBanking & Indian Cards via Razorpay."
+                  : "Thereafter ₹999/month · Cancel at any time. Supports UPI, NetBanking & Indian Cards via Razorpay."}
               </p>
             </div>
           </div>
@@ -1334,11 +1427,11 @@ export default function LandingPage() {
       <section className="relative z-10 py-16 px-4 md:px-8 max-w-4xl mx-auto">
         <RevealOnScroll>
         <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 bg-brand-mint/10 border border-brand-mint/20 px-3.5 py-1.5 rounded-full mb-4">
-            <HelpCircle className="w-3.5 h-3.5 text-brand-mint" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-brand-mint">Common Questions</span>
+          <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/25 px-3.5 py-1.5 rounded-full mb-4">
+            <HelpCircle className="w-3.5 h-3.5 text-blue-400" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-blue-400">Common Questions</span>
           </div>
-          <h2 className="font-display font-extrabold text-3.5xl md:text-4.5xl tracking-tight text-white mb-4">
+          <h2 className="font-display font-extrabold text-3.5xl md:text-4.5xl tracking-[-0.03em] text-white mb-4">
             Frequently Asked Questions
           </h2>
           <p className="text-zinc-400 text-sm leading-relaxed max-w-sm mx-auto">
@@ -1364,6 +1457,10 @@ export default function LandingPage() {
               a: "The Trend Radar constantly monitors tags and topics across your content vertical. When it spots an unusual spike in search volume or view velocity, it alerts you with the exact hooks and formats that triggered the spike."
             },
             {
+              q: "Does Svay work for small or starting channels?",
+              a: "Absolutely. In fact, starting channels benefit the most. Instead of spending months publishing videos blindly to an empty audience, Svay lets you ride the tailwinds of established competitors, indexing exactly what topics and structures are already gaining traction in your niche so you get discovered immediately."
+            },
+            {
               q: "How does the free trial and cancellation work?",
               a: "Your trial runs for 7 days with full features unlocked. No credit card is required upfront. If you choose to continue after your trial, billing starts at ₹999/month (or ₹699/month if choosing the yearly plan). You can cancel with a single click in your settings at any time."
             }
@@ -1372,7 +1469,7 @@ export default function LandingPage() {
             return (
               <div 
                 key={idx}
-                className="rounded-2xl border border-zinc-900 bg-zinc-950/40 overflow-hidden transition-all duration-300 hover:border-zinc-800"
+                className="rounded-2xl overflow-hidden transition-all duration-300 liquid-glass hover:border-brand-volt/40 hover:shadow-[0_15px_30px_rgba(0,0,0,0.5)]"
               >
                 <button
                   onClick={() => setOpenFaq(isOpen ? null : idx)}
@@ -1384,7 +1481,7 @@ export default function LandingPage() {
                 
                 <div 
                   className="transition-all duration-300 ease-in-out overflow-hidden"
-                  style={{ maxHeight: isOpen ? '200px' : '0' }}
+                  style={{ maxHeight: isOpen ? '300px' : '0' }}
                 >
                   <p className="px-5 pb-5 pt-1 text-xs md:text-sm text-zinc-400 leading-relaxed border-t border-zinc-950/50">
                     {faq.a}
@@ -1400,7 +1497,7 @@ export default function LandingPage() {
       {/* ── BOTTOM CALL TO ACTION ── */}
       <section className="relative z-10 py-16 px-4 md:px-8 max-w-7xl mx-auto">
         <RevealOnScroll>
-        <div className="rounded-3xl border border-zinc-900 bg-zinc-950/40 backdrop-blur-md p-10 md:p-16 text-center relative overflow-hidden shadow-[0_30px_70px_rgba(0,0,0,0.9)]">
+        <div className="rounded-3xl p-10 md:p-16 text-center relative overflow-hidden shadow-[0_30px_70px_rgba(0,0,0,0.9)] liquid-glass">
           {/* Decorative glows */}
           <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 w-96 h-96 bg-brand-volt/5 rounded-full filter blur-[80px] pointer-events-none" />
           
@@ -1421,13 +1518,13 @@ export default function LandingPage() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <a 
                 href="#pricing"
-                className="w-full sm:w-auto px-8 py-4 bg-brand-volt hover:bg-[#33f3ff] text-black font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-[0_0_25px_rgba(0,240,255,0.15)] text-center"
+                className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-brand-volt to-brand-mint hover:from-[#33f3ff] hover:to-[#00f0ff] text-black font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-[0_0_30px_rgba(0,240,255,0.25)] hover:shadow-[0_0_45px_rgba(0,240,255,0.45),inset_0_1px_1px_rgba(255,255,255,0.4)] border border-white/10 hover:-translate-y-0.5 text-center flex items-center justify-center gap-2 cursor-pointer"
               >
                 Start Trial
               </a>
               <a 
                 href="#features"
-                className="w-full sm:w-auto px-8 py-4 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all text-center"
+                className="w-full sm:w-auto px-8 py-4 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all text-center flex items-center justify-center gap-2 hover:-translate-y-0.5 cursor-pointer liquid-glass hover:border-brand-volt/40 hover:shadow-[0_15px_30px_rgba(0,0,0,0.5)]"
               >
                 Features
               </a>
@@ -1438,7 +1535,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── FOOTER ── */}
-      <footer className="relative z-10 border-t border-zinc-900/80 bg-zinc-950/40 backdrop-blur-md py-16 px-4 md:px-8 mt-20">
+      <footer className="relative z-10 py-16 px-4 md:px-8 mt-20 bg-white/[0.02] backdrop-blur-2xl border-t border-white/10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)]">
         <div className="max-w-5xl mx-auto">
           {/* Top Section */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-10 pb-12">
