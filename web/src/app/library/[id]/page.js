@@ -427,14 +427,14 @@ export default function NotePage({ params }) {
                     )}
                  </AnimatePresence>
               </div>
-              <div className="bg-zinc-950 border border-white/5 rounded-3xl overflow-hidden min-h-[600px] rich-text-editor full-editor shadow-sm">
+              <div className="bg-zinc-950 border border-white/5 rounded-3xl overflow-hidden min-h-[600px] rich-text-editor full-editor shadow-sm flex flex-col">
                 <ReactQuill 
                   theme="snow"
                   value={content}
                   onChange={setContent}
                   modules={modules}
                   placeholder="Draft your strategy, ideas, or research notes here..."
-                  className="quill-dark h-[530px]"
+                  className="quill-dark flex-1 flex flex-col"
                 />
               </div>
             </section>
@@ -548,6 +548,15 @@ export default function NotePage({ params }) {
       </div>
 
       <style jsx global>{`
+        .full-editor {
+          display: flex;
+          flex-direction: column;
+        }
+        .full-editor .quill-dark {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+        }
         .full-editor .ql-toolbar {
           background: #09090b;
           border: none !important;
@@ -560,11 +569,17 @@ export default function NotePage({ params }) {
           font-family: inherit;
           font-size: 1rem;
           background: transparent;
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          min-height: 0;
         }
         .full-editor .ql-editor {
           color: #d4d4d8;
           line-height: 1.8;
           padding: 1.5rem !important;
+          flex: 1;
+          overflow-y: auto;
         }
         .full-editor .ql-editor.ql-blank::before {
           color: #3f3f46 !important;

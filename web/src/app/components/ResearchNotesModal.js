@@ -284,6 +284,8 @@ export default function ResearchNotesModal({ isOpen, onClose, item, onSave, onVi
           font-family: inherit;
           font-size: 0.875rem;
           background: transparent;
+          display: flex;
+          flex-direction: column;
         }
         @media (min-width: 640px) {
           .quill-dark .ql-container {
@@ -305,6 +307,8 @@ export default function ResearchNotesModal({ isOpen, onClose, item, onSave, onVi
         }
         .quill-dark .ql-editor {
           color: #e4e4e7;
+          flex: 1;
+          overflow-y: auto;
         }
         .quill-dark .ql-active .ql-stroke {
           stroke: #fff !important;

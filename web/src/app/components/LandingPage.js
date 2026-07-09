@@ -1017,39 +1017,55 @@ export default function LandingPage() {
 
         {/* early adopter banner */}
         <RevealOnScroll delay={0.1}>
-        <div className="rounded-3xl border border-zinc-800/80 bg-zinc-950/40 backdrop-blur-md overflow-hidden relative mb-6">
-          <div className="p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <div className="flex items-start md:items-center gap-4">
-              <span className="bg-brand-rose text-white text-[9px] font-black tracking-widest px-2.5 py-1 rounded">LAUNCH OFFER</span>
-              <div>
-                <h3 className="font-display font-extrabold text-lg text-white">Lock in early adopter pricing for life</h3>
-                <p className="text-xs text-zinc-500 mt-0.5">Secure your {billingInterval} rate before we introduce multi-tier pricing. Your rate will never increase.</p>
+        <div className="rounded-3xl border border-white/[0.08] bg-zinc-950/60 backdrop-blur-xl overflow-hidden relative mb-8 shadow-[0_20px_50px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.05)]">
+          {/* Ambient Glows */}
+          <div className="absolute -left-16 -top-16 w-36 h-36 bg-brand-rose/8 rounded-full filter blur-3xl pointer-events-none" />
+          <div className="absolute -right-16 -bottom-16 w-36 h-36 bg-brand-volt/5 rounded-full filter blur-3xl pointer-events-none" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-brand-rose/[0.01] rounded-bl-full pointer-events-none" />
+          
+          <div className="p-6 md:p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
+            <div className="flex flex-col sm:flex-row items-start gap-4">
+              <div className="bg-brand-rose/10 border border-brand-rose/25 text-brand-rose text-[9px] font-black tracking-widest px-3 py-1.5 rounded-full uppercase flex items-center gap-1.5 shrink-0 select-none shadow-[0_0_15px_rgba(255,79,109,0.1)]">
+                <span className="w-1.5 h-1.5 rounded-full bg-brand-rose animate-pulse" />
+                <span>Launch Offer</span>
+              </div>
+              <div className="text-left">
+                <h3 className="font-display font-extrabold text-xl md:text-2xl text-white tracking-tight uppercase leading-tight">
+                  Lock in early adopter pricing for life
+                </h3>
+                <p className="text-xs text-zinc-400 mt-2 max-w-xl font-normal leading-relaxed">
+                  Secure your <strong className="text-white font-extrabold">{billingInterval}</strong> rate before we introduce multi-tier pricing. Your rate will never increase, even as features are added.
+                </p>
               </div>
             </div>
 
             {/* Countdown timer */}
-            <div className="flex items-center gap-3 bg-zinc-950 border border-zinc-900 p-3 rounded-2xl shrink-0">
-              <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Offer ends in:</span>
-              <div className="flex items-center gap-2 font-mono font-bold text-sm text-brand-volt">
-                <span className="flex items-baseline gap-0.5">
-                  <span>{String(timeLeft.days).padStart(2, '0')}</span>
-                  <span className="text-[9px] text-zinc-500 uppercase font-sans font-medium">d</span>
-                </span>
-                <span className="opacity-40 animate-pulse">:</span>
-                <span className="flex items-baseline gap-0.5">
-                  <span>{String(timeLeft.hours).padStart(2, '0')}</span>
-                  <span className="text-[9px] text-zinc-500 uppercase font-sans font-medium">h</span>
-                </span>
-                <span className="opacity-40 animate-pulse">:</span>
-                <span className="flex items-baseline gap-0.5">
-                  <span>{String(timeLeft.minutes).padStart(2, '0')}</span>
-                  <span className="text-[9px] text-zinc-500 uppercase font-sans font-medium">m</span>
-                </span>
-                <span className="opacity-40 animate-pulse">:</span>
-                <span className="flex items-baseline gap-0.5">
-                  <span>{String(timeLeft.seconds).padStart(2, '0')}</span>
-                  <span className="text-[9px] text-zinc-500 uppercase font-sans font-medium">s</span>
-                </span>
+            <div className="flex items-center gap-4 bg-black/40 border border-white/[0.06] p-3 md:p-4 rounded-2xl shrink-0 w-full lg:w-auto justify-between lg:justify-start shadow-inner backdrop-blur-md">
+              <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest leading-none font-bold">Offer ends in</span>
+              <div className="flex items-center gap-3 font-mono font-bold text-sm">
+                {/* Days */}
+                <div className="flex flex-col items-center min-w-[28px]">
+                  <span className="text-base md:text-lg text-brand-volt text-glow-volt leading-none">{String(timeLeft.days).padStart(2, '0')}</span>
+                  <span className="text-[7px] text-zinc-500 font-bold uppercase tracking-wider mt-1.5">days</span>
+                </div>
+                <span className="text-zinc-700 font-sans text-sm pb-3.5 leading-none select-none">:</span>
+                {/* Hours */}
+                <div className="flex flex-col items-center min-w-[28px]">
+                  <span className="text-base md:text-lg text-brand-volt text-glow-volt leading-none">{String(timeLeft.hours).padStart(2, '0')}</span>
+                  <span className="text-[7px] text-zinc-500 font-bold uppercase tracking-wider mt-1.5">hours</span>
+                </div>
+                <span className="text-zinc-700 font-sans text-sm pb-3.5 leading-none select-none">:</span>
+                {/* Minutes */}
+                <div className="flex flex-col items-center min-w-[28px]">
+                  <span className="text-base md:text-lg text-brand-volt text-glow-volt leading-none">{String(timeLeft.minutes).padStart(2, '0')}</span>
+                  <span className="text-[7px] text-zinc-500 font-bold uppercase tracking-wider mt-1.5">mins</span>
+                </div>
+                <span className="text-zinc-700 font-sans text-sm pb-3.5 leading-none select-none">:</span>
+                {/* Seconds */}
+                <div className="flex flex-col items-center min-w-[28px]">
+                  <span className="text-base md:text-lg text-brand-rose leading-none font-black animate-pulse">{String(timeLeft.seconds).padStart(2, '0')}</span>
+                  <span className="text-[7px] text-zinc-500 font-bold uppercase tracking-wider mt-1.5">secs</span>
+                </div>
               </div>
             </div>
           </div>
