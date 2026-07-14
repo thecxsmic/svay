@@ -14,10 +14,14 @@
     "@ai-sdk/groq": "^3.0.39",
     "@clerk/nextjs": "^7.3.3",
     "@libsql/client": "^0.17.3",
+    "@paper-design/shaders-react": "^0.0.77",
     "ai": "^6.0.177",
     "chart.js": "^4.5.1",
+    "clsx": "^2.1.1",
+    "cobe": "^0.6.5",
     "framer-motion": "^12.38.0",
-    "lucide-react": "^1.14.0",
+    "gsap": "^3.15.0",
+    "lucide-react": "^1.24.0",
     "next": "16.2.6",
     "razorpay": "^2.9.6",
     "react": "19.2.4",
@@ -25,6 +29,7 @@
     "react-dom": "19.2.4",
     "react-quill-new": "^3.8.3",
     "resend": "^6.12.3",
+    "tailwind-merge": "^3.6.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

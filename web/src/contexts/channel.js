@@ -14,17 +14,19 @@ export function ChannelProvider({ children }) {
     try {
       // Fetch pinned channels
       const res = await fetch("/api/youtube/channel/pin");
-      const data = await res.json();
+      const isJson = res.headers.get("content-type")?.includes("application/json");
+      const data = res.ok && isJson ? await res.json() : {};
       const pinnedItems = data.success ? (data.items || []) : [];
-      
+
       // Check for user's primary channel
       const userRes = await fetch("/api/youtube/channel/user");
-      const userData = await userRes.json();
+      const userIsJson = userRes.headers.get("content-type")?.includes("application/json");
+      const userData = userRes.ok && userIsJson ? await userRes.json() : {};
       const primaryChannel = userData.success && userData.channel ? userData.channel : null;
-      
+
       setUserChannel(primaryChannel);
-      
-      const allChannels = primaryChannel 
+
+      const allChannels = primaryChannel
         ? [primaryChannel, ...pinnedItems.filter(p => p.id !== primaryChannel.id)]
         : pinnedItems;
 

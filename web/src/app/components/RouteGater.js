@@ -72,11 +72,11 @@ export default function RouteGater({ children, initialIsSubscribed, initialSubsc
                        pathname.startsWith("/shared");
 
   if (!isLoaded) {
-    // Still render public pages while Clerk is loading to avoid blank screen
+    // Still render public pages / landing while Clerk is loading to avoid blank screen
     if (isPublicPage) {
       return <div className="w-full text-[#ededed]">{children}</div>;
     }
-    return <div className="min-h-screen bg-black" />;
+    return <LandingPage />;
   }
 
   if (isDemoMode) {

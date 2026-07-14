@@ -52,11 +52,12 @@ export function useTypingEffect() {
   return badgeText;
 }
 
-// ─── Countdown timer (target: July 15, 2026) ─────────────────────────────────
+// ─── Countdown timer (target: 30 days from first mount window) ───────────────
 export function useCountdown() {
   const [timeLeft, setTimeLeft] = useState({ days: 14, hours: 0, minutes: 0, seconds: 0 });
   useEffect(() => {
-    const target = new Date('2026-07-15T23:59:59Z').getTime();
+    // Keep offer window ahead of "today" so the countdown stays meaningful
+    const target = new Date('2026-08-15T23:59:59Z').getTime();
     const calc = () => {
       const diff = target - Date.now();
       if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
