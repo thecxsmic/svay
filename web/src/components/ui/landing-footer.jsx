@@ -110,9 +110,8 @@ export function LandingFooter({ onLaunchDemo }) {
                 </a>
 
                 <p className="max-w-sm text-sm leading-relaxed text-white/45">
-                  Real-time creator intelligence — trend radar, competitor
-                  benchmarks, and virality scoring so you can publish with
-                  confidence.
+                  Real-time creator intelligence — Trend Radar, competitor
+                  benchmarks, and Virality Score so you publish with confidence.
                 </p>
 
                 <div className="flex flex-wrap items-center gap-2.5">

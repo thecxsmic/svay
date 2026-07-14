@@ -4,13 +4,13 @@
 export const PRICING_FEATURES = [
   'Real-time Trend Radar & breakout alerts',
   'Competitor analysis & format benchmarks',
-  'Subscriber velocity and milestone tracking',
-  'Advanced search sorted by custom Virality Score',
-  'Daily stats snapshot history & archived reports',
-  'Unlimited research notebook slots & outlining workspace',
-  'Smart notifications & digests sent to your inbox',
-  'Semantic content clustering & relationship mapping',
-  'Includes all upcoming features with no pricing increases',
+  'Subscriber velocity & milestones',
+  'Search ranked by Virality Score',
+  'Daily stats history & archived reports',
+  'Unlimited research notebooks',
+  'Smart inbox digests',
+  'Semantic content clustering',
+  'All future features included at your locked rate',
 ];
 
 /** Grouped for the pricing "what's included" panel. */
@@ -20,23 +20,23 @@ export const PRICING_FEATURE_GROUPS = [
     features: [
       'Real-time Trend Radar & breakout alerts',
       'Competitor analysis & format benchmarks',
-      'Advanced search sorted by custom Virality Score',
+      'Search ranked by Virality Score',
     ],
   },
   {
     label: 'Tracking',
     features: [
-      'Subscriber velocity and milestone tracking',
-      'Daily stats snapshot history & archived reports',
-      'Semantic content clustering & relationship mapping',
+      'Subscriber velocity & milestones',
+      'Daily stats history & archived reports',
+      'Semantic content clustering',
     ],
   },
   {
     label: 'Workflow',
     features: [
-      'Unlimited research notebook slots & outlining workspace',
-      'Smart notifications & digests sent to your inbox',
-      'Includes all upcoming features with no pricing increases',
+      'Unlimited research notebooks',
+      'Smart inbox digests',
+      'All future features included at your locked rate',
     ],
   },
 ];

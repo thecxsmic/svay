@@ -47,8 +47,8 @@ export function GoCta({ onStartTrial, onLaunchDemo }) {
             </h2>
 
             <p className="mt-4 max-w-lg text-sm leading-relaxed text-white/45 sm:text-base">
-              Your niche moves fast. Get trend signals, competitor benchmarks,
-              and breakout alerts — then hit publish with confidence.
+              Your niche won&apos;t wait. Get trend signals, competitor
+              benchmarks, and breakout alerts — then publish with a plan.
             </p>
 
             <div className="mt-9 flex w-full max-w-md flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center">
@@ -57,7 +57,7 @@ export function GoCta({ onStartTrial, onLaunchDemo }) {
                 onClick={onStartTrial}
                 className="group inline-flex h-14 w-full items-center justify-center gap-2.5 rounded-full border border-white/85 bg-gradient-to-b from-white to-[#e8f2ff] px-8 text-sm font-bold text-[#030308] shadow-[0_12px_40px_-16px_rgba(96,165,250,0.45)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_56px_-8px_rgba(96,165,250,0.55)] active:scale-[0.98] sm:w-auto"
               >
-                Go — start free trial
+                Start free trial
                 <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-0.5" />
               </button>
               <button
@@ -71,7 +71,7 @@ export function GoCta({ onStartTrial, onLaunchDemo }) {
             </div>
 
             <p className="mt-5 font-mono text-[9px] uppercase tracking-[0.16em] text-white/25">
-              7-day free trial · No card required to explore demo
+              7-day free trial · No card required for the demo
             </p>
           </div>
         </div>

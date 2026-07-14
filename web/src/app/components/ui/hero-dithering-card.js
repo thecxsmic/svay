@@ -122,17 +122,18 @@ export function CTASection() {
             </div>
 
             <h1 className="max-w-4xl font-display text-4xl leading-[1.05] tracking-tight text-white sm:text-5xl md:text-6xl lg:text-7xl">
-              Track trends,
+              Track trends.
               <span
                 className="mt-1.5 block bg-gradient-to-r from-white via-blue-200 to-blue-400 bg-clip-text text-transparent sm:mt-1"
               >
-                dominate your niche.
+                Dominate your niche.
               </span>
             </h1>
 
             <p className="mt-6 max-w-xl text-base leading-relaxed text-white/55 sm:text-lg">
-              Join visionary creators using SVAY to uncover high-performing
-              content. Actionable insights, delivered instantly.
+              SVAY shows creators what&apos;s working now — high-performing
+              formats, breakout topics, and signals you can act on before the
+              niche moves on.
             </p>
 
             <div className="mt-10 flex w-full max-w-lg flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center">
@@ -143,7 +144,7 @@ export function CTASection() {
                 }}
                 className="group inline-flex h-14 w-full items-center justify-center gap-2.5 rounded-full border border-white/85 bg-gradient-to-b from-white to-[#e8f2ff] px-8 text-sm font-bold text-[#030308] shadow-[0_12px_40px_-16px_rgba(96,165,250,0.45)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_56px_-8px_rgba(96,165,250,0.55)] active:scale-[0.98] sm:w-auto"
               >
-                Sign in
+                Start free trial
                 <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-0.5" />
               </button>
               <button

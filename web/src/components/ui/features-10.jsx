@@ -53,8 +53,8 @@ export function Features() {
             </span>
           </h2>
           <p className="mt-4 max-w-lg text-sm leading-relaxed text-white/40 sm:text-base">
-            Real-time channel signals, breakout trends, and competitor intel —
-            designed for creators who move fast.
+            Live channel signals, breakout trends, and competitor intel — built
+            for creators who publish fast.
           </p>
         </div>
 
@@ -64,7 +64,7 @@ export function Features() {
               icon={BarChart3}
               label="01 · Analytics"
               title="Real-time channel tracking"
-              description="Views, velocity, and milestones — updated as the niche moves."
+              description="Watch views, velocity, and milestones update as your niche shifts."
             />
             <div className="mt-5 sm:mt-6">
               <AnalyticsDemo />
@@ -76,7 +76,7 @@ export function Features() {
               icon={Radar}
               label="02 · Radar"
               title="Trend Radar"
-              description="Catch rising queries before saturation."
+              description="Spot rising queries before they saturate."
             />
             <div className="mt-5 sm:mt-6">
               <TrendRadarDemo />
@@ -87,8 +87,8 @@ export function Features() {
             <FeatureMeta
               icon={Flame}
               label="03 · Score"
-              title="Virality factor"
-              description="Proprietary ranking on every result."
+              title="Virality Score"
+              description="Rank every result by a score built for creators, not generic search."
             />
             <div className="mt-5 sm:mt-6">
               <ViralityDemo />
@@ -114,7 +114,7 @@ export function Features() {
                   icon={Zap}
                   label="05 · Digests"
                   title="Smart alerts, zero noise"
-                  description="Competitor moves and viral spikes land in your inbox on a schedule you control."
+                  description="Competitor moves and viral spikes land in your inbox on your schedule."
                 />
                 <ul className="mt-4 space-y-2 sm:mt-5">
                   {[

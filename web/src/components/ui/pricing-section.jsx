@@ -34,9 +34,9 @@ const PLANS = {
     price: PRICING.yearly,
     struck: "999",
     save: "30%",
-    billing: "Billed ₹8,388 once a year",
+    billing: "Billed ₹8,388/year",
     subtotal: "₹699/mo effective",
-    note: "Best value — 4 months free",
+    note: "Best value — ~4 months free",
     cta: "Start yearly trial",
   },
 };
@@ -164,13 +164,13 @@ export function Pricing({
                   </span>
                 </div>
                 <p className="font-display text-lg leading-snug tracking-tight text-white sm:text-xl">
-                  Lock in early-adopter pricing for life
+                  Lock early-adopter pricing for life
                 </p>
                 <p className="mt-1.5 max-w-md text-[13px] leading-relaxed text-white/40">
                   Secure your{" "}
                   <span className="text-white/70">{plan.label.toLowerCase()}</span>{" "}
-                  rate before multi-tier pricing. Your price never increases —
-                  even as features ship.
+                  rate before multi-tier pricing. Your price never goes up —
+                  even as we ship new features.
                 </p>
               </div>
 
