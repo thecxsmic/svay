@@ -105,7 +105,7 @@ export default function CookiesPage() {
               <ul className="list-disc pl-5 space-y-2">
                 <li><strong>Authentication:</strong> Clerk sets session identification cookies to keep you signed in securely as you navigate between dashboard modules.</li>
                 <li><strong>Functional state:</strong> We set a `demo_mode` cookie when you launch our workspace preview so the dashboard knows to run in demo sandbox mode.</li>
-                <li><strong>Security & Billing:</strong> Razorpay implements cookies during billing cycles to ensure checkout sessions are secure and transactions are validated.</li>
+                <li><strong>Security & Billing:</strong> Dodo Payments implements cookies during billing cycles to ensure checkout sessions are secure and transactions are validated.</li>
               </ul>
             </section>
 

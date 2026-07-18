@@ -96,7 +96,7 @@ export default function LandingPricing({
                           : 'bg-brand-rose/15 text-brand-rose border border-brand-rose/20'
                       }`}
                     >
-                      Save 30%
+                      Save 33%
                     </span>
                   )}
                   {billingInterval === interval && (
@@ -159,7 +159,7 @@ export default function LandingPricing({
               </div>
 
               <div className="flex items-baseline gap-1.5 mb-2">
-                <span className="font-display font-extrabold text-3xl text-zinc-500">₹</span>
+                <span className="font-display font-extrabold text-3xl text-zinc-500">$</span>
                 <span className="font-display font-extrabold text-6xl md:text-7.5xl text-white tracking-tighter transition-all">
                   {priceDisplay}
                 </span>
@@ -170,16 +170,16 @@ export default function LandingPricing({
                 <div className="flex items-center gap-2">
                   {billingInterval === 'monthly' ? (
                     <>
-                      <span className="text-zinc-500 line-through text-sm font-bold">₹1,499/mo</span>
+                      <span className="text-zinc-500 line-through text-sm font-bold">$14.99/mo</span>
                       <span className="bg-brand-rose/15 text-brand-rose border border-brand-rose/25 font-black text-[9px] px-2 py-0.5 rounded tracking-wide uppercase">
                         SAVE 33%
                       </span>
                     </>
                   ) : (
                     <>
-                      <span className="text-zinc-500 line-through text-sm font-bold">₹999/mo</span>
+                      <span className="text-zinc-500 line-through text-sm font-bold">$9.99/mo</span>
                       <span className="bg-brand-rose/15 text-brand-rose border border-brand-rose/25 font-black text-[9px] px-2 py-0.5 rounded tracking-wide uppercase">
-                        SAVE 30%
+                        SAVE 33%
                       </span>
                     </>
                   )}
@@ -203,8 +203,8 @@ export default function LandingPricing({
               </button>
               <p className="text-[10px] text-zinc-500 text-center mt-3 font-semibold tracking-wide">
                 {billingInterval === 'yearly'
-                  ? 'Billed annually at ₹8,388/year (₹699/mo) · Cancel at any time · Secure checkout powered by Razorpay'
-                  : 'Thereafter ₹999/month · Cancel at any time · Secure checkout powered by Razorpay'}
+                  ? 'Billed annually at $79.99/year ($6.66/mo) · Cancel at any time · Secure checkout powered by Dodo Payments'
+                  : 'Thereafter $9.99/month · Cancel at any time · Secure checkout powered by Dodo Payments'}
               </p>
             </div>
           </div>

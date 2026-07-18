@@ -107,12 +107,12 @@ export default function TermsPage() {
             <section className="space-y-3">
               <h2 className="text-white text-base font-bold uppercase tracking-wider">3. Subscription, Trial Periods & Billing</h2>
               <div className="text-zinc-550 text-xs mb-2 italic">
-                Quick summary: Billing is managed via Razorpay. Trials are free, and you can cancel anytime.
+                Quick summary: Billing is managed via Dodo Payments. Trials are free, and you can cancel anytime.
               </div>
               <ul className="list-disc pl-5 space-y-2">
-                <li><strong>Pro Plan Pricing:</strong> We offer full access to our creator intelligence tools under a monthly subscription priced at ₹999/month, or a yearly subscription priced at ₹699/month (billed annually as ₹8,388/year).</li>
+                <li><strong>Pro Plan Pricing:</strong> We offer full access to our creator intelligence tools under a monthly subscription priced at $9.99/month, or a yearly subscription priced at $6.66/month (billed annually as $79.99/year).</li>
                 <li><strong>7-Day Free Trial:</strong> New accounts are eligible for a 7-day free trial. If you cancel before the trial concludes, you will not be charged.</li>
-                <li><strong>Billing Cycles & Automatic Renewal:</strong> Subscription payments are processed securely by Razorpay. Subscriptions renew automatically each month on the anniversary of your billing date unless cancelled.</li>
+                <li><strong>Billing Cycles & Automatic Renewal:</strong> Subscription payments are processed securely by Dodo Payments. Subscriptions renew automatically each month on the anniversary of your billing date unless cancelled.</li>
               </ul>
             </section>
 

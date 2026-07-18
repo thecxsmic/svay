@@ -96,7 +96,7 @@ export default function PrivacyPage() {
                 <li><strong>Account Credentials:</strong> We use Clerk to handle user login and account security. When you sign up, Clerk stores your name, email address, profile photo, and social login metadata.</li>
                 <li><strong>YouTube Channel Metrics:</strong> If you connect your channel, we fetch public metadata (your channel name, ID, and thumbnail image) and public channel performance metrics (subscriber totals, weekly view metrics) through Google's API services.</li>
                 <li><strong>Your Inputs:</strong> We store search term queries, competitor handles/IDs, saved videos, outlines, and script ideas that you actively save in your workspace library.</li>
-                <li><strong>Billing Information:</strong> All payments are processed securely by Razorpay. We do not store your credit card or bank details on our servers. Razorpay provides us with basic payment status logs and verification tokens.</li>
+                <li><strong>Billing Information:</strong> All payments are processed securely by Dodo Payments. We do not store your credit card or bank details on our servers. Dodo Payments provides us with basic payment status logs and verification tokens.</li>
               </ul>
             </section>
 
@@ -128,7 +128,7 @@ export default function PrivacyPage() {
               </p>
               <ul className="list-disc pl-5 space-y-2">
                 <li><strong>Clerk:</strong> Provides secure authentication gates and user profile protection.</li>
-                <li><strong>Razorpay:</strong> Handles subscription cycles, payment security, and renewals.</li>
+                <li><strong>Dodo Payments:</strong> Handles subscription cycles, payment security, and renewals.</li>
                 <li><strong>YouTube API Services:</strong> Retrieves public channel statistics. By using Svay, you agree to be bound by the <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer" className="text-brand-volt underline">YouTube Terms of Service</a> and the <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-brand-volt underline">Google Privacy Policy</a>. You can manage or revoke this access at any time through Google's security settings.</li>
               </ul>
             </section>

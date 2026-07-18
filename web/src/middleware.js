@@ -21,10 +21,11 @@ export default clerkMiddleware(async (auth, request) => {
   const url = request.nextUrl;
   const pathname = url.pathname;
 
-  // Rate limit API routes, except for internal jobs and Razorpay webhooks
+  // Rate limit API routes, except for internal jobs and Webhooks
   let rateLimitHeaders = null;
   if (pathname.startsWith('/api') && 
       !pathname.startsWith('/api/razorpay/webhook') && 
+      !pathname.startsWith('/api/dodo/webhook') && 
       !pathname.startsWith('/api/jobs')) {
     
     const { userId } = await auth();

@@ -178,26 +178,26 @@ export default function RouteGater({ children, initialIsSubscribed, initialSubsc
                       }`}
                     >
                       Yearly
-                      <span className={`text-[7px] font-black tracking-wide px-1 py-0.5 rounded ${billingInterval === "yearly" ? "bg-black/10 text-black" : "bg-brand-rose/15 text-brand-rose"}`}>-30%</span>
+                      <span className={`text-[7px] font-black tracking-wide px-1 py-0.5 rounded ${billingInterval === "yearly" ? "bg-black/10 text-black" : "bg-brand-rose/15 text-brand-rose"}`}>-33%</span>
                     </button>
                  </div>
 
                  <div className="flex items-baseline gap-2 mb-2">
-                    <span className="text-3xl font-extrabold text-zinc-500">₹</span>
-                    <span className="text-5xl md:text-6xl font-extrabold text-white tracking-tight">{billingInterval === "yearly" ? "699" : "999"}</span>
+                    <span className="text-3xl font-extrabold text-zinc-500">$</span>
+                    <span className="text-5xl md:text-6xl font-extrabold text-white tracking-tight">{billingInterval === "yearly" ? "6.66" : "9.99"}</span>
                     <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">/ Month</span>
                  </div>
 
                  <div className="flex items-center gap-2 mb-8">
                    {billingInterval === "monthly" ? (
                      <>
-                       <span className="text-zinc-500 line-through text-xs font-bold">₹1,499/mo</span>
+                       <span className="text-zinc-500 line-through text-xs font-bold">$14.99/mo</span>
                        <span className="bg-brand-rose/15 text-brand-rose border border-brand-rose/25 font-black text-[9px] px-2 py-0.5 rounded tracking-wide uppercase">SAVE 33%</span>
                      </>
                    ) : (
                      <>
-                       <span className="text-zinc-500 line-through text-xs font-bold">₹999/mo</span>
-                       <span className="bg-brand-rose/15 text-brand-rose border border-brand-rose/25 font-black text-[9px] px-2 py-0.5 rounded tracking-wide uppercase">SAVE 30%</span>
+                       <span className="text-zinc-500 line-through text-xs font-bold">$9.99/mo</span>
+                       <span className="bg-brand-rose/15 text-brand-rose border border-brand-rose/25 font-black text-[9px] px-2 py-0.5 rounded tracking-wide uppercase">SAVE 33%</span>
                      </>
                    )}
                  </div>

@@ -22,20 +22,20 @@ const PLANS = {
   monthly: {
     label: "Monthly",
     price: PRICING.monthly,
-    struck: "1,499",
+    struck: "14.99",
     save: "33%",
     billing: "Billed monthly after trial",
-    subtotal: "₹999/mo",
+    subtotal: "$9.99/mo",
     note: "Flexible — cancel anytime",
     cta: "Start monthly trial",
   },
   yearly: {
     label: "Yearly",
     price: PRICING.yearly,
-    struck: "999",
-    save: "30%",
-    billing: "Billed ₹8,388/year",
-    subtotal: "₹699/mo effective",
+    struck: "9.99",
+    save: "33%",
+    billing: "Billed $79.99/year",
+    subtotal: "$6.66/mo effective",
     note: "Best value — ~4 months free",
     cta: "Start yearly trial",
   },
@@ -230,7 +230,7 @@ export function Pricing({
                                 : "border border-white/[0.1] bg-white/[0.04] text-white/45"
                             )}
                           >
-                            −30%
+                            −33%
                           </span>
                         )}
                         {active && (
@@ -253,7 +253,7 @@ export function Pricing({
               {/* Price */}
               <div className="flex items-end gap-1">
                 <span className="mb-2 font-display text-2xl text-white/25 sm:mb-3">
-                  ₹
+                  $
                 </span>
                 <AnimatePresence mode="popLayout">
                   <motion.span
@@ -274,7 +274,7 @@ export function Pricing({
 
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <span className="font-mono text-sm text-white/25 line-through">
-                  ₹{plan.struck}
+                  ${plan.struck}
                 </span>
                 <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-white/45">
                   Save {plan.save}
@@ -300,7 +300,7 @@ export function Pricing({
                   <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-0.5" />
                 </button>
                 <p className="mt-3 text-center font-mono text-[9px] uppercase tracking-wider text-white/25">
-                  7-day free · Secure checkout via Razorpay
+                  7-day free · Secure checkout via Dodo Payments
                 </p>
               </div>
             </div>

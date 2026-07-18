@@ -41,8 +41,8 @@ export const PRICING_FEATURE_GROUPS = [
   },
 ];
 
-/** Monthly / yearly price in INR (₹). */
+/** Monthly / yearly price in USD ($). */
 export const PRICING = {
-  monthly: 999,
-  yearly: 699,
+  monthly: 9.99,
+  yearly: 6.66,
 };

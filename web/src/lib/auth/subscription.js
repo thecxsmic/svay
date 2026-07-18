@@ -33,8 +33,8 @@ export async function getSubscriptionStatus(userId) {
     return {
       status: row.status,
       isActive: isActive,
-      isHalted: row.status === "halted",
-      isExpired: row.status === "expired" || row.status === "cancelled",
+      isHalted: row.status === "halted" || row.status === "on_hold",
+      isExpired: row.status === "expired" || row.status === "cancelled" || row.status === "failed",
       currentPeriodEnd: row.current_period_end,
       subscriptionId: row.subscription_id,
       planId: row.plan_id
