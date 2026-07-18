@@ -3,23 +3,22 @@
 import { usePathname } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import { useState, useEffect } from "react";
-import LayoutContent from "./LayoutContent";
-import LandingPage from "./LandingPage";
-import UpgradeGate from "./UpgradeGate";
+import dynamic from "next/dynamic";
+import SvayLoader from "./SvayLoader";
 
-/** Minimal black shell while Clerk hydrates — never flash the marketing landing page */
-function AuthLoadingShell() {
-  return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-black">
-      <div className="flex flex-col items-center gap-3">
-        <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-geist-success via-[#00f0ff] to-geist-success animate-logo-gradient shadow-[0_0_15px_rgba(0,112,243,0.3)]" />
-        <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600">
-          Loading…
-        </p>
-      </div>
-    </div>
-  );
-}
+// Code-split heavy shells so the marketing landing JS stays smaller
+const LayoutContent = dynamic(() => import("./LayoutContent"), {
+  loading: () => <SvayLoader fullScreen />,
+  ssr: true,
+});
+const LandingPage = dynamic(() => import("./LandingPage"), {
+  loading: () => <SvayLoader fullScreen />,
+  ssr: true,
+});
+const UpgradeGate = dynamic(() => import("./UpgradeGate"), {
+  loading: () => <SvayLoader fullScreen />,
+  ssr: true,
+});
 
 export default function RouteGater({
   children,
@@ -137,6 +136,11 @@ export default function RouteGater({
     <LayoutContent subscription={initialSubscription}>{content}</LayoutContent>
   );
 
+  // Standalone chrome — no sidebar / channel onboarding modal
+  const bare = (content) => (
+    <div className="w-full text-[#ededed]">{content}</div>
+  );
+
   const paywall = (
     <UpgradeGate
       billingInterval={billingInterval}
@@ -155,43 +159,51 @@ export default function RouteGater({
 
   if (!isLoaded) {
     if (isPublicPage || (pathname.startsWith("/support") && !signedIn && !demoMode)) {
-      return <div className="w-full text-[#ededed]">{children}</div>;
+      return bare(children);
     }
 
     // Optimistic render from server auth — no landing page flash
     if (demoMode) {
       return appShell(children);
     }
-    if (signedIn && (initialIsSubscribed || isCarePage)) {
+    if (signedIn && initialIsSubscribed) {
       return appShell(children);
+    }
+    if (signedIn && isCarePage) {
+      return bare(children);
     }
     if (signedIn && !initialIsSubscribed) {
       return paywall;
     }
 
-    // Unknown session: lightweight shell only (not full landing)
-    return <AuthLoadingShell />;
+    // Anonymous: show marketing landing immediately (SEO + first paint).
+    // Never gate the homepage behind a "Loading…" shell while Clerk boots.
+    return <LandingPage />;
   }
 
   if (demoMode) {
     if (isPublicPage) {
-      return <div className="w-full text-[#ededed]">{children}</div>;
+      return bare(children);
     }
     return appShell(children);
   }
 
   if (isPublicPage) {
-    return <div className="w-full text-[#ededed]">{children}</div>;
+    return bare(children);
   }
 
   // Support is public for logged-out visitors (standalone page chrome)
   if (pathname.startsWith("/support") && !signedIn) {
-    return <div className="w-full text-[#ededed]">{children}</div>;
+    return bare(children);
   }
 
   if (signedIn) {
-    if (initialIsSubscribed || isCarePage) {
+    if (initialIsSubscribed) {
       return appShell(children);
+    }
+    // From upgrade/paywall: support & billing without app shell / channel modal
+    if (isCarePage) {
+      return bare(children);
     }
     return paywall;
   }

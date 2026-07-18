@@ -1,21 +1,24 @@
 {
-  "name": "SvaySpace",
+  "name": "Svay — Creator Intelligence",
   "short_name": "Svay",
+  "description": "YouTube trend radar, competitor tracking, and growth analytics for creators.",
+  "start_url": "/",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     },
     {
       "src": "/web-app-manifest-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
   ],
   "theme_color": "#000000",
   "background_color": "#000000",
-  "display": "standalone"
+  "display": "standalone",
+  "lang": "en"
 }

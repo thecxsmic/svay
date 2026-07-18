@@ -122,7 +122,7 @@ export function CTASection() {
             </div>
 
             <h1 className="max-w-4xl font-display text-4xl leading-[1.05] tracking-tight text-white sm:text-5xl md:text-6xl lg:text-7xl">
-              Track trends.
+              YouTube trend radar.
               <span
                 className="mt-1.5 block bg-gradient-to-r from-white via-blue-200 to-blue-400 bg-clip-text text-transparent sm:mt-1"
               >
@@ -131,9 +131,9 @@ export function CTASection() {
             </h1>
 
             <p className="mt-6 max-w-xl text-base leading-relaxed text-white/55 sm:text-lg">
-              SVAY shows creators what&apos;s working now — high-performing
-              formats, breakout topics, and signals you can act on before the
-              niche moves on.
+              Svay is creator intelligence for YouTube — viral trend radar,
+              competitor tracking, and growth analytics so you act on breakout
+              topics before the niche moves on.
             </p>
 
             <div className="mt-10 flex w-full max-w-lg flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center">

@@ -58,13 +58,17 @@ export default function LayoutContent({ children, subscription }) {
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
-  // Automatically prompt to connect channel if none is connected
+  // Automatically prompt to connect channel if none is connected.
+  // Skip on care pages (support/billing) so paywall users can reach help
+  // without being blocked by the non-dismissible channel setup modal.
   useEffect(() => {
     const isDemoCookie = document.cookie.includes("demo_mode=true");
-    if (!loading && !isDemoCookie && !userChannel) {
+    const isCarePage =
+      pathname.startsWith("/support") || pathname.startsWith("/billing");
+    if (!loading && !isDemoCookie && !userChannel && !isCarePage) {
       setIsSetupModalOpen(true);
     }
-  }, [loading, userChannel]);
+  }, [loading, userChannel, pathname]);
 
 
   const SidebarContent = () => (

@@ -1,18 +1,32 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import CardNav from './landing/CardNav';
 import { CTASection } from './ui/hero-dithering-card';
-import { Features } from '@/components/ui/features-10';
-import { Pricing } from '@/components/ui/pricing-section';
-import { GoCta } from '@/components/ui/go-cta-section';
-import { LandingFooter } from '@/components/ui/landing-footer';
 import { LandingAmbient } from '@/components/ui/landing-ambient';
 import {
   useAnimatedPrice,
   useCountdown,
   useCustomCursor,
 } from './landing/useLandingHooks';
+
+// Below-fold sections — load after hero paints (faster LCP)
+const Features = lazy(() =>
+  import('@/components/ui/features-10').then((m) => ({ default: m.Features }))
+);
+const Pricing = lazy(() =>
+  import('@/components/ui/pricing-section').then((m) => ({ default: m.Pricing }))
+);
+const GoCta = lazy(() =>
+  import('@/components/ui/go-cta-section').then((m) => ({ default: m.GoCta }))
+);
+const LandingFooter = lazy(() =>
+  import('@/components/ui/landing-footer').then((m) => ({ default: m.LandingFooter }))
+);
+
+function SectionFallback() {
+  return <div className="min-h-[12rem] w-full" aria-hidden />;
+}
 
 const enterDemo = (e) => {
   if (e) e.preventDefault();
@@ -77,6 +91,14 @@ export default function LandingPage() {
 
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden bg-[#030308] text-white">
+      {/* SEO: visible landmark copy in first paint (matches hero H1) */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[10000] focus:rounded-md focus:bg-white focus:px-3 focus:py-2 focus:text-black"
+      >
+        Skip to content
+      </a>
+
       <LandingAmbient />
 
       {!isMobile && (
@@ -111,19 +133,27 @@ export default function LandingPage() {
         buttonTextColor="#030308"
       />
 
-      <div className="relative z-[2] pt-[90px]">
+      <main id="main-content" className="relative z-[2] pt-[90px]">
         <CTASection />
-        <Features />
-        <Pricing
-          billingInterval={billingInterval}
-          setBillingInterval={setBillingInterval}
-          priceDisplay={priceDisplay}
-          timeLeft={timeLeft}
-          onStartTrial={handleStartTrial}
-        />
-        <GoCta onStartTrial={handleStartTrial} onLaunchDemo={enterDemo} />
-        <LandingFooter onLaunchDemo={enterDemo} />
-      </div>
+        <Suspense fallback={<SectionFallback />}>
+          <Features />
+        </Suspense>
+        <Suspense fallback={<SectionFallback />}>
+          <Pricing
+            billingInterval={billingInterval}
+            setBillingInterval={setBillingInterval}
+            priceDisplay={priceDisplay}
+            timeLeft={timeLeft}
+            onStartTrial={handleStartTrial}
+          />
+        </Suspense>
+        <Suspense fallback={<SectionFallback />}>
+          <GoCta onStartTrial={handleStartTrial} onLaunchDemo={enterDemo} />
+        </Suspense>
+        <Suspense fallback={null}>
+          <LandingFooter onLaunchDemo={enterDemo} />
+        </Suspense>
+      </main>
     </div>
   );
 }

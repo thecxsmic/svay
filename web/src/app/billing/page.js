@@ -102,10 +102,11 @@ export default function BillingPage() {
   if (loading && !billing) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center">
-        <RefreshCw className="mb-4 h-8 w-8 animate-spin text-geist-success" />
-        <p className="text-xs font-bold uppercase tracking-widest text-accents-4">
-          Loading Billing...
-        </p>
+        <div
+          className="h-8 w-8 rounded-full bg-gradient-to-tr from-geist-success via-[#00f0ff] to-geist-success animate-logo-gradient shadow-[0_0_18px_rgba(0,112,243,0.4)]"
+          role="status"
+          aria-label="Svay"
+        />
       </div>
     );
   }

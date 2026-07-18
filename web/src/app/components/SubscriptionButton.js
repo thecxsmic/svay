@@ -57,9 +57,11 @@ export default function SubscriptionButton({
             <h2 className="font-display text-3xl tracking-tight text-white">
               You&apos;re in.
             </h2>
-            <p className="text-[10px] font-black uppercase tracking-[0.25em] leading-relaxed text-zinc-500">
-              Subscription active · Loading Pro workspace…
-            </p>
+            <div
+              className="mx-auto mt-4 h-8 w-8 rounded-full bg-gradient-to-tr from-geist-success via-[#00f0ff] to-geist-success animate-logo-gradient shadow-[0_0_18px_rgba(0,112,243,0.4)]"
+              role="status"
+              aria-label="Svay"
+            />
           </div>
         </div>
       )}
