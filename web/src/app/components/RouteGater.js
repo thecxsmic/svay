@@ -7,10 +7,30 @@ import LayoutContent from "./LayoutContent";
 import LandingPage from "./LandingPage";
 import UpgradeGate from "./UpgradeGate";
 
-export default function RouteGater({ children, initialIsSubscribed, initialSubscription }) {
+/** Minimal black shell while Clerk hydrates — never flash the marketing landing page */
+function AuthLoadingShell() {
+  return (
+    <div className="flex min-h-screen w-full items-center justify-center bg-black">
+      <div className="flex flex-col items-center gap-3">
+        <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-geist-success via-[#00f0ff] to-geist-success animate-logo-gradient shadow-[0_0_15px_rgba(0,112,243,0.3)]" />
+        <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600">
+          Loading…
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export default function RouteGater({
+  children,
+  initialIsSubscribed,
+  initialSubscription,
+  initialIsSignedIn = false,
+  initialIsDemoMode = false,
+}) {
   const pathname = usePathname();
   const { isSignedIn, isLoaded } = useAuth();
-  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(initialIsDemoMode);
   const [billingInterval, setBillingInterval] = useState("monthly");
 
   // Promo code states
@@ -26,7 +46,7 @@ export default function RouteGater({ children, initialIsSubscribed, initialSubsc
     if (match) {
       setBillingInterval(match[1]);
     }
-  }, [pathname]); // Refresh demo cookie detection on route transition
+  }, [pathname]);
 
   // Fallback: after Dodo checkout (or if webhooks failed), pull sub from Dodo → Turso
   useEffect(() => {
@@ -37,7 +57,6 @@ export default function RouteGater({ children, initialIsSubscribed, initialSubsc
         ? new URLSearchParams(window.location.search)
         : null;
     const fromCheckout = params?.get("checkout") === "success";
-    // Always try once when paywall is shown; more aggressively right after checkout
     const key = "svay_dodo_sync_attempted";
     if (!fromCheckout && sessionStorage.getItem(key) === "1") return;
 
@@ -49,7 +68,6 @@ export default function RouteGater({ children, initialIsSubscribed, initialSubsc
         const data = await res.json().catch(() => ({}));
         if (cancelled) return;
         if (res.ok && data.success && data.found) {
-          // Clean query string then reload so layout re-reads subscription
           const url = new URL(window.location.href);
           url.searchParams.delete("checkout");
           url.searchParams.delete("plan");
@@ -87,8 +105,7 @@ export default function RouteGater({ children, initialIsSubscribed, initialSubsc
 
       setPromoSuccess(data.message);
       setPromoCode("");
-      
-      // Reload page to refresh initialIsSubscribed
+
       setTimeout(() => {
         window.location.reload();
       }, 1500);
@@ -99,53 +116,84 @@ export default function RouteGater({ children, initialIsSubscribed, initialSubsc
     }
   };
 
-  const isPublicPage = pathname.startsWith("/sign-in") || 
-                       pathname.startsWith("/docs") ||
-                       pathname.startsWith("/privacy") ||
-                       pathname.startsWith("/terms") ||
-                       pathname.startsWith("/cookies") ||
-                       pathname.startsWith("/refund") ||
-                       pathname.startsWith("/shared");
+  const isPublicPage =
+    pathname.startsWith("/sign-in") ||
+    pathname.startsWith("/docs") ||
+    pathname.startsWith("/privacy") ||
+    pathname.startsWith("/terms") ||
+    pathname.startsWith("/cookies") ||
+    pathname.startsWith("/refund") ||
+    pathname.startsWith("/shared");
+
+  // Always reachable even on the paywall (support + billing care)
+  const isCarePage =
+    pathname.startsWith("/support") || pathname.startsWith("/billing");
+
+  // Prefer server-known session while Clerk JS is still hydrating
+  const signedIn = isLoaded ? isSignedIn : initialIsSignedIn;
+  const demoMode = isDemoMode || initialIsDemoMode;
+
+  const appShell = (content) => (
+    <LayoutContent subscription={initialSubscription}>{content}</LayoutContent>
+  );
+
+  const paywall = (
+    <UpgradeGate
+      billingInterval={billingInterval}
+      setBillingInterval={setBillingInterval}
+      initialSubscription={initialSubscription}
+      promoCode={promoCode}
+      setPromoCode={setPromoCode}
+      showPromoInput={showPromoInput}
+      setShowPromoInput={setShowPromoInput}
+      isRedeeming={isRedeeming}
+      promoError={promoError}
+      promoSuccess={promoSuccess}
+      onRedeemPromo={handleRedeemPromo}
+    />
+  );
 
   if (!isLoaded) {
-    // Still render public pages / landing while Clerk is loading to avoid blank screen
-    if (isPublicPage) {
+    if (isPublicPage || (pathname.startsWith("/support") && !signedIn && !demoMode)) {
       return <div className="w-full text-[#ededed]">{children}</div>;
     }
-    return <LandingPage />;
+
+    // Optimistic render from server auth — no landing page flash
+    if (demoMode) {
+      return appShell(children);
+    }
+    if (signedIn && (initialIsSubscribed || isCarePage)) {
+      return appShell(children);
+    }
+    if (signedIn && !initialIsSubscribed) {
+      return paywall;
+    }
+
+    // Unknown session: lightweight shell only (not full landing)
+    return <AuthLoadingShell />;
   }
 
-  if (isDemoMode) {
+  if (demoMode) {
     if (isPublicPage) {
       return <div className="w-full text-[#ededed]">{children}</div>;
     }
-    return <LayoutContent>{children}</LayoutContent>;
+    return appShell(children);
   }
 
   if (isPublicPage) {
     return <div className="w-full text-[#ededed]">{children}</div>;
   }
 
-  if (isSignedIn) {
-    if (initialIsSubscribed) {
-      return <LayoutContent subscription={initialSubscription}>{children}</LayoutContent>;
-    } else {
-      return (
-        <UpgradeGate
-          billingInterval={billingInterval}
-          setBillingInterval={setBillingInterval}
-          initialSubscription={initialSubscription}
-          promoCode={promoCode}
-          setPromoCode={setPromoCode}
-          showPromoInput={showPromoInput}
-          setShowPromoInput={setShowPromoInput}
-          isRedeeming={isRedeeming}
-          promoError={promoError}
-          promoSuccess={promoSuccess}
-          onRedeemPromo={handleRedeemPromo}
-        />
-      );
+  // Support is public for logged-out visitors (standalone page chrome)
+  if (pathname.startsWith("/support") && !signedIn) {
+    return <div className="w-full text-[#ededed]">{children}</div>;
+  }
+
+  if (signedIn) {
+    if (initialIsSubscribed || isCarePage) {
+      return appShell(children);
     }
+    return paywall;
   }
 
   return <LandingPage />;

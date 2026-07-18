@@ -82,6 +82,7 @@ export default async function RootLayout({ children }) {
 
   let isSubscribed = false;
   let subscription = null;
+  let isSignedIn = false;
 
   if (isDemoMode) {
     isSubscribed = true;
@@ -89,6 +90,7 @@ export default async function RootLayout({ children }) {
     try {
       const { userId } = await auth();
       if (userId) {
+        isSignedIn = true;
         // Fetch Clerk user details to check if they are the admin
         const user = await currentUser();
         const userEmail = user?.emailAddresses[0]?.emailAddress;
@@ -132,6 +134,8 @@ export default async function RootLayout({ children }) {
                 <RouteGater 
                   initialIsSubscribed={isSubscribed} 
                   initialSubscription={subscription}
+                  initialIsSignedIn={isSignedIn}
+                  initialIsDemoMode={isDemoMode}
                 >
                   {children}
                 </RouteGater>

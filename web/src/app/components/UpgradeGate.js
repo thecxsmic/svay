@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
 import {
   Check,
@@ -436,6 +437,13 @@ export default function UpgradeGate({
                         </form>
                       )}
                     </div>
+
+                    <p className="pt-1 text-center text-[10px] text-zinc-600">
+                      Paid but stuck?{" "}
+                      <Link href="/support" className="text-zinc-400 underline-offset-2 hover:text-white hover:underline">
+                        Contact support
+                      </Link>
+                    </p>
                   </div>
                 </div>
               </div>

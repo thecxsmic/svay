@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserButton } from "@clerk/nextjs";
-import { Plus, Menu, X, Search, Zap, Users, Trophy, BookOpen, BarChart3, Activity, Radio, HelpCircle, SlidersHorizontal, Trash2 } from 'lucide-react';
+import { Plus, Menu, X, Search, Zap, Users, Trophy, BookOpen, BarChart3, Activity, Radio, HelpCircle, SlidersHorizontal, Trash2, CreditCard, LifeBuoy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useChannel } from '@/contexts/channel';
 import { useUser } from '@/contexts/user';
@@ -20,6 +20,8 @@ const navItems = [
   { name: 'Competitors', href: '/competitors', icon: Trophy },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Library', href: '/library', icon: BookOpen },
+  { name: 'Billing', href: '/billing', icon: CreditCard },
+  { name: 'Support', href: '/support', icon: LifeBuoy },
   { name: 'Docs', href: '/docs', icon: HelpCircle },
 ];
 
@@ -184,7 +186,7 @@ export default function LayoutContent({ children, subscription }) {
           </>
         )}
       </nav>
-      <div className="h-[88px] p-4 border-t border-accents-2 mt-auto flex items-center">
+      <div className="p-4 border-t border-accents-2 mt-auto space-y-2">
         {isDemo ? (
           <div 
             onClick={toggleDemoMode}
@@ -201,29 +203,38 @@ export default function LayoutContent({ children, subscription }) {
             </div>
           </div>
         ) : (
-          <div 
-            onClick={(e) => {
-              const button = e.currentTarget.querySelector('button');
-              if (button && !button.contains(e.target)) {
-                button.click();
-              }
-            }}
-            className="w-full bg-accents-1 border border-accents-2 rounded-lg p-3 flex items-center gap-3 hover:bg-white/[0.02] transition-colors cursor-pointer"
-          >
-              <UserButton appearance={{ 
-                elements: { 
-                  userButtonAvatarBox: "w-8 h-8 border border-white/10" 
-                } 
-              }} />
-              <div className="min-w-0">
-                <p className="text-[10px] font-bold text-white uppercase tracking-tight truncate">
-                  {isPromo ? "Promo Account" : "Pro Account"}
-                </p>
-                <p className={`text-[8px] font-bold uppercase tracking-widest ${isPromo ? 'text-[#00f0ff]' : 'text-accents-4'}`}>
-                  {isPromo && promoExpiryStr ? `Expires: ${promoExpiryStr}` : "Status: Active"}
-                </p>
-              </div>
-          </div>
+          <>
+            <div 
+              onClick={(e) => {
+                const button = e.currentTarget.querySelector('button');
+                if (button && !button.contains(e.target)) {
+                  button.click();
+                }
+              }}
+              className="w-full bg-accents-1 border border-accents-2 rounded-lg p-3 flex items-center gap-3 hover:bg-white/[0.02] transition-colors cursor-pointer"
+            >
+                <UserButton appearance={{ 
+                  elements: { 
+                    userButtonAvatarBox: "w-8 h-8 border border-white/10" 
+                  } 
+                }} />
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold text-white uppercase tracking-tight truncate">
+                    {isPromo ? "Promo Account" : "Pro Account"}
+                  </p>
+                  <p className={`text-[8px] font-bold uppercase tracking-widest ${isPromo ? 'text-[#00f0ff]' : 'text-accents-4'}`}>
+                    {isPromo && promoExpiryStr ? `Expires: ${promoExpiryStr}` : "Status: Active"}
+                  </p>
+                </div>
+            </div>
+            <Link
+              href="/billing"
+              className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-white/[0.06] py-2 text-[9px] font-bold uppercase tracking-wider text-accents-4 transition-colors hover:border-white/15 hover:text-white"
+            >
+              <CreditCard className="h-3 w-3" />
+              Manage billing
+            </Link>
+          </>
         )}
       </div>
     </>
@@ -317,10 +328,21 @@ export default function LayoutContent({ children, subscription }) {
                   <span className="font-display text-[10px] font-bold uppercase tracking-tight">Demo Mode</span>
                 </button>
               )}
-              <div className="flex items-center gap-2 bg-white/5 px-2.5 py-1 rounded-full border border-white/10">
+              <Link
+                href="/support"
+                className="flex items-center justify-center p-1.5 rounded-full border border-white/10 bg-white/5 text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+                title="Customer care"
+              >
+                <LifeBuoy className="w-3.5 h-3.5" />
+              </Link>
+              <Link
+                href="/billing"
+                className="flex items-center gap-2 bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded-full border border-white/10 transition-colors"
+                title="Manage subscription"
+              >
                 <Zap className="w-3 h-3 text-geist-success" fill="currentColor" />
                 <span className="font-display text-[10px] font-bold text-white uppercase tracking-tight">Pro</span>
-              </div>
+              </Link>
           </div>
         </header>
 
@@ -339,6 +361,7 @@ export default function LayoutContent({ children, subscription }) {
                     <span className="text-[10px] font-medium text-accents-4 tracking-tight">© 2026 Svay Intelligence. All rights reserved.</span>
                 </div>
                 <div className="flex gap-6 text-[11px] font-medium text-accents-4">
+                    <Link href="/support" className="hover:text-white transition-colors">Support</Link>
                     <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
                     <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
                 </div>
