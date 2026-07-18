@@ -188,6 +188,18 @@ async function syncSchema() {
     `);
     console.log("✓ Table 'promo_redemptions' created or already exists.");
 
+    await client.execute(`
+      CREATE TABLE IF NOT EXISTS tool_usage (
+        subject_key TEXT NOT NULL,
+        tool_id TEXT NOT NULL,
+        day TEXT NOT NULL,
+        count INTEGER NOT NULL DEFAULT 0,
+        updated_at INTEGER NOT NULL,
+        PRIMARY KEY (subject_key, tool_id, day)
+      )
+    `);
+    console.log("✓ Table 'tool_usage' created or already exists.");
+
     console.log("Schema sync complete!");  } catch (error) {
     console.error("Error syncing schema:", error);
     process.exit(1);

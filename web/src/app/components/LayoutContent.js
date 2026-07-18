@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserButton } from "@clerk/nextjs";
-import { Plus, Menu, X, Search, Zap, Users, Trophy, BookOpen, BarChart3, Activity, Radio, HelpCircle, SlidersHorizontal, Trash2, CreditCard, LifeBuoy } from 'lucide-react';
+import { Plus, Menu, X, Search, Zap, Users, Trophy, BookOpen, BarChart3, Activity, Radio, HelpCircle, SlidersHorizontal, Trash2, CreditCard, LifeBuoy, Wrench } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useChannel } from '@/contexts/channel';
 import { useUser } from '@/contexts/user';
@@ -20,6 +20,7 @@ const navItems = [
   { name: 'Competitors', href: '/competitors', icon: Trophy },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Library', href: '/library', icon: BookOpen },
+  { name: 'Tools', href: '/tools', icon: Wrench },
   { name: 'Billing', href: '/billing', icon: CreditCard },
   { name: 'Support', href: '/support', icon: LifeBuoy },
   { name: 'Docs', href: '/docs', icon: HelpCircle },
@@ -85,7 +86,10 @@ export default function LayoutContent({ children, subscription }) {
           <p className="font-display text-[10px] font-bold text-accents-4 uppercase tracking-widest">Intelligence</p>
         </div>
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive =
+            item.href === '/'
+              ? pathname === '/'
+              : pathname === item.href || pathname.startsWith(`${item.href}/`);
           return (
             <Link 
               key={item.name}

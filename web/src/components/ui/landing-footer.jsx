@@ -6,6 +6,7 @@ import { ArrowUp, ArrowUpRight, ExternalLink } from "lucide-react";
 const PRODUCT_LINKS = [
   { label: "Features", href: "#features" },
   { label: "Pricing", href: "#pricing" },
+  { label: "Free tools", href: "/tools" },
   { label: "Live demo", href: "#", demo: true },
 ];
 

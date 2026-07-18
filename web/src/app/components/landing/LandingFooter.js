@@ -33,6 +33,7 @@ export default function LandingFooter() {
               <a href="#features" className="hover:text-brand-volt transition-colors">Features</a>
               <a href="#demo" className="hover:text-brand-volt transition-colors">Live Demo</a>
               <a href="#pricing" className="hover:text-brand-volt transition-colors">Pricing</a>
+              <Link href="/tools" className="hover:text-brand-volt transition-colors">Free Tools</Link>
               <Link href="/docs" className="hover:text-brand-volt transition-colors">Docs</Link>
             </div>
             <div className="flex flex-wrap md:justify-end gap-x-6 gap-y-2 text-[9px] font-bold uppercase tracking-widest text-zinc-650 mt-1">

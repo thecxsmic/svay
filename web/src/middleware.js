@@ -7,6 +7,7 @@ const isPublicRoute = createRouteMatcher([
   '/sign-up(.*)', 
   '/api(.*)', 
   '/docs(.*)',
+  '/tools(.*)',
   '/privacy(.*)',
   '/terms(.*)',
   '/cookies(.*)',
@@ -64,6 +65,13 @@ export default clerkMiddleware(async (auth, request) => {
 
     if (isHeavyEndpoint) {
       limit = 10; // Max 10 requests per minute for heavy tasks
+    }
+
+    // Free tools: tighter edge limits (quota layer still enforces daily/tier caps)
+    if (pathname.startsWith('/api/tools/run') && request.method === 'POST') {
+      limit = 20;
+    } else if (pathname.startsWith('/api/tools/status')) {
+      limit = 40;
     }
 
     const routeKey = `${rateLimitKey}:${pathname}:${request.method}`;

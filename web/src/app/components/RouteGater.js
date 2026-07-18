@@ -118,6 +118,7 @@ export default function RouteGater({
   const isPublicPage =
     pathname.startsWith("/sign-in") ||
     pathname.startsWith("/docs") ||
+    pathname.startsWith("/tools") ||
     pathname.startsWith("/privacy") ||
     pathname.startsWith("/terms") ||
     pathname.startsWith("/cookies") ||

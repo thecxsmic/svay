@@ -70,14 +70,14 @@ export default function SubscriptionButton({
         type="button"
         onClick={handleSubscription}
         disabled={isProcessing}
-        className="group relative flex w-full cursor-pointer items-center justify-center gap-2.5 overflow-hidden rounded-2xl bg-brand-volt py-4 text-[12px] font-black uppercase tracking-[0.12em] text-black shadow-[0_0_40px_rgba(0,240,255,0.28),0_12px_32px_rgba(0,0,0,0.4)] transition-all hover:-translate-y-0.5 hover:bg-[#33f3ff] hover:shadow-[0_0_56px_rgba(0,240,255,0.4)] active:scale-[0.98] disabled:cursor-wait disabled:opacity-80 disabled:hover:translate-y-0 sm:text-sm sm:tracking-[0.14em]"
+        className="group flex w-full cursor-pointer items-center justify-center gap-2 rounded-md bg-white py-3 text-[11px] font-bold uppercase tracking-wider text-black transition-colors hover:bg-zinc-200 active:scale-[0.99] disabled:cursor-wait disabled:opacity-70"
       >
         {isProcessing && !isSuccess ? (
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-black/20 border-t-black" />
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-black/20 border-t-black" />
         ) : (
           <>
             <span>{label}</span>
-            <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={2.75} />
+            <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" strokeWidth={2.5} />
           </>
         )}
       </button>

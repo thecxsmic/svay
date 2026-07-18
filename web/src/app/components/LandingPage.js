@@ -14,6 +14,11 @@ import {
 const Features = lazy(() =>
   import('@/components/ui/features-10').then((m) => ({ default: m.Features }))
 );
+const FreeToolsSection = lazy(() =>
+  import('@/components/ui/free-tools-section').then((m) => ({
+    default: m.FreeToolsSection,
+  }))
+);
 const Pricing = lazy(() =>
   import('@/components/ui/pricing-section').then((m) => ({ default: m.Pricing }))
 );
@@ -62,6 +67,7 @@ export default function LandingPage() {
       links: [
         { label: 'Features', href: '#features', ariaLabel: 'SVAY Features' },
         { label: 'Pricing', href: '#pricing', ariaLabel: 'SVAY Pricing' },
+        { label: 'Free Tools', href: '/tools', ariaLabel: 'Free creator tools' },
       ],
     },
     {
@@ -137,6 +143,9 @@ export default function LandingPage() {
         <CTASection />
         <Suspense fallback={<SectionFallback />}>
           <Features />
+        </Suspense>
+        <Suspense fallback={<SectionFallback />}>
+          <FreeToolsSection />
         </Suspense>
         <Suspense fallback={<SectionFallback />}>
           <Pricing

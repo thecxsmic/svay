@@ -49,6 +49,7 @@ export default function LandingNav({ scrolled, onEnterDemo }) {
           {[
             { label: 'Features', href: '#features' },
             { label: 'Pricing', href: '#pricing' },
+            { label: 'Free Tools', href: '/tools' },
             { label: 'Docs', href: '/docs' },
           ].map(({ label, href }) => (
             <a
