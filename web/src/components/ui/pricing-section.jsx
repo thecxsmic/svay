@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   ArrowRight,
   BarChart3,
@@ -196,11 +196,18 @@ export function Pricing({
                 <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 font-mono text-[8px] uppercase tracking-wider text-white/40">
                   All features
                 </span>
-                {isYearly && (
-                  <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 font-mono text-[8px] uppercase tracking-wider text-white/40">
-                    Best value
-                  </span>
-                )}
+                {/* Always reserve badge slot so monthly/yearly toggle doesn't shift layout */}
+                <span
+                  className={cn(
+                    "rounded-full border px-2 py-0.5 font-mono text-[8px] uppercase tracking-wider transition-opacity duration-200",
+                    isYearly
+                      ? "border-white/[0.08] bg-white/[0.04] text-white/40 opacity-100"
+                      : "border-transparent bg-transparent text-transparent opacity-0 pointer-events-none"
+                  )}
+                  aria-hidden={!isYearly}
+                >
+                  Best value
+                </span>
               </div>
 
               {/* Billing toggle */}
@@ -250,29 +257,24 @@ export function Pricing({
                 </div>
               </div>
 
-              {/* Price */}
-              <div className="flex items-end gap-1">
+              {/* Price — fixed-width tabular so 9.99 ↔ 6.66 doesn't jump layout */}
+              <div className="flex items-end gap-1 min-h-[4.75rem] sm:min-h-[5.25rem]">
                 <span className="mb-2 font-display text-2xl text-white/25 sm:mb-3">
                   $
                 </span>
-                <AnimatePresence mode="popLayout">
-                  <motion.span
-                    key={billingInterval}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -12 }}
-                    transition={{ duration: 0.25 }}
-                    className="font-display text-6xl tabular-nums tracking-tight text-white sm:text-7xl md:text-[4.75rem] md:leading-none"
-                  >
-                    {priceDisplay}
-                  </motion.span>
-                </AnimatePresence>
+                <span
+                  className="font-display text-6xl tabular-nums tracking-tight text-white sm:text-7xl md:text-[4.75rem] md:leading-none min-w-[4.5ch]"
+                >
+                  {typeof priceDisplay === "number"
+                    ? priceDisplay.toFixed(2)
+                    : priceDisplay}
+                </span>
                 <span className="mb-2 ml-1 font-mono text-xs text-white/35 sm:mb-3">
                   /mo
                 </span>
               </div>
 
-              <div className="mt-3 flex flex-wrap items-center gap-2">
+              <div className="mt-3 flex flex-wrap items-center gap-2 min-h-[1.5rem]">
                 <span className="font-mono text-sm text-white/25 line-through">
                   ${plan.struck}
                 </span>
@@ -281,7 +283,8 @@ export function Pricing({
                 </span>
               </div>
 
-              <div className="mt-4 space-y-1">
+              {/* Fixed-height copy block so monthly/yearly text swap doesn't shift CTA */}
+              <div className="mt-4 space-y-1 min-h-[2.75rem]">
                 <p className="text-xs leading-relaxed text-white/40">
                   {plan.billing}
                 </p>

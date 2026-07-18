@@ -75,31 +75,47 @@ export function useCountdown() {
   return timeLeft;
 }
 
-// ─── Animated price counter ───────────────────────────────────────────────────
+// ─── Animated price counter (always 2 decimals — never rounds 9.99 → 10) ─────
+function formatPrice(n) {
+  return Number(n).toFixed(2);
+}
+
 export function useAnimatedPrice(billingInterval) {
-  const [priceDisplay, setPriceDisplay] = useState(PRICING.monthly);
+  const target = PRICING[billingInterval] ?? PRICING.monthly;
+  const [priceDisplay, setPriceDisplay] = useState(() => formatPrice(PRICING.monthly));
   const prevRef = useRef(PRICING.monthly);
+  const rafRef = useRef(0);
 
   useEffect(() => {
-    const target = PRICING[billingInterval];
     const from = prevRef.current;
-    if (from === target) return;
-    let id;
+    if (from === target) {
+      setPriceDisplay(formatPrice(target));
+      return;
+    }
+
+    cancelAnimationFrame(rafRef.current);
     let start = null;
+    const duration = 420;
+
     const animate = (ts) => {
       if (!start) start = ts;
-      const p = Math.min((ts - start) / 800, 1);
+      const p = Math.min((ts - start) / duration, 1);
+      // easeOutCubic
       const ease = 1 - Math.pow(1 - p, 3);
-      setPriceDisplay(Math.round(from + (target - from) * ease));
+      const value = from + (target - from) * ease;
+      // Keep two decimals throughout — never Math.round to whole dollars
+      setPriceDisplay(formatPrice(value));
       if (p < 1) {
-        id = requestAnimationFrame(animate);
+        rafRef.current = requestAnimationFrame(animate);
       } else {
         prevRef.current = target;
+        setPriceDisplay(formatPrice(target)); // exact final value
       }
     };
-    id = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(id);
-  }, [billingInterval]);
+
+    rafRef.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [billingInterval, target]);
 
   return priceDisplay;
 }

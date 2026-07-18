@@ -19,25 +19,28 @@ export async function getSubscriptionStatus(userId) {
     const row = rs.rows[0];
     const now = Math.floor(Date.now() / 1000);
 
-    // Razorpay statuses: created, authenticated, active, cancelled, expired, halted
-    const activeStatuses = ["active", "authenticated", "created"];
+    // Razorpay: created, authenticated, active | Dodo: pending (trial start), active
+    const activeStatuses = ["active", "authenticated", "created", "pending"];
     const isStatusValid = activeStatuses.includes(row.status);
-    
-    // Safety check: Even if status is active, check if we've passed the period end 
-    // (with a 2-day grace period for webhook processing)
-    const gracePeriod = 2 * 24 * 60 * 60; 
-    const isPeriodValid = row.current_period_end === 0 || (row.current_period_end + gracePeriod) > now;
+
+    // Even if status is active, check period end (2-day grace for webhook lag)
+    const gracePeriod = 2 * 24 * 60 * 60;
+    const isPeriodValid =
+      row.current_period_end === 0 || row.current_period_end + gracePeriod > now;
 
     const isActive = isStatusValid && isPeriodValid;
-    
+
     return {
       status: row.status,
-      isActive: isActive,
+      isActive,
       isHalted: row.status === "halted" || row.status === "on_hold",
-      isExpired: row.status === "expired" || row.status === "cancelled" || row.status === "failed",
+      isExpired:
+        row.status === "expired" ||
+        row.status === "cancelled" ||
+        row.status === "failed",
       currentPeriodEnd: row.current_period_end,
       subscriptionId: row.subscription_id,
-      planId: row.plan_id
+      planId: row.plan_id,
     };
   } catch (error) {
     console.error("Get Subscription Status Error:", error);
