@@ -14,6 +14,8 @@ import SetupUserChannelModal from "./SetupUserChannelModal";
 import RemoveUserChannelModal from "./RemoveUserChannelModal";
 import MobileAppShell from "./MobileAppShell";
 import { MobilePageTabsProvider } from "@/contexts/mobilePageTabs";
+import { NavProgressProvider } from "@/contexts/navProgress";
+import DashboardNavLoader from "./DashboardNavLoader";
 
 const navItems = [
   { name: 'Search', href: '/', icon: Search },
@@ -294,8 +296,10 @@ export default function LayoutContent({ children, subscription }) {
   const page = resolvePageMeta(pathname);
 
   return (
+    <NavProgressProvider>
     <div className="flex h-full w-full min-w-0 max-w-full overflow-hidden bg-black text-white font-sans selection:bg-geist-success selection:text-white">
       {sharedModals}
+      <DashboardNavLoader />
 
       {/* ═══ MOBILE APP SHELL (phones / Android) ═══ */}
       <MobilePageTabsProvider>
@@ -458,5 +462,6 @@ export default function LayoutContent({ children, subscription }) {
         </main>
       </div>
     </div>
+    </NavProgressProvider>
   );
 }

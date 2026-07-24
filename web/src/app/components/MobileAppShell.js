@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMobilePageTabs } from '@/contexts/mobilePageTabs';
+import { useNavProgress } from '@/contexts/navProgress';
 
 /** Icon-only primary tabs (thumb zone) */
 const PRIMARY_TABS = [
@@ -73,6 +74,7 @@ export default function MobileAppShell({
   const moreActive = isMoreActive(pathname);
   const pageTabsCtx = useMobilePageTabs();
   const pageTabs = pageTabsCtx?.config;
+  const navProgress = useNavProgress();
   const hasPageTabs =
     Array.isArray(pageTabs?.items) &&
     pageTabs.items.length > 0 &&
@@ -286,6 +288,7 @@ export default function MobileAppShell({
                             type="button"
                             onClick={() => {
                               setMoreOpen(false);
+                              navProgress?.start({ href: item.href, label: item.name });
                               router.push(item.href);
                             }}
                             className={`flex w-full items-center gap-3 px-3.5 py-3.5 text-left active:bg-white/[0.06] ${
