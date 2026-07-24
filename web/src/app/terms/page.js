@@ -110,7 +110,7 @@ export default function TermsPage() {
                 Quick summary: Billing is managed via Dodo Payments. Trials are free, and you can cancel anytime.
               </div>
               <ul className="list-disc pl-5 space-y-2">
-                <li><strong>Pro Plan Pricing:</strong> We offer full access to our creator intelligence tools under a monthly subscription priced at $9.99/month, or a yearly subscription priced at $6.66/month (billed annually as $79.99/year).</li>
+                <li><strong>Pro Plan Pricing:</strong> We offer full access to our creator intelligence tools under a monthly subscription priced at $9.99/month, or a yearly subscription priced at $6.66/month (billed annually as $79.99/year). Listed prices do not include applicable taxes, which may be calculated and added at checkout based on your location.</li>
                 <li><strong>7-Day Free Trial:</strong> New accounts are eligible for a 7-day free trial. If you cancel before the trial concludes, you will not be charged.</li>
                 <li><strong>Billing Cycles & Automatic Renewal:</strong> Subscription payments are processed securely by Dodo Payments. Subscriptions renew automatically each month on the anniversary of your billing date unless cancelled.</li>
               </ul>

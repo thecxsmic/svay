@@ -248,6 +248,9 @@ export default function UpgradeGate({
               <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-zinc-600">
                 {effectiveNote}
               </p>
+              <p className="mt-1.5 text-[11px] text-zinc-500">
+                Prices do not include applicable taxes.
+              </p>
             </div>
 
             {/* Trial note */}
@@ -256,7 +259,7 @@ export default function UpgradeGate({
                 7 days free · then {isYearly ? "$79.99/yr" : "$9.99/mo"}
               </p>
               <p className="mt-0.5 text-[11px] text-zinc-600">
-                Cancel anytime during trial. No charge today.
+                Cancel anytime during trial. No charge today. Taxes not included.
               </p>
             </div>
 

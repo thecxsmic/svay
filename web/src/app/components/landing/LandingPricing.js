@@ -203,8 +203,8 @@ export default function LandingPricing({
               </button>
               <p className="text-[10px] text-zinc-500 text-center mt-3 font-semibold tracking-wide">
                 {billingInterval === 'yearly'
-                  ? 'Billed annually at $79.99/year ($6.66/mo) · Cancel at any time · Secure checkout powered by Dodo Payments'
-                  : 'Thereafter $9.99/month · Cancel at any time · Secure checkout powered by Dodo Payments'}
+                  ? 'Billed annually at $79.99/year ($6.66/mo) · Taxes not included · Cancel at any time · Secure checkout powered by Dodo Payments'
+                  : 'Thereafter $9.99/month · Taxes not included · Cancel at any time · Secure checkout powered by Dodo Payments'}
               </p>
             </div>
           </div>

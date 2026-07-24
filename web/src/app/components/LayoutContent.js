@@ -13,6 +13,7 @@ import ResearchNotesModal from "./ResearchNotesModal";
 import SetupUserChannelModal from "./SetupUserChannelModal";
 import RemoveUserChannelModal from "./RemoveUserChannelModal";
 import MobileAppShell from "./MobileAppShell";
+import { MobilePageTabsProvider } from "@/contexts/mobilePageTabs";
 
 const navItems = [
   { name: 'Search', href: '/', icon: Search },
@@ -297,20 +298,22 @@ export default function LayoutContent({ children, subscription }) {
       {sharedModals}
 
       {/* ═══ MOBILE APP SHELL (phones / Android) ═══ */}
-      <MobileAppShell
-        userChannel={userChannel}
-        isDemo={isDemo}
-        isPromo={isPromo}
-        promoExpiryStr={promoExpiryStr}
-        onOpenNotes={() => setIsNotesModalOpen(true)}
-        onOpenSetup={() => setIsSetupModalOpen(true)}
-        onOpenRemove={() => setIsRemoveModalOpen(true)}
-        onToggleDemo={toggleDemoMode}
-      >
-        <div className="animate-[dash-page-in_0.28s_ease-out]">
-          {children}
-        </div>
-      </MobileAppShell>
+      <MobilePageTabsProvider>
+        <MobileAppShell
+          userChannel={userChannel}
+          isDemo={isDemo}
+          isPromo={isPromo}
+          promoExpiryStr={promoExpiryStr}
+          onOpenNotes={() => setIsNotesModalOpen(true)}
+          onOpenSetup={() => setIsSetupModalOpen(true)}
+          onOpenRemove={() => setIsRemoveModalOpen(true)}
+          onToggleDemo={toggleDemoMode}
+        >
+          <div className="animate-[dash-page-in_0.28s_ease-out]">
+            {children}
+          </div>
+        </MobileAppShell>
+      </MobilePageTabsProvider>
 
       {/* ═══ DESKTOP (≥ md) ═══ */}
       <aside className="hidden w-64 shrink-0 flex-col border-r border-accents-2 bg-accents-1 md:flex">

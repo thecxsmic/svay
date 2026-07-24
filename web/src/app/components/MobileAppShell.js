@@ -23,6 +23,7 @@ import {
   Megaphone,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useMobilePageTabs } from '@/contexts/mobilePageTabs';
 
 /** Icon-only primary tabs (thumb zone) */
 const PRIMARY_TABS = [
@@ -70,6 +71,12 @@ export default function MobileAppShell({
   const router = useRouter();
   const [moreOpen, setMoreOpen] = useState(false);
   const moreActive = isMoreActive(pathname);
+  const pageTabsCtx = useMobilePageTabs();
+  const pageTabs = pageTabsCtx?.config;
+  const hasPageTabs =
+    Array.isArray(pageTabs?.items) &&
+    pageTabs.items.length > 0 &&
+    typeof pageTabs.onChange === 'function';
 
   useEffect(() => {
     setMoreOpen(false);
@@ -84,6 +91,22 @@ export default function MobileAppShell({
     };
   }, [moreOpen]);
 
+  // Extra scroll padding when a page registers section tabs above the primary nav
+  useEffect(() => {
+    const root = document.documentElement;
+    if (hasPageTabs) {
+      root.style.setProperty('--mobile-page-tabs-h', '3.35rem');
+      root.classList.add('has-mobile-page-tabs');
+    } else {
+      root.style.removeProperty('--mobile-page-tabs-h');
+      root.classList.remove('has-mobile-page-tabs');
+    }
+    return () => {
+      root.style.removeProperty('--mobile-page-tabs-h');
+      root.classList.remove('has-mobile-page-tabs');
+    };
+  }, [hasPageTabs]);
+
   return (
     <div className="mobile-app-shell flex h-full flex-col overflow-hidden bg-black text-white md:hidden">
       {/* Safe area only — no chrome top bar */}
@@ -94,13 +117,55 @@ export default function MobileAppShell({
       />
 
       <main className="mobile-app-main relative min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
-        <div className="min-h-full pb-[calc(4.75rem+env(safe-area-inset-bottom,0px))]">
+        <div className="min-h-full pb-[calc(4.75rem+var(--mobile-page-tabs-h,0px)+env(safe-area-inset-bottom,0px))]">
           {children}
         </div>
       </main>
 
-      {/* Icon-only floating bottom nav */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[90] flex justify-center px-4 pb-[max(0.4rem,env(safe-area-inset-bottom))] md:hidden">
+      {/* Bottom chrome: optional page section tabs + primary nav */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[90] flex flex-col items-center gap-1.5 px-3 pb-[max(0.4rem,env(safe-area-inset-bottom))] md:hidden">
+        {hasPageTabs && (
+          <nav
+            className="mobile-page-tabs pointer-events-auto flex w-full max-w-[22rem] items-center gap-0.5 overflow-x-auto no-scrollbar rounded-full border border-white/10 bg-black/55 px-1.5 py-1 shadow-lg backdrop-blur-md"
+            aria-label="Page sections"
+          >
+            {pageTabs.items.map((t) => {
+              const active = pageTabs.value === t.id;
+              const Icon = t.icon;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    pageTabs.onChange(t.id);
+                  }}
+                  title={t.label}
+                  aria-label={t.label}
+                  aria-current={active ? 'page' : undefined}
+                  className={`relative inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-full px-2.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                    active
+                      ? 'bg-white/[0.14] text-white'
+                      : 'text-zinc-500 active:bg-white/[0.06] active:text-zinc-300'
+                  }`}
+                >
+                  {Icon && (
+                    <Icon
+                      className="h-3.5 w-3.5 shrink-0"
+                      strokeWidth={active ? 2.5 : 2}
+                    />
+                  )}
+                  <span className="max-w-[5.5rem] truncate">{t.label}</span>
+                  {typeof t.count === 'number' && (
+                    <span className="tabular-nums text-zinc-600">{t.count}</span>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+        )}
+
         <nav
           className="pointer-events-auto relative flex w-full max-w-[22rem] items-center justify-around gap-0.5 rounded-full border border-white/10 bg-black/50 px-1.5 py-1.5 shadow-lg backdrop-blur-md"
           aria-label="Primary"

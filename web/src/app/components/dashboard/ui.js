@@ -7,10 +7,8 @@ import {
   AlertTriangle,
   CheckCircle2,
   Info,
-  ChevronDown,
-  ChevronRight,
-  Check,
 } from "lucide-react";
+import { useMobilePageTabs } from "@/contexts/mobilePageTabs";
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * Svay Dashboard UI Kit
@@ -400,9 +398,9 @@ export function DashPage({ children, className = "" }) {
  * Sticky page toolbar.
  *
  * Mobile (app-like):
- *  - One row: [Section picker ▾] ………… [actions]
- *  - Section picker opens a full bottom sheet with labeled destinations
- *  - Optional meta sheet for channel/scan details
+ *  - Top row (optional): meta/details + action buttons only
+ *  - Page section tabs sit in a secondary bar just above the bottom nav
+ *    (thumb zone — not a top section picker)
  * Desktop: meta chips + action buttons + full tab row
  */
 export function DashToolbar({
@@ -410,7 +408,7 @@ export function DashToolbar({
   mobileLeft,
   children,
   tabs,
-  /** Preferred: structured tabs for mobile section sheet + desktop row */
+  /** Preferred: structured tabs for mobile bottom bar + desktop row */
   tabItems,
   tabValue,
   onTabChange,
@@ -426,62 +424,75 @@ export function DashToolbar({
     tabs
   );
 
+  // Mobile top chrome only when there is something to show besides tabs
+  const showMobileTop = Boolean(children || mobileLeft);
+
   return (
-    <div
-      className={cn(
-        "sticky top-0 z-40 border-b border-white/[0.06] bg-black/85 backdrop-blur-xl",
-        className
-      )}
-    >
-      {/* ── Mobile: single clear row ───────────────────────────────── */}
+    <>
       <div
         className={cn(
-          "mx-auto flex h-12 items-center gap-2 px-3 sm:hidden",
-          maxWidth
+          "sticky top-0 z-40 border-b border-white/[0.06] bg-black/85 backdrop-blur-xl",
+          // Hide empty sticky shell on phone when only bottom tabs exist
+          !showMobileTop && "max-md:hidden",
+          className
         )}
       >
-        {hasStructuredTabs ? (
-          <MobileSectionNav
-            items={tabItems}
-            value={tabValue}
-            onChange={onTabChange}
-            meta={mobileLeft}
-          />
-        ) : (
-          <div className="min-w-0 flex-1">{mobileLeft}</div>
-        )}
-        {children && (
-          <div className="flex shrink-0 items-center gap-1.5">{children}</div>
-        )}
-      </div>
-
-      {/* ── Desktop ────────────────────────────────────────────────── */}
-      <div className="hidden sm:block">
-        <div
-          className={cn(
-            "mx-auto flex items-center justify-between gap-3 px-6 py-3",
-            maxWidth
-          )}
-        >
-          <div className="flex min-w-0 flex-wrap items-center gap-2">{left}</div>
-          {children && (
-            <div className="flex shrink-0 items-center gap-2">{children}</div>
-          )}
-        </div>
-        {desktopTabs && (
-          <div className="dash-tabs-desktop border-t border-white/[0.04]">
-            {desktopTabs}
+        {/* ── Mobile / phone shell: actions + meta (tabs live at bottom) ─ */}
+        {showMobileTop && (
+          <div
+            className={cn(
+              "mx-auto flex h-12 items-center gap-2 px-3 md:hidden",
+              maxWidth
+            )}
+          >
+            {hasStructuredTabs ? (
+              mobileLeft ? (
+                <MobileMetaTrigger meta={mobileLeft} />
+              ) : (
+                <div className="min-w-0 flex-1" />
+              )
+            ) : (
+              <div className="min-w-0 flex-1">{mobileLeft}</div>
+            )}
+            {children && (
+              <div className="flex shrink-0 items-center gap-1.5">{children}</div>
+            )}
           </div>
         )}
+
+        {/* ── Desktop (≥ md, matches LayoutContent sidebar shell) ───── */}
+        <div className="hidden md:block">
+          <div
+            className={cn(
+              "mx-auto flex items-center justify-between gap-3 px-6 py-3",
+              maxWidth
+            )}
+          >
+            <div className="flex min-w-0 flex-wrap items-center gap-2">{left}</div>
+            {children && (
+              <div className="flex shrink-0 items-center gap-2">{children}</div>
+            )}
+          </div>
+          {desktopTabs && (
+            <div className="dash-tabs-desktop border-t border-white/[0.04]">
+              {desktopTabs}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* Mobile page tabs — secondary bar just above primary bottom nav */}
+      {hasStructuredTabs && (
+        <MobileBottomTabs
+          items={tabItems}
+          value={tabValue}
+          onChange={onTabChange}
+        />
+      )}
+    </>
   );
 }
 
-/**
- * Mobile section navigation — big tappable control + sheet list.
- * Easy thumbs: open sheet, pick a labeled destination, done.
- */
 function usePortalReady() {
   const [ready, setReady] = useState(false);
   useEffect(() => {
@@ -497,150 +508,70 @@ function MobileSheetPortal({ children }) {
   return createPortal(children, document.body);
 }
 
-export function MobileSectionNav({ items = [], value, onChange, meta }) {
-  const [open, setOpen] = useState(false);
+/**
+ * Registers page section tabs with MobileAppShell (secondary bar above primary nav).
+ * Does not render UI itself — the shell owns hit targets so taps always work.
+ */
+export function MobileBottomTabs({ items = [], value, onChange }) {
+  const ctx = useMobilePageTabs();
+  const setPageTabs = ctx?.setPageTabs;
+  const clearPageTabs = ctx?.clearPageTabs;
+  const itemsKey = Array.isArray(items)
+    ? items.map((t) => `${t.id}:${t.label}:${t.count ?? ""}`).join("|")
+    : "";
+
+  // Keep shell config in sync while mounted
+  useEffect(() => {
+    if (!setPageTabs) return;
+    if (!Array.isArray(items) || items.length === 0 || typeof onChange !== "function") {
+      clearPageTabs?.();
+      return;
+    }
+    setPageTabs({ items, value, onChange });
+  }, [setPageTabs, clearPageTabs, items, itemsKey, value, onChange]);
+
+  // Clear only on unmount so tab switches don't flash the bar away
+  useEffect(() => {
+    return () => clearPageTabs?.();
+  }, [clearPageTabs]);
+
+  return null;
+}
+
+/** Compact details trigger for mobile top row (channel / scan meta). */
+function MobileMetaTrigger({ meta }) {
   const [metaOpen, setMetaOpen] = useState(false);
-  const active = items.find((t) => t.id === value) || items[0];
-  const ActiveIcon = active?.icon;
 
   useEffect(() => {
-    if (!open && !metaOpen) return;
+    if (!metaOpen) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = prev;
     };
-  }, [open, metaOpen]);
+  }, [metaOpen]);
+
+  if (!meta) return <div className="min-w-0 flex-1" />;
 
   return (
     <>
       <div className="flex min-w-0 flex-1 items-center gap-1.5">
         <button
           type="button"
-          onClick={() => setOpen(true)}
-          className="flex h-10 min-w-0 flex-1 items-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.06] px-3 text-left active:bg-white/[0.1]"
+          onClick={() => setMetaOpen(true)}
+          className="flex h-9 min-w-0 max-w-full items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 text-left text-zinc-400 active:bg-white/[0.08]"
+          aria-label="Details"
         >
-          {ActiveIcon && (
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white">
-              <ActiveIcon className="h-3.5 w-3.5" />
-            </span>
-          )}
-          <span className="min-w-0 flex-1">
-            <span className="block text-[9px] font-bold uppercase tracking-[0.14em] text-zinc-500">
-              Section
-            </span>
-            <span className="block truncate text-[13px] font-semibold text-white">
-              {active?.label || "Navigate"}
-              {typeof active?.count === "number" ? (
-                <span className="ml-1.5 text-zinc-500">· {active.count}</span>
-              ) : null}
-            </span>
+          <Info className="h-4 w-4 shrink-0" />
+          <span className="truncate text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+            Details
           </span>
-          <ChevronDown className="h-4 w-4 shrink-0 text-zinc-500" />
         </button>
-
-        {meta && (
-          <button
-            type="button"
-            onClick={() => setMetaOpen(true)}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-zinc-400 active:bg-white/[0.08]"
-            aria-label="Details"
-          >
-            <Info className="h-4 w-4" />
-          </button>
-        )}
       </div>
 
-      {/* Section sheet — portaled so parent overflow never hides it */}
-      {open && (
+      {metaOpen && (
         <MobileSheetPortal>
-          <div className="fixed inset-0 z-[200] sm:hidden" role="dialog" aria-modal="true">
-            <button
-              type="button"
-              aria-label="Close"
-              className="absolute inset-0 bg-black/75 backdrop-blur-sm"
-              onClick={() => setOpen(false)}
-            />
-            <div className="mobile-more-sheet absolute inset-x-0 bottom-0 max-h-[min(78vh,560px)] overflow-hidden rounded-t-[1.5rem] shadow-2xl">
-              <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-white/25" />
-              <div className="flex items-center justify-between px-5 py-3">
-                <p className="font-display text-sm uppercase tracking-tight text-white">
-                  Go to
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  className="rounded-full border border-white/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-300"
-                >
-                  Close
-                </button>
-              </div>
-              <div className="max-h-[calc(min(78vh,560px)-4.5rem)] overflow-y-auto overscroll-contain px-3 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
-                <div className="overflow-hidden rounded-2xl border border-white/[0.1] bg-zinc-950/90">
-                  {items.map((t, idx) => {
-                    const Icon = t.icon;
-                    const isActive = t.id === value;
-                    return (
-                      <button
-                        key={t.id}
-                        type="button"
-                        onClick={() => {
-                          onChange?.(t.id);
-                          setOpen(false);
-                        }}
-                        className={cn(
-                          "flex w-full items-center gap-3 px-3.5 py-3.5 text-left active:bg-white/[0.08]",
-                          idx < items.length - 1 && "border-b border-white/[0.06]",
-                          isActive && "bg-white/[0.08]"
-                        )}
-                      >
-                        <span
-                          className={cn(
-                            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
-                            isActive
-                              ? "bg-white text-black"
-                              : "bg-white/[0.06] text-zinc-400"
-                          )}
-                        >
-                          {Icon ? (
-                            <Icon className="h-4 w-4" />
-                          ) : (
-                            <span className="text-xs font-bold">{idx + 1}</span>
-                          )}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span
-                            className={cn(
-                              "block text-[15px] font-semibold",
-                              isActive ? "text-white" : "text-zinc-200"
-                            )}
-                          >
-                            {t.label}
-                          </span>
-                          {typeof t.count === "number" && (
-                            <span className="text-[11px] text-zinc-500">
-                              {t.count} items
-                            </span>
-                          )}
-                        </span>
-                        {isActive ? (
-                          <Check className="h-4 w-4 shrink-0 text-white" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4 shrink-0 text-zinc-600" />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
-        </MobileSheetPortal>
-      )}
-
-      {meta && metaOpen && (
-        <MobileSheetPortal>
-          <div className="fixed inset-0 z-[200] sm:hidden" role="dialog" aria-modal="true">
+          <div className="fixed inset-0 z-[200] md:hidden" role="dialog" aria-modal="true">
             <button
               type="button"
               aria-label="Close"
@@ -666,6 +597,19 @@ export function MobileSectionNav({ items = [], value, onChange, meta }) {
           </div>
         </MobileSheetPortal>
       )}
+    </>
+  );
+}
+
+/**
+ * @deprecated Prefer MobileBottomTabs via DashToolbar tabItems.
+ * Kept so any external import does not break; renders bottom tabs.
+ */
+export function MobileSectionNav({ items = [], value, onChange, meta }) {
+  return (
+    <>
+      {meta ? <MobileMetaTrigger meta={meta} /> : <div className="min-w-0 flex-1" />}
+      <MobileBottomTabs items={items} value={value} onChange={onChange} />
     </>
   );
 }
@@ -994,20 +938,21 @@ export function DashButton({
   type = "button",
   ...props
 }) {
+  // Match mobile liquid-glass chrome: always fully rounded pills
   const sizes = {
-    sm: "h-8 px-2.5 text-[10px] gap-1.5 rounded-md",
-    md: "h-9 px-3.5 text-[10px] gap-2 rounded-md sm:rounded-full sm:px-4",
-    lg: "h-11 px-5 text-[11px] gap-2 rounded-md sm:rounded-full",
+    sm: "h-9 min-w-9 px-3 text-[10px] gap-1.5 rounded-full",
+    md: "h-9 px-3.5 text-[10px] gap-2 rounded-full sm:px-4",
+    lg: "h-11 px-5 text-[11px] gap-2 rounded-full",
   };
   const variants = {
     primary:
       "bg-white text-black hover:bg-zinc-200 disabled:hover:bg-white",
     secondary:
-      "border border-zinc-800 bg-zinc-950 text-zinc-400 hover:border-zinc-700 hover:text-white",
+      "border border-white/10 bg-white/[0.04] text-zinc-300 hover:border-white/20 hover:bg-white/[0.08] hover:text-white",
     ghost:
       "border border-transparent text-zinc-500 hover:bg-white/5 hover:text-white",
     danger:
-      "border border-zinc-800 text-zinc-500 hover:border-red-500/30 hover:text-red-400",
+      "border border-white/10 text-zinc-500 hover:border-red-500/30 hover:text-red-400",
   };
 
   return (

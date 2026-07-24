@@ -284,12 +284,15 @@ export function Pricing({
               </div>
 
               {/* Fixed-height copy block so monthly/yearly text swap doesn't shift CTA */}
-              <div className="mt-4 space-y-1 min-h-[2.75rem]">
+              <div className="mt-4 space-y-1 min-h-[3.25rem]">
                 <p className="text-xs leading-relaxed text-white/40">
                   {plan.billing}
                 </p>
                 <p className="font-mono text-[10px] uppercase tracking-wider text-white/30">
                   {plan.subtotal} · {plan.note}
+                </p>
+                <p className="text-[11px] leading-relaxed text-white/35">
+                  Prices do not include applicable taxes.
                 </p>
               </div>
 
@@ -303,7 +306,7 @@ export function Pricing({
                   <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-0.5" />
                 </button>
                 <p className="mt-3 text-center font-mono text-[9px] uppercase tracking-wider text-white/25">
-                  7-day free · Secure checkout via Dodo Payments
+                  7-day free · Taxes not included · Secure checkout via Dodo Payments
                 </p>
               </div>
             </div>

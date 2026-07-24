@@ -1020,6 +1020,15 @@ h1, h2, h3, h4, h5, h6 {
   overflow: visible;
 }
 
+/* Secondary page-tabs bar (above primary bottom nav) */
+.mobile-page-tabs {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.mobile-page-tabs::-webkit-scrollbar {
+  display: none;
+}
+
 .mobile-more-sheet {
   background:
     linear-gradient(
