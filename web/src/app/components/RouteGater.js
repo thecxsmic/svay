@@ -123,11 +123,14 @@ export default function RouteGater({
     pathname.startsWith("/terms") ||
     pathname.startsWith("/cookies") ||
     pathname.startsWith("/refund") ||
-    pathname.startsWith("/shared");
+    pathname.startsWith("/shared") ||
+    pathname.startsWith("/affiliate");
 
-  // Always reachable even on the paywall (support + billing care)
+  // Always reachable even on the paywall (support + billing care + affiliate)
   const isCarePage =
-    pathname.startsWith("/support") || pathname.startsWith("/billing");
+    pathname.startsWith("/support") ||
+    pathname.startsWith("/billing") ||
+    pathname.startsWith("/affiliate");
 
   // Prefer server-known session while Clerk JS is still hydrating
   const signedIn = isLoaded ? isSignedIn : initialIsSignedIn;

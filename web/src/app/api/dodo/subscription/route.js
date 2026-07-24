@@ -1,6 +1,11 @@
 import DodoPayments from "dodopayments";
 import { NextResponse } from "next/server";
 import { auth, currentUser } from "@clerk/nextjs/server";
+import { cookies } from "next/headers";
+import {
+  attributeReferral,
+  normalizeAffiliateCode,
+} from "@/lib/affiliate";
 
 export async function POST(req) {
   try {
@@ -51,12 +56,54 @@ export async function POST(req) {
 
     console.log(`[Dodo Payments] Creating checkout session for user: ${userId}, Product: ${productId} (${planType})`);
 
+    // Affiliate attribution (cookie or explicit body.ref)
+    let affiliateCode = normalizeAffiliateCode(body.ref || body.affiliateCode || "");
+    if (!affiliateCode) {
+      try {
+        const cookieStore = await cookies();
+        affiliateCode = normalizeAffiliateCode(
+          cookieStore.get("svay_ref")?.value || ""
+        );
+      } catch {
+        /* ignore */
+      }
+    }
+
+    if (affiliateCode) {
+      try {
+        const attr = await attributeReferral({
+          affiliateCode,
+          referredUserId: userId,
+        });
+        if (attr.ok) {
+          console.log(
+            `[Affiliate] Attributed user=${userId} to code=${affiliateCode} already=${!!attr.already}`
+          );
+        } else {
+          console.log(
+            `[Affiliate] Attribution skipped for user=${userId}: ${attr.reason}`
+          );
+        }
+      } catch (affErr) {
+        console.warn("[Affiliate] Attribution error:", affErr?.message || affErr);
+      }
+    }
+
     const baseReturn =
       process.env.DODO_PAYMENTS_RETURN_URL ||
       process.env.NEXT_PUBLIC_APP_URL ||
       "http://localhost:3000";
     // Flag return so the client can reconcile subscription if webhooks lag
     const returnUrl = `${baseReturn.replace(/\/$/, "")}/?checkout=success&plan=${planType}`;
+
+    const metadata = {
+      user_id: userId,
+      product_id: productId,
+      plan_type: planType,
+    };
+    if (affiliateCode) {
+      metadata.affiliate_code = affiliateCode;
+    }
 
     const session = await client.checkoutSessions.create({
       product_cart: [
@@ -70,11 +117,7 @@ export async function POST(req) {
         name: userName,
       },
       // Checkout metadata is copied onto payment + subscription objects
-      metadata: {
-        user_id: userId,
-        product_id: productId,
-        plan_type: planType,
-      },
+      metadata,
       // Monthly product already has 7-day trial in Dodo; pass through for yearly if desired later
       subscription_data:
         planType === "monthly"

@@ -23,8 +23,20 @@ import {
   Lock,
   ExternalLink,
   Search,
-  Database
+  Database,
+  Megaphone,
+  DollarSign,
+  Wallet
 } from "lucide-react";
+
+function usd(cents) {
+  return `$${(Number(cents || 0) / 100).toFixed(2)}`;
+}
+
+function currentPeriodMonth() {
+  const d = new Date();
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+}
 
 export default function AdminPage() {
   const { user, isLoaded } = useUser();
@@ -74,6 +86,13 @@ export default function AdminPage() {
   const [generatedChannelId, setGeneratedChannelId] = useState("");
   const [shareError, setShareError] = useState("");
 
+  // Affiliate admin
+  const [affiliates, setAffiliates] = useState([]);
+  const [affiliatePayouts, setAffiliatePayouts] = useState(null);
+  const [payoutMonth, setPayoutMonth] = useState(currentPeriodMonth());
+  const [loadingAffiliates, setLoadingAffiliates] = useState(false);
+  const [markingPaidId, setMarkingPaidId] = useState(null);
+
   // Check admin authorization
   useEffect(() => {
     if (isLoaded) {
@@ -82,6 +101,7 @@ export default function AdminPage() {
         setIsAdmin(true);
         fetchAdminData();
         fetchChannels();
+        fetchAffiliates();
       } else {
         setIsAdmin(false);
         setLoadingData(false);
@@ -118,6 +138,83 @@ export default function AdminPage() {
     } finally {
       setLoadingChannels(false);
     }
+  };
+
+  const fetchAffiliates = async (month) => {
+    try {
+      setLoadingAffiliates(true);
+      const m = month || payoutMonth;
+      const res = await fetch(
+        `/api/admin/affiliates?month=${encodeURIComponent(m)}`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setAffiliates(data.affiliates || []);
+        setAffiliatePayouts(data.payouts || null);
+      }
+    } catch (err) {
+      console.error("Failed to fetch affiliates:", err);
+    } finally {
+      setLoadingAffiliates(false);
+    }
+  };
+
+  const handleMarkAffiliatePaid = (affiliateId, code) => {
+    setConfirmModal({
+      title: "Mark month as paid",
+      message: `Mark all unpaid commissions for ${code} in ${payoutMonth} as paid?\n\nConfirm only after you sent the PayPal transfer.`,
+      isDanger: false,
+      onConfirm: async () => {
+        setMarkingPaidId(affiliateId);
+        try {
+          const res = await fetch("/api/admin/affiliates", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "mark_paid",
+              affiliateId,
+              periodMonth: payoutMonth,
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Failed");
+          showToast(data.message || "Marked as paid");
+          fetchAffiliates();
+        } catch (err) {
+          showToast(err.message, "error");
+        } finally {
+          setMarkingPaidId(null);
+        }
+      },
+    });
+  };
+
+  const handleToggleAffiliateStatus = async (affiliateId, nextStatus) => {
+    try {
+      const res = await fetch("/api/admin/affiliates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "set_status",
+          affiliateId,
+          status: nextStatus,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      showToast(data.message || `Set to ${nextStatus}`);
+      fetchAffiliates();
+    } catch (err) {
+      showToast(err.message, "error");
+    }
+  };
+
+  const copyPaypal = (email) => {
+    if (!email) return;
+    navigator.clipboard.writeText(email);
+    setCopiedCode(email);
+    setTimeout(() => setCopiedCode(null), 2000);
+    showToast("PayPal email copied");
   };
 
   const handleCreateCode = async (e) => {
@@ -402,6 +499,7 @@ export default function AdminPage() {
         <div className="flex border-b border-white/5 gap-6 sm:gap-8 bg-transparent px-2 overflow-x-auto no-scrollbar">
           {[
             { id: "promos", label: "Promo & Subscriptions", icon: Ticket },
+            { id: "affiliates", label: "Affiliates & Payouts", icon: Megaphone },
             { id: "shares", label: "Public Share Reports", icon: Globe },
             { id: "cache", label: "Cache Manager", icon: Database }
           ].map((tab) => (
@@ -420,6 +518,342 @@ export default function AdminPage() {
           ))}
         </div>
         
+        {activeTab === "affiliates" && (
+          <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
+            {/* Month picker + totals */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <section className="bg-zinc-950/80 border border-white/[0.06] rounded-2xl p-5 sm:p-6 space-y-3 lg:col-span-1">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-brand-volt" />
+                  <h2 className="font-display font-extrabold text-sm uppercase text-white">
+                    Payout month
+                  </h2>
+                </div>
+                <input
+                  type="month"
+                  value={payoutMonth}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setPayoutMonth(v);
+                    fetchAffiliates(v);
+                  }}
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-brand-volt text-zinc-200"
+                />
+                <p className="text-[11px] text-zinc-500 leading-relaxed">
+                  15% commission for 6 months after each referred user joins.
+                  Monthly = recurring each paid month. Yearly = one-time cut of
+                  the annual charge. Pay creators manually via PayPal.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => fetchAffiliates()}
+                  disabled={loadingAffiliates}
+                  className="text-[10px] font-black uppercase tracking-wider text-zinc-400 hover:text-white cursor-pointer bg-transparent border-none"
+                >
+                  {loadingAffiliates ? "Loading…" : "Refresh"}
+                </button>
+              </section>
+
+              <section className="bg-zinc-950/80 border border-white/[0.06] rounded-2xl p-5 sm:p-6 flex flex-col justify-center">
+                <div className="flex items-center gap-2 text-zinc-500 mb-2">
+                  <Wallet className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="text-[9px] font-black uppercase tracking-wider">
+                    Unpaid this month
+                  </span>
+                </div>
+                <p className="font-display text-3xl font-extrabold text-amber-400 tabular-nums">
+                  {usd(affiliatePayouts?.totalUnpaidCents)}
+                </p>
+                <p className="text-[11px] text-zinc-500 mt-1">
+                  Send these via PayPal, then mark paid.
+                </p>
+              </section>
+
+              <section className="bg-zinc-950/80 border border-white/[0.06] rounded-2xl p-5 sm:p-6 flex flex-col justify-center">
+                <div className="flex items-center gap-2 text-zinc-500 mb-2">
+                  <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-[9px] font-black uppercase tracking-wider">
+                    Total commission ({payoutMonth})
+                  </span>
+                </div>
+                <p className="font-display text-3xl font-extrabold text-white tabular-nums">
+                  {usd(affiliatePayouts?.totalCommissionCents)}
+                </p>
+                <p className="text-[11px] text-zinc-500 mt-1">
+                  {affiliates.length} creator{affiliates.length === 1 ? "" : "s"} in program
+                </p>
+              </section>
+            </div>
+
+            {/* Monthly payout table — the main thing you need */}
+            <section className="bg-zinc-950/80 border border-white/[0.06] rounded-2xl sm:rounded-[2rem] p-4 sm:p-8 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-amber-500/10 rounded-xl border border-amber-500/20">
+                  <Wallet className="w-4 h-4 text-amber-400" />
+                </div>
+                <div>
+                  <h2 className="font-display font-extrabold text-base sm:text-lg text-white uppercase">
+                    Monthly payout list — {payoutMonth}
+                  </h2>
+                  <p className="text-zinc-500 text-[10px] sm:text-xs mt-0.5">
+                    Each creator&apos;s recurring revenue share + PayPal email for manual transfer.
+                  </p>
+                </div>
+              </div>
+
+              {loadingAffiliates && !affiliatePayouts ? (
+                <div className="flex justify-center py-10">
+                  <Loader2 className="w-6 h-6 animate-spin text-zinc-500" />
+                </div>
+              ) : !affiliatePayouts?.creators?.length ? (
+                <p className="text-zinc-500 text-sm py-6 text-center">
+                  No affiliates enrolled yet. Creators join at /affiliate.
+                </p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs sm:text-sm min-w-[720px]">
+                    <thead>
+                      <tr className="text-[9px] uppercase tracking-wider text-zinc-500 border-b border-white/5">
+                        <th className="py-2.5 pr-3 font-black">Creator</th>
+                        <th className="py-2.5 pr-3 font-black">Code</th>
+                        <th className="py-2.5 pr-3 font-black">PayPal email</th>
+                        <th className="py-2.5 pr-3 font-black">Gross</th>
+                        <th className="py-2.5 pr-3 font-black">Commission</th>
+                        <th className="py-2.5 pr-3 font-black">Unpaid</th>
+                        <th className="py-2.5 pr-3 font-black">Mo / Yr pays</th>
+                        <th className="py-2.5 font-black">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {affiliatePayouts.creators.map((c) => (
+                        <tr
+                          key={c.affiliateId}
+                          className="border-b border-white/[0.03] text-zinc-300"
+                        >
+                          <td className="py-3 pr-3">
+                            <div className="font-semibold text-white">
+                              {c.displayName || "—"}
+                            </div>
+                            <div className="text-[10px] text-zinc-500 font-mono">
+                              {c.email || c.userId}
+                            </div>
+                            <div className="text-[9px] uppercase mt-0.5">
+                              <span
+                                className={
+                                  c.status === "active"
+                                    ? "text-emerald-400"
+                                    : "text-zinc-500"
+                                }
+                              >
+                                {c.status}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3 pr-3 font-mono text-brand-volt font-bold">
+                            {c.code}
+                          </td>
+                          <td className="py-3 pr-3">
+                            {c.paypalEmail ? (
+                              <button
+                                type="button"
+                                onClick={() => copyPaypal(c.paypalEmail)}
+                                className="flex items-center gap-1.5 font-mono text-xs text-sky-300 hover:text-white cursor-pointer bg-transparent border-none p-0"
+                                title="Copy PayPal email"
+                              >
+                                {c.paypalEmail}
+                                {copiedCode === c.paypalEmail ? (
+                                  <Check className="w-3 h-3 text-emerald-400" />
+                                ) : (
+                                  <Copy className="w-3 h-3 text-zinc-500" />
+                                )}
+                              </button>
+                            ) : (
+                              <span className="text-rose-400 text-[11px]">
+                                Missing PayPal
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 pr-3 tabular-nums">
+                            {usd(c.grossCents)}
+                          </td>
+                          <td className="py-3 pr-3 tabular-nums text-white font-semibold">
+                            {usd(c.commissionCents)}
+                          </td>
+                          <td className="py-3 pr-3 tabular-nums">
+                            {c.unpaidCents > 0 ? (
+                              <span className="text-amber-400 font-bold">
+                                {usd(c.unpaidCents)}
+                              </span>
+                            ) : c.commissionCents > 0 ? (
+                              <span className="text-emerald-400">Paid</span>
+                            ) : (
+                              <span className="text-zinc-600">$0.00</span>
+                            )}
+                          </td>
+                          <td className="py-3 pr-3 text-zinc-400">
+                            {c.monthlyPayments || 0} mo · {c.yearlyPayments || 0} yr
+                          </td>
+                          <td className="py-3">
+                            <div className="flex flex-wrap gap-2">
+                              {c.unpaidCents > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleMarkAffiliatePaid(c.affiliateId, c.code)
+                                  }
+                                  disabled={markingPaidId === c.affiliateId}
+                                  className="px-2.5 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[9px] font-black uppercase tracking-wider cursor-pointer hover:bg-emerald-500/25 disabled:opacity-50"
+                                >
+                                  {markingPaidId === c.affiliateId
+                                    ? "…"
+                                    : "Mark paid"}
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleToggleAffiliateStatus(
+                                    c.affiliateId,
+                                    c.status === "active" ? "disabled" : "active"
+                                  )
+                                }
+                                className="px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 text-[9px] font-black uppercase tracking-wider cursor-pointer hover:text-white"
+                              >
+                                {c.status === "active" ? "Disable" : "Enable"}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
+
+            {/* Line-item earnings for the month */}
+            {affiliatePayouts?.earnings?.length > 0 && (
+              <section className="bg-zinc-950/80 border border-white/[0.06] rounded-2xl p-4 sm:p-8 space-y-4">
+                <h2 className="font-display font-extrabold text-sm uppercase text-white">
+                  Commission line items — {payoutMonth}
+                </h2>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs min-w-[640px]">
+                    <thead>
+                      <tr className="text-[9px] uppercase tracking-wider text-zinc-500 border-b border-white/5">
+                        <th className="py-2 pr-3 font-black">Creator</th>
+                        <th className="py-2 pr-3 font-black">Plan</th>
+                        <th className="py-2 pr-3 font-black">User</th>
+                        <th className="py-2 pr-3 font-black">Gross</th>
+                        <th className="py-2 pr-3 font-black">15% cut</th>
+                        <th className="py-2 font-black">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {affiliatePayouts.earnings.map((e) => (
+                        <tr
+                          key={e.id}
+                          className="border-b border-white/[0.03] text-zinc-300"
+                        >
+                          <td className="py-2 pr-3">
+                            <span className="font-mono text-brand-volt">
+                              {e.affiliateCode}
+                            </span>
+                            {e.paypalEmail && (
+                              <div className="text-[10px] text-zinc-500 font-mono">
+                                {e.paypalEmail}
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-2 pr-3 capitalize">
+                            {e.planType}
+                            {e.planType === "yearly" ? " (one-time)" : " (recurring)"}
+                          </td>
+                          <td className="py-2 pr-3 font-mono text-[10px] text-zinc-500">
+                            {e.referredUserId}
+                          </td>
+                          <td className="py-2 pr-3">{usd(e.grossCents)}</td>
+                          <td className="py-2 pr-3 text-white font-semibold">
+                            {usd(e.commissionCents)}
+                          </td>
+                          <td className="py-2 capitalize">
+                            {e.payoutStatus === "paid" ? (
+                              <span className="text-emerald-400">Paid</span>
+                            ) : (
+                              <span className="text-amber-400">Unpaid</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            )}
+
+            {/* All affiliates summary */}
+            <section className="bg-zinc-950/80 border border-white/[0.06] rounded-2xl p-4 sm:p-8 space-y-4">
+              <div className="flex items-center gap-3">
+                <Users className="w-4 h-4 text-sky-400" />
+                <h2 className="font-display font-extrabold text-sm uppercase text-white">
+                  All affiliates (lifetime)
+                </h2>
+              </div>
+              {affiliates.length === 0 ? (
+                <p className="text-zinc-500 text-sm">None yet.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs min-w-[600px]">
+                    <thead>
+                      <tr className="text-[9px] uppercase tracking-wider text-zinc-500 border-b border-white/5">
+                        <th className="py-2 pr-3 font-black">Creator</th>
+                        <th className="py-2 pr-3 font-black">Code</th>
+                        <th className="py-2 pr-3 font-black">PayPal</th>
+                        <th className="py-2 pr-3 font-black">Refs</th>
+                        <th className="py-2 pr-3 font-black">Lifetime earned</th>
+                        <th className="py-2 font-black">Unpaid</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {affiliates.map((a) => (
+                        <tr
+                          key={a.id}
+                          className="border-b border-white/[0.03] text-zinc-300"
+                        >
+                          <td className="py-2 pr-3">
+                            {a.displayName || a.email || "—"}
+                          </td>
+                          <td className="py-2 pr-3 font-mono text-brand-volt">
+                            {a.code}
+                          </td>
+                          <td className="py-2 pr-3 font-mono text-[11px]">
+                            {a.paypalEmail || (
+                              <span className="text-rose-400">—</span>
+                            )}
+                          </td>
+                          <td className="py-2 pr-3">{a.referralCount}</td>
+                          <td className="py-2 pr-3">
+                            {usd(a.totalCommissionCents)}
+                          </td>
+                          <td className="py-2">
+                            {a.unpaidCents > 0 ? (
+                              <span className="text-amber-400 font-semibold">
+                                {usd(a.unpaidCents)}
+                              </span>
+                            ) : (
+                              <span className="text-zinc-600">$0.00</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
+          </div>
+        )}
+
         {activeTab === "promos" && (
           <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
             {/* Section 1: Subscriptions actions grid */}

@@ -1,6 +1,11 @@
 import DodoPayments from "dodopayments";
 import { NextResponse } from "next/server";
 import { createClient } from "@libsql/client";
+import {
+  attributeReferral,
+  recordAffiliateEarningFromPayment,
+  normalizeAffiliateCode,
+} from "@/lib/affiliate";
 
 export const runtime = "nodejs";
 // Ensure we always read the raw body for signature verification
@@ -88,6 +93,18 @@ async function handleSubscriptionEvent(data) {
     return { ok: false, reason: "missing_user_id" };
   }
 
+  // Ensure referral is attributed even before first paid invoice (trial)
+  const affiliateCode = normalizeAffiliateCode(
+    data.metadata?.affiliate_code || data.metadata?.ref || ""
+  );
+  if (affiliateCode) {
+    try {
+      await attributeReferral({ affiliateCode, referredUserId: userId });
+    } catch (e) {
+      console.warn("[Affiliate] subscription attribute failed:", e?.message || e);
+    }
+  }
+
   await upsertSubscription({
     userId,
     subscriptionId,
@@ -96,6 +113,82 @@ async function handleSubscriptionEvent(data) {
     currentPeriodEnd,
   });
   return { ok: true };
+}
+
+/**
+ * Resolve amount in cents from Dodo payment payload variants.
+ * Prefer total / settlement amounts; fall back to recurring_pre_tax_amount.
+ * Returns 0 when the charge is explicitly free (trial), null when unknown.
+ */
+function extractAmountCents(data = {}) {
+  const candidates = [
+    data.total_amount,
+    data.settlement_amount,
+    data.amount,
+    data.recurring_pre_tax_amount,
+    data.payment?.total_amount,
+  ];
+  let sawExplicitZero = false;
+  for (const c of candidates) {
+    if (typeof c === "number") {
+      if (c > 0) return Math.round(c);
+      if (c === 0) sawExplicitZero = true;
+    } else if (typeof c === "string" && c !== "" && !Number.isNaN(Number(c))) {
+      const n = Number(c);
+      if (n > 0) return Math.round(n);
+      if (n === 0) sawExplicitZero = true;
+    }
+  }
+  if (sawExplicitZero) return 0;
+  return null;
+}
+
+async function maybeRecordAffiliateCommission(data, userId) {
+  if (!userId) return { ok: false, reason: "missing_user" };
+
+  // Only commission on successful (real) charges — skip failed/cancelled/processing
+  const status = (data.status || "").toLowerCase();
+  if (status && status !== "succeeded" && status !== "paid" && status !== "captured") {
+    return { ok: false, reason: "not_succeeded" };
+  }
+
+  // Attribute from checkout metadata if not already linked
+  const affiliateCode = normalizeAffiliateCode(
+    data.metadata?.affiliate_code || data.metadata?.ref || ""
+  );
+  if (affiliateCode) {
+    try {
+      await attributeReferral({ affiliateCode, referredUserId: userId });
+    } catch (e) {
+      console.warn("[Affiliate] webhook attribute failed:", e?.message || e);
+    }
+  }
+
+  const amountCents = extractAmountCents(data);
+  const planType = data.metadata?.plan_type || data.metadata?.planType || null;
+  const paidAt = toUnix(data.created_at || data.payment_date) || Math.floor(Date.now() / 1000);
+
+  try {
+    const result = await recordAffiliateEarningFromPayment({
+      userId,
+      paymentId: data.payment_id || data.id || null,
+      subscriptionId: data.subscription_id || null,
+      productId: data.product_id || data.metadata?.product_id || "",
+      planType,
+      interval: data.payment_frequency_interval || data.subscription?.payment_frequency_interval,
+      amountCents,
+      paidAt,
+    });
+    if (result.ok) {
+      console.log("[Affiliate] Commission recorded:", result);
+    } else {
+      console.log("[Affiliate] Commission skipped:", result.reason);
+    }
+    return result;
+  } catch (e) {
+    console.error("[Affiliate] Commission error:", e);
+    return { ok: false, reason: "error", detail: e?.message };
+  }
 }
 
 async function handlePaymentEvent(data) {
@@ -132,7 +225,14 @@ async function handlePaymentEvent(data) {
     status,
     currentPeriodEnd,
   });
-  return { ok: true };
+
+  // Recurring affiliate commission (15% for 6 months; yearly = one-time of annual charge)
+  let affiliate = { ok: false };
+  if (data.status === "succeeded") {
+    affiliate = await maybeRecordAffiliateCommission(data, userId);
+  }
+
+  return { ok: true, affiliate };
 }
 
 export async function POST(req) {

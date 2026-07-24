@@ -20,6 +20,7 @@ import {
   X,
   ChevronRight,
   LayoutGrid,
+  Megaphone,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -36,6 +37,7 @@ const MORE_LINKS = [
   { name: 'Library', href: '/library', icon: BookOpen, group: 'Grow' },
   { name: 'Tools', href: '/tools', icon: Wrench, group: 'Grow' },
   { name: 'Billing', href: '/billing', icon: CreditCard, group: 'Account' },
+  { name: 'Affiliate', href: '/affiliate', icon: Megaphone, group: 'Account' },
   { name: 'Support', href: '/support', icon: LifeBuoy, group: 'Account' },
   { name: 'Docs', href: '/docs', icon: HelpCircle, group: 'Account' },
 ];

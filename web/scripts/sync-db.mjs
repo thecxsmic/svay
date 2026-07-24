@@ -200,6 +200,58 @@ async function syncSchema() {
     `);
     console.log("✓ Table 'tool_usage' created or already exists.");
 
+    await client.execute(`
+      CREATE TABLE IF NOT EXISTS affiliates (
+        id TEXT PRIMARY KEY,
+        user_id TEXT UNIQUE NOT NULL,
+        code TEXT UNIQUE NOT NULL,
+        display_name TEXT,
+        email TEXT,
+        paypal_email TEXT,
+        status TEXT DEFAULT 'active',
+        commission_rate REAL DEFAULT 0.15,
+        commission_months INTEGER DEFAULT 6,
+        created_at INTEGER,
+        updated_at INTEGER
+      )
+    `);
+    console.log("✓ Table 'affiliates' created or already exists.");
+
+    await client.execute(`
+      CREATE TABLE IF NOT EXISTS affiliate_referrals (
+        id TEXT PRIMARY KEY,
+        affiliate_id TEXT NOT NULL,
+        referred_user_id TEXT UNIQUE NOT NULL,
+        joined_at INTEGER NOT NULL,
+        first_payment_at INTEGER,
+        status TEXT DEFAULT 'active',
+        FOREIGN KEY (affiliate_id) REFERENCES affiliates (id)
+      )
+    `);
+    console.log("✓ Table 'affiliate_referrals' created or already exists.");
+
+    await client.execute(`
+      CREATE TABLE IF NOT EXISTS affiliate_earnings (
+        id TEXT PRIMARY KEY,
+        affiliate_id TEXT NOT NULL,
+        referral_id TEXT NOT NULL,
+        referred_user_id TEXT NOT NULL,
+        payment_id TEXT UNIQUE,
+        subscription_id TEXT,
+        plan_type TEXT,
+        period_month TEXT NOT NULL,
+        gross_cents INTEGER NOT NULL,
+        commission_cents INTEGER NOT NULL,
+        commission_rate REAL NOT NULL,
+        payout_status TEXT DEFAULT 'unpaid',
+        paid_at INTEGER,
+        created_at INTEGER,
+        FOREIGN KEY (affiliate_id) REFERENCES affiliates (id),
+        FOREIGN KEY (referral_id) REFERENCES affiliate_referrals (id)
+      )
+    `);
+    console.log("✓ Table 'affiliate_earnings' created or already exists.");
+
     console.log("Schema sync complete!");  } catch (error) {
     console.error("Error syncing schema:", error);
     process.exit(1);

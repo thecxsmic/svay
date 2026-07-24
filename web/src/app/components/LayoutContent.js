@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserButton } from "@clerk/nextjs";
-import { Plus, Search, Zap, Users, Trophy, BookOpen, BarChart3, Radio, HelpCircle, SlidersHorizontal, Trash2, CreditCard, LifeBuoy, Wrench, ChevronRight } from 'lucide-react';
+import { Plus, Search, Zap, Users, Trophy, BookOpen, BarChart3, Radio, HelpCircle, SlidersHorizontal, Trash2, CreditCard, LifeBuoy, Wrench, ChevronRight, Megaphone } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useChannel } from '@/contexts/channel';
 import { useUser } from '@/contexts/user';
@@ -23,6 +23,7 @@ const navItems = [
   { name: 'Library', href: '/library', icon: BookOpen },
   { name: 'Tools', href: '/tools', icon: Wrench },
   { name: 'Billing', href: '/billing', icon: CreditCard },
+  { name: 'Affiliate', href: '/affiliate', icon: Megaphone },
   { name: 'Support', href: '/support', icon: LifeBuoy },
   { name: 'Docs', href: '/docs', icon: HelpCircle },
 ];
@@ -36,6 +37,7 @@ function resolvePageMeta(pathname) {
   if (pathname.startsWith('/library')) return { title: 'Library', section: 'Research' };
   if (pathname.startsWith('/tools')) return { title: 'Tools', section: 'Utilities' };
   if (pathname.startsWith('/billing')) return { title: 'Billing', section: 'Account' };
+  if (pathname.startsWith('/affiliate')) return { title: 'Affiliate', section: 'Account' };
   if (pathname.startsWith('/support')) return { title: 'Support', section: 'Account' };
   if (pathname.startsWith('/docs')) return { title: 'Docs', section: 'Help' };
   if (pathname.startsWith('/admin')) return { title: 'Admin', section: 'Internal' };
@@ -73,7 +75,9 @@ export default function LayoutContent({ children, subscription }) {
   useEffect(() => {
     const isDemoCookie = document.cookie.includes("demo_mode=true");
     const isCarePage =
-      pathname.startsWith("/support") || pathname.startsWith("/billing");
+      pathname.startsWith("/support") ||
+      pathname.startsWith("/billing") ||
+      pathname.startsWith("/affiliate");
     if (!loading && !isDemoCookie && !userChannel && !isCarePage) {
       setIsSetupModalOpen(true);
     }

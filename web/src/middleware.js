@@ -12,7 +12,8 @@ const isPublicRoute = createRouteMatcher([
   '/terms(.*)',
   '/cookies(.*)',
   '/refund(.*)',
-  '/shared(.*)'
+  '/shared(.*)',
+  '/affiliate(.*)',
 ])
 
 export default clerkMiddleware(async (auth, request) => {
@@ -21,6 +22,20 @@ export default clerkMiddleware(async (auth, request) => {
 
   const url = request.nextUrl;
   const pathname = url.pathname;
+
+  // Affiliate referral capture: /?ref=CODE → cookie for checkout attribution
+  const refParam = url.searchParams.get("ref") || url.searchParams.get("aff");
+  let affiliateCookie = null;
+  if (refParam) {
+    const code = refParam
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9_-]/g, "")
+      .slice(0, 24);
+    if (code) {
+      affiliateCookie = code;
+    }
+  }
 
   // Rate limit API routes, except for internal jobs and Webhooks
   let rateLimitHeaders = null;
@@ -119,6 +134,17 @@ export default clerkMiddleware(async (auth, request) => {
   if (rateLimitHeaders) {
     Object.entries(rateLimitHeaders).forEach(([name, value]) => {
       response.headers.set(name, value);
+    });
+  }
+
+  // Persist affiliate ref for 60 days so checkout can attribute the sale
+  if (affiliateCookie) {
+    response.cookies.set("svay_ref", affiliateCookie, {
+      path: "/",
+      maxAge: 60 * 24 * 60 * 60,
+      sameSite: "lax",
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production",
     });
   }
 
