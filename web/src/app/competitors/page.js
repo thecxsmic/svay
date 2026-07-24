@@ -11,22 +11,25 @@ import {
   Target, 
   BarChart3, 
   Zap, 
-  Shield, 
-  ArrowUpRight, 
   RefreshCw, 
   Plus, 
   AlertCircle,
   Eye,
   Search,
-  ChevronRight,
-  Database,
-  Layers,
-  History,
   Activity,
-  MousePointer2,
   PieChart,
   Mail,
-  Trophy
+  Trophy,
+  Clock,
+  Filter,
+  ExternalLink,
+  Video,
+  Heart,
+  Gauge,
+  ArrowUpRight,
+  ArrowDownRight,
+  Minus,
+  Save,
 } from 'lucide-react';
 import { useTitle } from '@/lib/hooks/titles';
 import ResearchNotesModal from '../components/ResearchNotesModal';
@@ -34,8 +37,22 @@ import {
   EngagementPieChart, 
   CompetitorRadarChart, 
   CompetitorBarComparison, 
+  CompetitorShareChart,
   VideoPerformanceScatter 
 } from "../components/ChannelCharts";
+import {
+  ProgressLoader,
+  EmptyState,
+  DashPage,
+  DashToolbar,
+  DashBody,
+  DashButton,
+  MetaChip,
+  DashKpi,
+  DashPanel,
+  DashChip,
+  DashAlert,
+} from '../components/dashboard/ui';
 
 const CACHE_KEY_PREFIX = 'competitor_analysis_cache_v2_';
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
@@ -53,9 +70,14 @@ export default function CompetitorsPage() {
   const [error, setError] = useState(null);
   const [lastScanTime, setLastScanTime] = useState(null);
   const [lastEmailSentAt, setLastEmailSentAt] = useState(null);
-  const [activeTab, setActiveTab] = useState('market');
+  const [activeTab, setActiveTab] = useState('overview');
   const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
   const [selectedNoteItem, setSelectedNoteItem] = useState(null);
+  const [sortBy, setSortBy] = useState('subs'); // subs | views | efficiency | eng
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [barMetric, setBarMetric] = useState('views');
+  const [rivalId, setRivalId] = useState(null);
+
 
   const selectedChannel = channels.data.find(c => c.id === channels.selectedId);
   const getCacheKey = () => `${CACHE_KEY_PREFIX}${selectedChannel?.id || 'default'}`;
@@ -306,29 +328,142 @@ export default function CompetitorsPage() {
   };
 
   const formatNumber = (num) => {
-    const n = parseInt(num || 0);
+    const n = parseInt(num || 0, 10);
     if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
     if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
     return n.toString();
   };
 
-  const calculateEngagement = (statistics) => {
-    if (!statistics) return "0";
-    const views = parseInt(statistics.viewCount || 0);
-    const subs = parseInt(statistics.subscriberCount || 0);
-    return subs === 0 ? "0" : (views / subs).toFixed(2);
+  const deriveStats = (ch) => {
+    if (!ch) return null;
+    const views = parseInt(ch.statistics?.viewCount || 0, 10);
+    const subs = parseInt(ch.statistics?.subscriberCount || 0, 10);
+    const videos = parseInt(ch.statistics?.videoCount || 0, 10);
+    const recent = ch.videos || [];
+    const recentViews = recent.map((v) => parseInt(v.statistics?.viewCount || 0, 10));
+    const avgRecent =
+      recentViews.length > 0
+        ? recentViews.reduce((a, b) => a + b, 0) / recentViews.length
+        : views / Math.max(1, videos);
+    const engRates = recent.map((v) => {
+      const vv = Math.max(1, parseInt(v.statistics?.viewCount || 1, 10));
+      const likes = parseInt(v.statistics?.likeCount || 0, 10);
+      const comments = parseInt(v.statistics?.commentCount || 0, 10);
+      return ((likes + comments) / vv) * 100;
+    });
+    const avgEng =
+      engRates.length > 0
+        ? engRates.reduce((a, b) => a + b, 0) / engRates.length
+        : 0;
+    const topTitle = [...recent]
+      .sort(
+        (a, b) =>
+          parseInt(b.statistics?.viewCount || 0, 10) -
+          parseInt(a.statistics?.viewCount || 0, 10)
+      )[0]?.snippet?.title;
+    return {
+      views,
+      subs,
+      videos,
+      avgRecent,
+      avgEng,
+      viewsPerSub: views / Math.max(1, subs),
+      viewsPerVideo: views / Math.max(1, videos),
+      topTitle,
+    };
   };
 
-  const baseSubs = data ? parseInt(data.baseChannel.statistics?.subscriberCount || 0, 10) : 0;
-  const largerCompetitors = data ? data.competitors.filter(c => parseInt(c.statistics?.subscriberCount || 0, 10) > baseSubs) : [];
-  const hasLargerCompetitors = largerCompetitors.length > 0;
-  const isKing = !hasLargerCompetitors && baseSubs > 1000000;
+  const insights = useMemo(() => {
+    if (!data?.baseChannel) return null;
+    const you = deriveStats(data.baseChannel);
+    const rivals = (data.competitors || []).map((c) => ({
+      ...c,
+      stats: deriveStats(c),
+    }));
+    const all = [{ id: 'you', title: data.baseChannel.title, isYou: true, stats: you }, ...rivals.map((r) => ({ ...r, isYou: false }))];
+    const bySubs = [...all].sort((a, b) => b.stats.subs - a.stats.subs);
+    const rank = bySubs.findIndex((x) => x.isYou) + 1;
+    const larger = rivals.filter((r) => r.stats.subs > you.subs);
+    const smaller = rivals.filter((r) => r.stats.subs <= you.subs);
+    const bestEff = [...all].sort((a, b) => b.stats.viewsPerSub - a.stats.viewsPerSub)[0];
+    const bestEng = [...all].sort((a, b) => b.stats.avgEng - a.stats.avgEng)[0];
+    const bestAvg = [...all].sort((a, b) => b.stats.avgRecent - a.stats.avgRecent)[0];
+    const avgRivalSubs =
+      rivals.length > 0
+        ? rivals.reduce((a, r) => a + r.stats.subs, 0) / rivals.length
+        : 0;
+    const gapToLeader =
+      larger.length > 0
+        ? Math.min(...larger.map((r) => r.stats.subs)) - you.subs
+        : 0;
+    const share =
+      all.reduce((a, x) => a + x.stats.subs, 0) > 0
+        ? (you.subs / all.reduce((a, x) => a + x.stats.subs, 0)) * 100
+        : 0;
+
+    // Content pattern heuristics from titles
+    const allTitles = [
+      ...(data.baseChannel.videos || []),
+      ...rivals.flatMap((r) => r.videos || []),
+    ].map((v) => v.snippet?.title || '');
+    const withNumbers = allTitles.filter((t) => /\d/.test(t)).length;
+    const withHow = allTitles.filter((t) => /how to|how i|guide/i.test(t)).length;
+    const withVs = allTitles.filter((t) => /\bvs\b|versus|react/i.test(t)).length;
+
+    return {
+      you,
+      rivals,
+      all,
+      bySubs,
+      rank,
+      larger,
+      smaller,
+      bestEff,
+      bestEng,
+      bestAvg,
+      avgRivalSubs,
+      gapToLeader,
+      share,
+      isKing: larger.length === 0 && you.subs > 1000000,
+      contentHints: {
+        withNumbers,
+        withHow,
+        withVs,
+        total: allTitles.length || 1,
+      },
+    };
+  }, [data]);
+
+  useEffect(() => {
+    if (data?.competitors?.length && !rivalId) {
+      setRivalId(data.competitors[0].id);
+    }
+  }, [data?.competitors, rivalId]);
+
+  const filteredRivals = useMemo(() => {
+    if (!insights) return [];
+    let list = [...insights.rivals];
+    if (typeFilter !== 'all') {
+      list = list.filter((r) => r.matchType === typeFilter);
+    }
+    list.sort((a, b) => {
+      if (sortBy === 'views') return b.stats.views - a.stats.views;
+      if (sortBy === 'efficiency') return b.stats.viewsPerSub - a.stats.viewsPerSub;
+      if (sortBy === 'eng') return b.stats.avgEng - a.stats.avgEng;
+      return b.stats.subs - a.stats.subs;
+    });
+    return list;
+  }, [insights, sortBy, typeFilter]);
+
+  const selectedRival =
+    data?.competitors?.find((c) => c.id === rivalId) || data?.competitors?.[0];
 
   const TABS = [
-    { id: 'market', label: 'Market Matrix', icon: Target },
-    { id: 'content', label: 'Content DNA', icon: Activity },
-    ...(hasLargerCompetitors ? [{ id: 'growth', label: 'Growth Velocity', icon: TrendingUp }] : []),
-    { id: 'audience', label: 'Reach Analysis', icon: Users }
+    { id: 'overview', label: 'Overview', icon: Gauge },
+    { id: 'rivals', label: 'Rivals', icon: Users, count: data?.competitors?.length },
+    { id: 'content', label: 'Content', icon: Activity },
+    { id: 'growth', label: 'Benchmarks', icon: TrendingUp },
+    { id: 'audience', label: 'Engagement', icon: PieChart },
   ];
 
   const getCacheAge = () => {
@@ -336,445 +471,805 @@ export default function CompetitorsPage() {
     const mins = Math.floor((Date.now() - lastScanTime) / 60000);
     if (mins < 1) return 'just now';
     if (mins < 60) return `${mins}m ago`;
-    return `${Math.floor(mins/60)}h ago`;
+    return `${Math.floor(mins / 60)}h ago`;
   };
 
+  const typeColor = (t) =>
+    t === 'Market Leader'
+      ? 'text-orange-400 border-orange-500/25 bg-orange-500/10'
+      : t === 'Growth Target'
+        ? 'text-emerald-400 border-emerald-500/25 bg-emerald-500/10'
+        : t === 'Direct Peer'
+          ? 'text-sky-400 border-sky-500/25 bg-sky-500/10'
+          : 'text-zinc-400 border-white/10 bg-white/5';
+
   return (
-    <div className="min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black">
+    <DashPage>
       <ResearchNotesModal
         isOpen={isNotesModalOpen}
         onClose={() => setIsNotesModalOpen(false)}
         item={selectedNoteItem}
       />
 
-      {/* Header */}
-      <nav className="sticky top-0 z-50 border-b border-zinc-800 bg-black/80 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
-              <Shield className="w-5 h-5 text-black" />
-            </div>
-            <h1 className="font-display text-lg tracking-tight uppercase flex items-center gap-3">
-              Competitors <span className="text-zinc-600 font-normal hidden sm:inline">/ {selectedChannel?.title || 'Global'}</span>
-            </h1>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            {searchParams.get('analysisId') && data && !loading && lastEmailSentAt && (
-              <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-tighter hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap">
-                <Mail className="w-3.5 h-3.5" />
-                Last Sent: {new Date(lastEmailSentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            )}
+      <DashToolbar
+        left={
+          <>
+            {selectedChannel && <MetaChip>{selectedChannel.title}</MetaChip>}
             {lastScanTime && !loading && (
-              <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-tighter hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap">
-                <BarChart3 className="w-3.5 h-3.5" />
-                Last scan: {getCacheAge()}
-              </span>
+              <MetaChip icon={Clock}>Scanned {getCacheAge()}</MetaChip>
             )}
-            <button
-              onClick={analyzeCompetitors}
-              disabled={loading || !selectedChannel}
-              className="h-9 px-4 rounded-full bg-white text-black text-sm font-medium hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">{loading ? 'Analyzing' : 'Sync'}</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Dynamic Tabs */}
-        {data && !loading && !isKing && (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 flex gap-8 overflow-x-auto no-scrollbar">
-            {TABS.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 pb-3 pt-4 text-[10px] uppercase font-bold tracking-widest transition-all relative whitespace-nowrap ${
-                  activeTab === tab.id ? "text-white" : "text-zinc-500 hover:text-zinc-300"
-                }`}
-              >
-                <tab.icon className="w-3 h-3" />
-                {tab.label}
-                {activeTab === tab.id && (
-                  <motion.div 
-                    layoutId="tab-underline"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-white rounded-full" 
-                  />
-                )}
-              </button>
-            ))}
-          </div>
+            {data && !loading && insights && (
+              <MetaChip icon={Trophy}>
+                Rank #{insights.rank} of {insights.all.length}
+              </MetaChip>
+            )}
+            {searchParams.get('analysisId') && data && !loading && lastEmailSentAt && (
+              <MetaChip icon={Mail}>
+                Emailed{' '}
+                {new Date(lastEmailSentAt).toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </MetaChip>
+            )}
+          </>
+        }
+        mobileLeft={
+          data && !loading ? (
+            <>
+              {selectedChannel && (
+                <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5">
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-600">
+                    Channel
+                  </p>
+                  <p className="mt-0.5 truncate text-sm font-semibold text-white">
+                    {selectedChannel.title}
+                  </p>
+                </div>
+              )}
+              {lastScanTime && (
+                <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5">
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-600">
+                    Last scan
+                  </p>
+                  <p className="mt-0.5 text-sm font-semibold text-white">
+                    {getCacheAge()}
+                  </p>
+                </div>
+              )}
+              {insights && (
+                <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5">
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-600">
+                    Rank
+                  </p>
+                  <p className="mt-0.5 text-sm font-semibold text-white">
+                    #{insights.rank} of {insights.all.length}
+                  </p>
+                </div>
+              )}
+            </>
+          ) : null
+        }
+        tabItems={data && !loading ? TABS : undefined}
+        tabValue={activeTab}
+        onTabChange={setActiveTab}
+      >
+        {data && !loading && (
+          <DashButton
+            variant="secondary"
+            size="sm"
+            onClick={() =>
+              handleSaveNote(
+                'analysis',
+                `Market Snapshot: ${data.baseChannel.title}`,
+                data
+              )
+            }
+            className="!h-9 !px-2.5 sm:!px-3.5"
+          >
+            <Save className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Save</span>
+          </DashButton>
         )}
-      </nav>
+        <DashButton
+          size="sm"
+          onClick={analyzeCompetitors}
+          disabled={loading || !selectedChannel}
+          className="!h-9 !px-2.5 sm:!px-3.5"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+          <span className="hidden sm:inline">
+            {loading ? 'Analyzing' : data ? 'Rescan' : 'Scan'}
+          </span>
+        </DashButton>
+      </DashToolbar>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      <DashBody className="space-y-6 pb-20">
+        {error && (
+          <DashAlert variant="error">
+            <p className="font-bold uppercase tracking-wider">Mapping failed</p>
+            <p className="mt-0.5 opacity-80">{error}</p>
+          </DashAlert>
+        )}
+
         <AnimatePresence mode="wait">
           {!data && !loading && (
-            <motion.div
+            <EmptyState
               key="empty"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center py-32 text-center"
-            >
-              <div className="w-20 h-20 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-6">
-                <Search className="w-10 h-10 text-zinc-600" />
-              </div>
-              <h2 className="text-2xl font-semibold mb-2">Ecosystem Mapping</h2>
-              <p className="text-zinc-500 max-w-sm mb-8 leading-relaxed text-sm">
-                Analyze your channel's position against direct rivals, market leaders, and niche peers.
-              </p>
-              <button
-                onClick={analyzeCompetitors}
-                disabled={!selectedChannel}
-                className="px-10 py-3 rounded-full bg-white text-black font-semibold hover:bg-zinc-200 transition-all disabled:opacity-30"
-              >
-                Start Analysis
-              </button>
-            </motion.div>
+              icon={Search}
+              title="Ecosystem mapping"
+              description="Map your channel against rivals for reach gaps, content DNA, and engagement benchmarks."
+              action={
+                <DashButton
+                  onClick={analyzeCompetitors}
+                  disabled={!selectedChannel}
+                  size="lg"
+                >
+                  Start analysis
+                </DashButton>
+              }
+            />
           )}
 
           {loading && (
-            <motion.div
+            <ProgressLoader
               key="loading"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center py-32"
-            >
-              <div className="w-64 space-y-4">
-                <div className="flex justify-between text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
-                  <span>{currentStep}</span>
-                  <span>{progress}%</span>
-                </div>
-                <div className="h-0.5 w-full bg-zinc-900 rounded-full overflow-hidden">
-                  <motion.div 
-                    initial={{ width: 0 }}
-                    animate={{ width: `${progress}%` }}
-                    className="h-full bg-white"
-                  />
-                </div>
-              </div>
-            </motion.div>
+              progress={progress}
+              step={currentStep || 'Analyzing…'}
+            />
           )}
 
-          {data && !loading && (
+          {data && !loading && insights && (
             <motion.div
-              key={isKing ? 'king' : activeTab}
-              initial={{ opacity: 0, y: 10 }}
+              key={activeTab}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="space-y-12 pb-20"
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="space-y-6"
             >
-              {isKing ? (
-                <div className="border border-zinc-800 bg-zinc-950 p-6 sm:p-10 rounded-2xl space-y-4 text-left relative overflow-hidden">
-                  <div className="flex items-center gap-2">
-                    <Trophy className="w-4 h-4 text-white" />
-                    <span className="text-[9px] font-mono tracking-widest text-zinc-500 uppercase">niche dominance established</span>
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="text-base sm:text-lg font-bold text-white uppercase tracking-tight font-mono">u are the king</h3>
-                    <p className="text-zinc-450 text-xs leading-relaxed max-w-3xl">
-                      Your channel sits at the absolute peak of this niche's subscriber hierarchy. No larger rivals were detected in this keyword space.
-                    </p>
-                  </div>
-                </div>
-              ) : (
+              {/* ── OVERVIEW ───────────────────────────────────────── */}
+              {activeTab === 'overview' && (
                 <>
-                  {activeTab === 'market' && (
-                <div className="space-y-12">
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    <div className="lg:col-span-8 p-8 rounded-2xl bg-zinc-900/30 border border-zinc-800 backdrop-blur-sm">
-                      <div className="flex items-center justify-between mb-8">
-                        <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500 flex items-center gap-2">
-                          <BarChart3 className="w-4 h-4" /> Strategic Radar
-                        </h3>
-                        <span className="text-[10px] font-bold text-zinc-600 uppercase">Benchmarked vs Peers</span>
-                      </div>
-                      <div className="h-80">
-                        <CompetitorRadarChart baseChannel={data.baseChannel} competitors={data.competitors} />
-                      </div>
-                    </div>
-
-                    <div className="lg:col-span-4 p-8 rounded-2xl bg-white text-black">
-                      <div className="flex items-center gap-4 mb-10">
-                        <img 
-                          src={data.baseChannel.thumbnail || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.baseChannel.title)}&background=27272a&color=fff`} 
-                          className="w-12 h-12 rounded-full" 
-                          alt="" 
-                          referrerPolicy="no-referrer"
-                          onError={(e) => {
-                            e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(data.baseChannel.title)}&background=27272a&color=fff`;
-                          }}
-                        />
+                  {insights.isKing && (
+                    <div className="relative overflow-hidden rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 to-transparent p-5 sm:p-6">
+                      <div className="flex items-start gap-3">
+                        <Trophy className="mt-0.5 h-5 w-5 text-amber-400" />
                         <div>
-                          <h2 className="text-lg font-bold tracking-tight line-clamp-1">{data.baseChannel.title}</h2>
-                          <p className="text-[10px] font-bold uppercase tracking-widest opacity-50">Main Subject</p>
+                          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-amber-400/80">
+                            Niche dominance
+                          </p>
+                          <h3 className="mt-1 font-display text-lg uppercase tracking-tight text-white">
+                            You lead this set
+                          </h3>
+                          <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-zinc-400">
+                            No tracked rival exceeds your subscriber count. Focus on defending efficiency and publishing cadence.
+                          </p>
                         </div>
                       </div>
-                      <div className="space-y-8">
-                        <MetricRow label="Reach Tier" value={formatNumber(data.baseChannel.statistics.subscriberCount)} />
-                        <MetricRow label="Efficiency" value={`${calculateEngagement(data.baseChannel.statistics)}x`} />
-                        <MetricRow label="Output Level" value={data.baseChannel.videos.length > 500 ? 'High' : 'Moderate'} />
-                      </div>
-                      <button 
-                        onClick={() => handleSaveNote('analysis', `Market Snapshot: ${data.baseChannel.title}`, data)}
-                        className="w-full mt-10 h-12 rounded-2xl bg-black text-white text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-opacity"
-                      >
-                        Save Analysis
-                      </button>
                     </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
+                    <DashKpi
+                      label="Rank"
+                      value={`#${insights.rank}`}
+                      icon={Trophy}
+                      tone="text-amber-400"
+                      sub={`${insights.all.length} tracked`}
+                      className="!p-3 sm:!p-5"
+                    />
+                    <DashKpi
+                      label="Subs"
+                      value={formatNumber(insights.you.subs)}
+                      icon={Users}
+                      tone="text-[#00f0ff]"
+                      sub={
+                        insights.gapToLeader > 0
+                          ? `${formatNumber(insights.gapToLeader)} to lead`
+                          : 'Leading'
+                      }
+                      className="!p-3 sm:!p-5"
+                    />
+                    <DashKpi
+                      label="Share"
+                      value={`${insights.share.toFixed(0)}%`}
+                      icon={Target}
+                      tone="text-violet-400"
+                      sub="Niche"
+                      className="!p-3 sm:!p-5"
+                    />
+                    <DashKpi
+                      label="Eff"
+                      value={insights.you.viewsPerSub.toFixed(1) + 'x'}
+                      icon={Zap}
+                      tone="text-orange-400"
+                      sub={insights.bestEff?.isYou ? 'Best' : 'Views/sub'}
+                      className="!p-3 sm:!p-5"
+                    />
                   </div>
 
-                  {(() => {
-                    const baseSubs = parseInt(data.baseChannel.statistics?.subscriberCount || 0, 10);
-                    const largerCompetitors = data.competitors.filter(c => parseInt(c.statistics?.subscriberCount || 0, 10) > baseSubs);
-                    const hasLarger = largerCompetitors.length > 0;
-
-                    if (!hasLarger && baseSubs > 1000000) {
-                      return (
-                        <div className="border border-zinc-800 bg-zinc-950 p-6 sm:p-10 rounded-2xl space-y-4 text-left relative overflow-hidden">
-                          <div className="flex items-center gap-2">
-                            <Trophy className="w-4 h-4 text-white" />
-                            <span className="text-[9px] font-mono tracking-widest text-zinc-500 uppercase">niche dominance established</span>
-                          </div>
-                          <div className="space-y-2">
-                            <h3 className="text-base sm:text-lg font-bold text-white uppercase tracking-tight font-mono">u are the king</h3>
-                            <p className="text-zinc-450 text-xs leading-relaxed max-w-3xl">
-                              Your channel sits at the absolute peak of this niche's subscriber hierarchy. No larger rivals were detected in this keyword space.
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {data.competitors.map((comp) => (
-                          <CompetitorCard 
-                            key={comp.id} 
-                            comp={comp} 
-                            baseSubs={baseSubs}
-                            onSave={() => handleSaveNote('channel', comp.title, comp)}
-                          />
-                        ))}
-                      </div>
-                    );
-                  })()}
-                </div>
-              )}
-
-              {activeTab === 'content' && (
-                <div className="space-y-10">
-                  <div className="p-8 rounded-2xl bg-zinc-900/30 border border-zinc-800 backdrop-blur-sm">
-                    <div className="flex items-center justify-between mb-10">
-                      <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500 flex items-center gap-2">
-                        <MousePointer2 className="w-4 h-4" /> Performance Scatter
-                      </h3>
-                      <div className="flex items-center gap-4 text-[10px] font-bold text-zinc-600 uppercase tracking-widest">
-                        <span className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-white" /> You</span>
-                        <span className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-blue-500" /> Rival</span>
-                      </div>
-                    </div>
-                    <div className="h-[400px]">
-                      <VideoPerformanceScatter 
-                        videos={data.baseChannel.videos} 
-                        competitorVideos={data.competitors[0]?.videos || []} 
+                  <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+                    <DashPanel
+                      title="Strategic radar"
+                      icon={BarChart3}
+                      className="lg:col-span-7"
+                      bodyClassName="h-80 p-4 sm:p-5"
+                    >
+                      <CompetitorRadarChart
+                        baseChannel={data.baseChannel}
+                        competitors={data.competitors}
+                        maxRivals={4}
                       />
-                    </div>
+                    </DashPanel>
+
+                    <DashPanel
+                      title="Share of tracked niche"
+                      icon={PieChart}
+                      className="lg:col-span-5"
+                      bodyClassName="h-80 p-4 sm:p-5"
+                    >
+                      <CompetitorShareChart
+                        channels={[data.baseChannel, ...data.competitors]}
+                      />
+                    </DashPanel>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <ContentInsightCard 
-                      title="Top Hook" 
-                      value="Data-Driven Titles" 
-                      desc="Competitors using numbers in titles see 40% higher reach."
+                  <DashPanel
+                    title="Leaderboard"
+                    icon={Trophy}
+                    action={
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('rivals')}
+                        className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 hover:text-white"
+                      >
+                        All rivals →
+                      </button>
+                    }
+                    bodyClassName="divide-y divide-white/[0.04]"
+                  >
+                    {insights.bySubs.map((row, i) => (
+                      <div
+                        key={row.id || row.title}
+                        className={`flex items-center gap-3 px-4 py-3.5 sm:px-5 ${
+                          row.isYou ? 'bg-[#00f0ff]/[0.04]' : ''
+                        }`}
+                      >
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] font-display text-xs text-zinc-400">
+                          {i + 1}
+                        </span>
+                        <Avatar ch={row.isYou ? data.baseChannel : row} size={8} />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-white">
+                            {row.isYou ? `You · ${row.title}` : row.title}
+                          </p>
+                          {!row.isYou && row.matchType && (
+                            <span
+                              className={`mt-0.5 inline-flex rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${typeColor(
+                                row.matchType
+                              )}`}
+                            >
+                              {row.matchType}
+                            </span>
+                          )}
+                        </div>
+                        <div className="hidden text-right sm:block">
+                          <p className="text-xs font-bold tabular-nums text-zinc-200">
+                            {formatNumber(row.stats.subs)}
+                          </p>
+                          <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-600">
+                            subs
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs font-bold tabular-nums text-zinc-300">
+                            {row.stats.viewsPerSub.toFixed(1)}x
+                          </p>
+                          <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-600">
+                            eff
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </DashPanel>
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <InsightCard
+                      title="Efficiency leader"
+                      value={insights.bestEff?.isYou ? 'You' : insights.bestEff?.title}
+                      desc={`${(insights.bestEff?.stats?.viewsPerSub || 0).toFixed(1)}x views per subscriber`}
+                      icon={Zap}
                     />
-                    <ContentInsightCard 
-                      title="Gap Opportunity" 
-                      value="Long-form Deep Dives" 
-                      desc="Niche rivals are ignoring 20min+ formats in this segment."
+                    <InsightCard
+                      title="Engagement leader"
+                      value={insights.bestEng?.isYou ? 'You' : insights.bestEng?.title}
+                      desc={`${(insights.bestEng?.stats?.avgEng || 0).toFixed(2)}% avg on recent uploads`}
+                      icon={Heart}
                     />
-                    <ContentInsightCard 
-                      title="Viral Pattern" 
-                      value="Reaction Loops" 
-                      desc="Most successful videos this month follow response styles."
+                    <InsightCard
+                      title="Recent avg views"
+                      value={
+                        insights.bestAvg?.isYou
+                          ? 'You lead'
+                          : insights.bestAvg?.title
+                      }
+                      desc={`${formatNumber(insights.bestAvg?.stats?.avgRecent || 0)} avg on last videos`}
+                      icon={Eye}
                     />
                   </div>
-                </div>
+                </>
               )}
 
-              {activeTab === 'growth' && (
-                <div className="space-y-10">
-                  <div className="p-8 rounded-2xl bg-zinc-900/30 border border-zinc-800 backdrop-blur-sm">
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-10 flex items-center gap-2">
-                      <Database className="w-4 h-4" /> Growth Benchmarks
-                    </h3>
-                    <div className="h-80">
-                      <CompetitorBarComparison channels={[data.baseChannel, ...data.competitors]} />
-                    </div>
+              {/* ── RIVALS ─────────────────────────────────────────── */}
+              {activeTab === 'rivals' && (
+                <>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-600">
+                      <Filter className="h-3 w-3" /> Sort
+                    </span>
+                    {[
+                      { id: 'subs', label: 'Subs' },
+                      { id: 'views', label: 'Views' },
+                      { id: 'efficiency', label: 'Efficiency' },
+                      { id: 'eng', label: 'Engagement' },
+                    ].map((s) => (
+                      <DashChip
+                        key={s.id}
+                        active={sortBy === s.id}
+                        onClick={() => setSortBy(s.id)}
+                      >
+                        {s.label}
+                      </DashChip>
+                    ))}
+                    <span className="mx-1 hidden h-4 w-px bg-white/10 sm:inline" />
+                    {['all', 'Market Leader', 'Growth Target', 'Direct Peer', 'Emerging Rival'].map(
+                      (t) => (
+                        <DashChip
+                          key={t}
+                          active={typeFilter === t}
+                          onClick={() => setTypeFilter(t)}
+                        >
+                          {t === 'all' ? 'All types' : t}
+                        </DashChip>
+                      )
+                    )}
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                    <div className="space-y-6">
-                      <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-600">Growth Velocity</h4>
-                      <div className="space-y-4">
-                        {[data.baseChannel, ...data.competitors].map(ch => (
-                          <div key={ch.id} className="flex items-center justify-between p-4 rounded-2xl bg-zinc-900/50 border border-white/5">
-                            <div className="flex items-center gap-3">
-                              <img 
-                                src={ch.thumbnail || `https://ui-avatars.com/api/?name=${encodeURIComponent(ch.title)}&background=27272a&color=fff`} 
-                                className="w-6 h-6 rounded-full" 
-                                alt="" 
-                                referrerPolicy="no-referrer"
-                                onError={(e) => {
-                                  e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(ch.title)}&background=27272a&color=fff`;
-                                }}
-                              />
-                              <span className="text-xs font-medium text-zinc-200">{ch.title}</span>
+                  {filteredRivals.length === 0 ? (
+                    <p className="py-16 text-center text-sm text-zinc-600">
+                      No rivals match this filter.
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                      {filteredRivals.map((comp) => (
+                        <CompetitorCard
+                          key={comp.id}
+                          comp={comp}
+                          you={insights.you}
+                          formatNumber={formatNumber}
+                          typeColor={typeColor}
+                          onSave={() => handleSaveNote('channel', comp.title, comp)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* ── CONTENT ────────────────────────────────────────── */}
+              {activeTab === 'content' && (
+                <>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-600">
+                      Compare vs
+                    </span>
+                    {(data.competitors || []).map((c) => (
+                      <DashChip
+                        key={c.id}
+                        active={rivalId === c.id}
+                        onClick={() => setRivalId(c.id)}
+                      >
+                        {(c.title || '').slice(0, 20)}
+                      </DashChip>
+                    ))}
+                  </div>
+
+                  <DashPanel
+                    title="Views vs likes scatter"
+                    icon={Activity}
+                    action={
+                      selectedRival ? (
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-600">
+                          You · {selectedRival.title?.slice(0, 16)}
+                        </span>
+                      ) : null
+                    }
+                    bodyClassName="h-[380px] p-4 sm:h-[420px] sm:p-5"
+                  >
+                    <VideoPerformanceScatter
+                      videos={data.baseChannel.videos}
+                      competitorVideos={selectedRival?.videos || []}
+                      youLabel="You"
+                      rivalLabel={selectedRival?.title?.slice(0, 16) || 'Rival'}
+                    />
+                  </DashPanel>
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <InsightCard
+                      title="Numeric titles"
+                      value={`${Math.round(
+                        (insights.contentHints.withNumbers /
+                          insights.contentHints.total) *
+                          100
+                      )}%`}
+                      desc="Of sampled titles include numbers — strong CTR pattern in this niche."
+                      icon={BarChart3}
+                    />
+                    <InsightCard
+                      title="How-to / guides"
+                      value={`${Math.round(
+                        (insights.contentHints.withHow / insights.contentHints.total) *
+                          100
+                      )}%`}
+                      desc="Educational framing share across you + rivals."
+                      icon={Target}
+                    />
+                    <InsightCard
+                      title="React / vs formats"
+                      value={`${Math.round(
+                        (insights.contentHints.withVs / insights.contentHints.total) *
+                          100
+                      )}%`}
+                      desc="Response-style packaging in the current sample."
+                      icon={Zap}
+                    />
+                  </div>
+
+                  {insights.you.topTitle && (
+                    <DashPanel title="Your top recent video" icon={Video} bodyClassName="p-5">
+                      <p className="text-sm font-semibold text-white">
+                        {insights.you.topTitle}
+                      </p>
+                      <p className="mt-2 text-xs text-zinc-500">
+                        Highest views in the loaded sample — reverse-engineer hooks and packaging here.
+                      </p>
+                    </DashPanel>
+                  )}
+                </>
+              )}
+
+              {/* ── GROWTH / BENCHMARKS ─────────────────────────────── */}
+              {activeTab === 'growth' && (
+                <>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-600">
+                      Metric
+                    </span>
+                    {[
+                      { id: 'views', label: 'Total views' },
+                      { id: 'subs', label: 'Subscribers' },
+                      { id: 'vpv', label: 'Views / video' },
+                      { id: 'efficiency', label: 'Views / sub' },
+                    ].map((m) => (
+                      <DashChip
+                        key={m.id}
+                        active={barMetric === m.id}
+                        onClick={() => setBarMetric(m.id)}
+                      >
+                        {m.label}
+                      </DashChip>
+                    ))}
+                  </div>
+
+                  <DashPanel
+                    title="Channel benchmarks"
+                    icon={TrendingUp}
+                    bodyClassName="h-80 p-4 sm:p-5"
+                  >
+                    <CompetitorBarComparison
+                      channels={[data.baseChannel, ...data.competitors]}
+                      metric={barMetric}
+                    />
+                  </DashPanel>
+
+                  <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                    <DashPanel title="Relative position" icon={Gauge} bodyClassName="divide-y divide-white/[0.04]">
+                      {insights.bySubs.map((row) => {
+                        const delta = row.stats.subs - insights.you.subs;
+                        return (
+                          <div
+                            key={row.id || row.title}
+                            className="flex items-center justify-between gap-3 px-4 py-3.5 sm:px-5"
+                          >
+                            <div className="flex min-w-0 items-center gap-2.5">
+                              <Avatar ch={row.isYou ? data.baseChannel : row} size={7} />
+                              <span className="truncate text-sm font-medium text-zinc-200">
+                                {row.isYou ? 'You' : row.title}
+                              </span>
                             </div>
-                            <span className="text-xs font-bold text-green-500">+12% / mo</span>
+                            {row.isYou ? (
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-[#00f0ff]">
+                                baseline
+                              </span>
+                            ) : (
+                              <span
+                                className={`inline-flex items-center gap-1 text-xs font-bold tabular-nums ${
+                                  delta > 0 ? 'text-orange-400' : 'text-emerald-400'
+                                }`}
+                              >
+                                {delta > 0 ? (
+                                  <ArrowUpRight className="h-3.5 w-3.5" />
+                                ) : delta < 0 ? (
+                                  <ArrowDownRight className="h-3.5 w-3.5" />
+                                ) : (
+                                  <Minus className="h-3.5 w-3.5" />
+                                )}
+                                {delta > 0 ? '+' : ''}
+                                {formatNumber(delta)}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </DashPanel>
+
+                    <DashPanel title="What to do next" icon={Target} bodyClassName="space-y-3 p-5">
+                      <ActionTip
+                        n={1}
+                        text={
+                          insights.gapToLeader > 0
+                            ? `Close the ${formatNumber(insights.gapToLeader)} sub gap to the nearest leader with consistent weekly uploads.`
+                            : 'You lead on subs — double down on formats with your highest recent avg views.'
+                        }
+                      />
+                      <ActionTip
+                        n={2}
+                        text={
+                          insights.bestEff && !insights.bestEff.isYou
+                            ? `Study ${insights.bestEff.title}'s packaging — they convert viewers to long-term reach better (${insights.bestEff.stats.viewsPerSub.toFixed(1)}x).`
+                            : 'You lead views-per-sub — protect that efficiency; avoid dead-weight series.'
+                        }
+                      />
+                      <ActionTip
+                        n={3}
+                        text={`Open Content tab and compare scatter vs a peer — steal winning view/like ratios.`}
+                      />
+                    </DashPanel>
+                  </div>
+                </>
+              )}
+
+              {/* ── AUDIENCE ───────────────────────────────────────── */}
+              {activeTab === 'audience' && (
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+                  <DashPanel
+                    title="Your engagement mix"
+                    icon={PieChart}
+                    className="lg:col-span-7"
+                    bodyClassName="h-80 p-4 sm:p-5"
+                  >
+                    {(data.baseChannel.videos || []).length > 0 ? (
+                      <EngagementPieChart videos={data.baseChannel.videos} />
+                    ) : (
+                      <p className="flex h-full items-center justify-center text-sm text-zinc-600">
+                        No video sample loaded for engagement mix.
+                      </p>
+                    )}
+                  </DashPanel>
+
+                  <div className="space-y-3 lg:col-span-5">
+                    <DashKpi
+                      label="Avg engagement"
+                      value={`${insights.you.avgEng.toFixed(2)}%`}
+                      icon={Heart}
+                      tone="text-pink-400"
+                      sub="Likes + comments / views"
+                    />
+                    <DashKpi
+                      label="Avg recent views"
+                      value={formatNumber(insights.you.avgRecent)}
+                      icon={Eye}
+                      tone="text-[#00f0ff]"
+                      sub="From loaded uploads"
+                    />
+                    <DashKpi
+                      label="Library size"
+                      value={formatNumber(insights.you.videos)}
+                      icon={Video}
+                      sub={`${formatNumber(insights.you.viewsPerVideo)} views / video lifetime`}
+                    />
+
+                    <DashPanel title="Vs rivals (engagement)" bodyClassName="divide-y divide-white/[0.04]">
+                      {[
+                        { label: 'You', stats: insights.you, you: true },
+                        ...insights.rivals.map((r) => ({
+                          label: r.title,
+                          stats: r.stats,
+                          you: false,
+                        })),
+                      ]
+                        .sort((a, b) => b.stats.avgEng - a.stats.avgEng)
+                        .map((row) => (
+                          <div
+                            key={row.label}
+                            className="flex items-center justify-between px-4 py-3"
+                          >
+                            <span
+                              className={`truncate text-xs font-semibold ${
+                                row.you ? 'text-[#00f0ff]' : 'text-zinc-300'
+                              }`}
+                            >
+                              {row.you ? 'You' : row.label}
+                            </span>
+                            <span className="text-xs font-bold tabular-nums text-zinc-200">
+                              {row.stats.avgEng.toFixed(2)}%
+                            </span>
                           </div>
                         ))}
-                      </div>
-                    </div>
-                    <div className="p-8 rounded-2xl bg-blue-600/10 border border-blue-500/20 flex flex-col justify-center text-center">
-                       <Zap className="w-8 h-8 text-blue-500 mx-auto mb-6" />
-                       <h4 className="text-lg font-bold mb-2 tracking-tight">Predictive Insight</h4>
-                       <p className="text-sm text-zinc-400 leading-relaxed max-w-xs mx-auto">
-                         Based on current velocity, you are on track to outpace 2/4 identified rivals by Q4 2026.
-                       </p>
-                    </div>
+                    </DashPanel>
                   </div>
                 </div>
-              )}
-
-              {activeTab === 'audience' && (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                  <div className="lg:col-span-7 p-8 rounded-2xl bg-zinc-900/30 border border-zinc-800 backdrop-blur-sm">
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-10 flex items-center gap-2">
-                      <PieChart className="w-4 h-4" /> Audience Engagement
-                    </h3>
-                    <div className="h-80 relative">
-                      <EngagementPieChart videos={data.baseChannel.videos} />
-                    </div>
-                  </div>
-
-                  <div className="lg:col-span-5 space-y-6">
-                    <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-600">Reach Distribution</h4>
-                    <div className="space-y-8 p-8 rounded-2xl bg-zinc-900/30 border border-zinc-800">
-                      <AudienceMetric label="Retention Score" value="84%" color="bg-green-500" />
-                      <AudienceMetric label="Click-Through Rate" value="6.2%" color="bg-blue-500" />
-                      <AudienceMetric label="Conversion Velocity" value="3.1%" color="bg-purple-500" />
-                      <AudienceMetric label="Community Loyalty" value="72%" color="bg-orange-500" />
-                    </div>
-                  </div>
-                </div>
-              )}
-                </>
               )}
             </motion.div>
           )}
         </AnimatePresence>
-
-        {error && (
-          <div className="mt-8 p-6 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center gap-4 text-red-500">
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
-            <div className="flex-1">
-              <p className="text-sm font-bold uppercase tracking-widest">Mapping Failed</p>
-              <p className="text-xs opacity-70 mt-1">{error}</p>
-            </div>
-          </div>
-        )}
-      </main>
-    </div>
+      </DashBody>
+    </DashPage>
   );
 }
 
-function MetricRow({ label, value }) {
+function Avatar({ ch, size = 8 }) {
+  const dim =
+    size === 7 ? 'h-7 w-7' : size === 10 ? 'h-10 w-10' : size === 12 ? 'h-12 w-12' : 'h-8 w-8';
+  const name = ch?.title || '?';
+  const src =
+    ch?.thumbnail ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=27272a&color=fff`;
   return (
-    <div className="flex justify-between items-end border-b border-black/10 pb-4">
-      <span className="text-[10px] font-bold uppercase tracking-widest opacity-40">{label}</span>
-      <span className="text-xl font-black tracking-tighter">{value}</span>
-    </div>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt=""
+      className={`${dim} shrink-0 rounded-full border border-white/10 object-cover`}
+      referrerPolicy="no-referrer"
+      onError={(e) => {
+        e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=27272a&color=fff`;
+      }}
+    />
   );
 }
 
-function ContentInsightCard({ title, value, desc }) {
+function InsightCard({ title, value, desc, icon: Icon }) {
   return (
-    <div className="p-6 rounded-2xl bg-zinc-900/30 border border-zinc-800">
-      <p className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest mb-4">{title}</p>
-      <h4 className="text-base font-bold text-white mb-2">{value}</h4>
-      <p className="text-xs text-zinc-500 leading-relaxed">{desc}</p>
-    </div>
-  );
-}
-
-function AudienceMetric({ label, value, color }) {
-  return (
-    <div className="space-y-2">
-      <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
-        <span className="text-zinc-500">{label}</span>
-        <span className="text-white">{value}</span>
+    <div className="rounded-2xl border border-white/[0.07] bg-zinc-950/50 p-4 sm:p-5">
+      <div className="mb-3 flex items-center gap-2">
+        {Icon && <Icon className="h-3.5 w-3.5 text-zinc-500" />}
+        <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-zinc-600">
+          {title}
+        </p>
       </div>
-      <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
-        <div className={`h-full ${color}`} style={{ width: value }} />
-      </div>
+      <p className="line-clamp-1 font-display text-lg tracking-tight text-white">
+        {value || '—'}
+      </p>
+      {desc && (
+        <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">{desc}</p>
+      )}
     </div>
   );
 }
 
-function CompetitorCard({ comp, baseSubs, onSave }) {
-  const compSubs = parseInt(comp.statistics.subscriberCount);
-  const diff = compSubs - baseSubs;
-  const isLeader = compSubs > baseSubs;
+function ActionTip({ n, text }) {
+  return (
+    <div className="flex gap-3">
+      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/5 text-[10px] font-bold text-zinc-400">
+        {n}
+      </span>
+      <p className="text-sm leading-relaxed text-zinc-400">{text}</p>
+    </div>
+  );
+}
 
-  const typeColor = comp.matchType === 'Market Leader' ? 'text-orange-500' : 
-                    comp.matchType === 'Growth Target' ? 'text-green-500' : 
-                    'text-blue-500';
+function CompetitorCard({ comp, you, formatNumber, typeColor, onSave }) {
+  const s = comp.stats;
+  const subGap = s.subs - you.subs;
+  const isLeader = subGap > 0;
+  const effDelta = s.viewsPerSub - you.viewsPerSub;
 
   return (
-    <div className="group p-6 rounded-2xl bg-zinc-900/30 border border-zinc-800 hover:bg-zinc-900/50 transition-all flex flex-col gap-6">
-      <div className="flex justify-between items-start">
-        <div className="flex items-center gap-4">
-          <img 
-            src={comp.thumbnail || `https://ui-avatars.com/api/?name=${encodeURIComponent(comp.title)}&background=27272a&color=fff`} 
-            className="w-12 h-12 rounded-full grayscale group-hover:grayscale-0 transition-all" 
-            alt="" 
-            referrerPolicy="no-referrer"
-            onError={(e) => {
-              e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(comp.title)}&background=27272a&color=fff`;
-            }}
-          />
-          <div>
-            <h4 className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors line-clamp-1">{comp.title}</h4>
-            <span className={`text-[9px] font-black uppercase tracking-widest ${typeColor}`}>
+    <div className="group flex flex-col gap-4 rounded-2xl border border-white/[0.07] bg-zinc-950/50 p-5 transition-colors hover:border-white/15">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <Avatar ch={comp} size={10} />
+          <div className="min-w-0">
+            <h4 className="truncate text-sm font-semibold text-white group-hover:text-[#93e9ff]">
+              {comp.title}
+            </h4>
+            <span
+              className={`mt-1 inline-flex rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${typeColor(
+                comp.matchType
+              )}`}
+            >
               {comp.matchType}
             </span>
           </div>
         </div>
-        <button 
-          onClick={onSave}
-          className="p-2 rounded-xl bg-zinc-800 text-zinc-500 hover:text-white hover:bg-zinc-700 transition-all"
-        >
-          <Plus className="w-4 h-4" />
-        </button>
+        <div className="flex shrink-0 gap-1">
+          {comp.customUrl || comp.id ? (
+            <a
+              href={`https://youtube.com/channel/${comp.id}`}
+              target="_blank"
+              rel="noreferrer"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] text-zinc-500 hover:text-white"
+              title="Open on YouTube"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          ) : null}
+          <button
+            type="button"
+            onClick={onSave}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] text-zinc-500 transition-all hover:bg-white hover:text-black"
+            title="Save to library"
+          >
+            <Plus className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="p-4 rounded-2xl bg-black/40 border border-white/5">
-          <p className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest mb-1">Reach Gap</p>
-          <p className={`text-sm font-black ${isLeader ? 'text-orange-400' : 'text-green-400'}`}>
-            {isLeader ? '+' : ''}{Math.abs(diff) >= 1000000 ? (diff/1000000).toFixed(1) + 'M' : Math.abs(diff).toLocaleString()}
-          </p>
-        </div>
-        <div className="p-4 rounded-2xl bg-black/40 border border-white/5">
-          <p className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest mb-1">Efficiency</p>
-          <p className="text-sm font-black text-white">
-            {(parseInt(comp.statistics.viewCount)/compSubs).toFixed(1)}x
-          </p>
-        </div>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <MiniStat
+          label="Subs"
+          value={formatNumber(s.subs)}
+          hint={
+            <span className={isLeader ? 'text-orange-400' : 'text-emerald-400'}>
+              {isLeader ? '+' : ''}
+              {formatNumber(subGap)} vs you
+            </span>
+          }
+        />
+        <MiniStat label="Views" value={formatNumber(s.views)} />
+        <MiniStat
+          label="Efficiency"
+          value={`${s.viewsPerSub.toFixed(1)}x`}
+          hint={
+            <span className={effDelta >= 0 ? 'text-orange-400' : 'text-emerald-400'}>
+              {effDelta >= 0 ? '+' : ''}
+              {effDelta.toFixed(1)} vs you
+            </span>
+          }
+        />
+        <MiniStat
+          label="Engagement"
+          value={`${s.avgEng.toFixed(2)}%`}
+          hint="Recent sample"
+        />
       </div>
+
+      <div className="flex flex-wrap gap-3 border-t border-white/[0.05] pt-3 text-[10px] font-bold uppercase tracking-wider text-zinc-600">
+        <span className="inline-flex items-center gap-1">
+          <Video className="h-3 w-3" /> {formatNumber(s.videos)} videos
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <Eye className="h-3 w-3" /> {formatNumber(s.avgRecent)} avg recent
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function MiniStat({ label, value, hint }) {
+  return (
+    <div className="rounded-xl border border-white/[0.05] bg-black/30 px-2.5 py-2.5">
+      <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-600">
+        {label}
+      </p>
+      <p className="mt-0.5 text-sm font-bold tabular-nums text-white">{value}</p>
+      {hint && (
+        <div className="mt-0.5 text-[9px] font-bold uppercase tracking-wider text-zinc-600">
+          {hint}
+        </div>
+      )}
     </div>
   );
 }

@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import { calculateViralityScore } from "@/lib/ranking/virality";
 import VideoCard from "./components/VideoCard";
 import VideoDetailsModal from "./components/VideoDetailsModal";
-import { Search, Zap, BarChart3, TrendingUp, Target, LayoutDashboard, Users, SlidersHorizontal } from 'lucide-react';
+import { Search, Zap, BarChart3, TrendingUp, Target, Users, SlidersHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { LoadingToast } from "./components/dashboard/ui";
 
 export default function Home() {
   const [query, setQuery] = useState("");
@@ -120,52 +121,24 @@ export default function Home() {
         formatNumber={formatNumber} 
       />
 
-      <div className={`transition-all duration-700 ease-in-out ${hasSearched ? 'pt-0' : 'pt-20 md:pt-32'}`}>
-        <header className={`max-w-5xl mx-auto text-center transition-all duration-700 ${hasSearched ? 'opacity-0 h-0 overflow-hidden mb-0' : 'opacity-100 mb-16'}`}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-6"
-          >
-            <LayoutDashboard className="w-3.5 h-3.5 text-geist-success" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-accents-4">Dashboard</span>
-          </motion.div>
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="font-display text-4xl md:text-6xl tracking-tight mb-4 text-white uppercase"
-          >
-            Content Insights
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-accents-5 text-base md:text-lg max-w-2xl mx-auto font-medium"
-          >
-            Discover high-performing content and track market trends in real-time.
-          </motion.p>
-        </header>
-
-        <section className={`sticky top-0 z-[45] transition-all duration-700 border-b ${hasSearched ? 'w-full bg-black/80 backdrop-blur-md border-white/5 py-4 px-6 md:px-10' : 'max-w-2xl mx-auto px-6 border-transparent'}`}>
-          <form onSubmit={handleSearch} className={`relative group mx-auto transition-all duration-700 ${hasSearched ? 'max-w-[1600px]' : 'w-full'}`}>
-            <div className="relative flex items-center bg-black border border-white/10 rounded-2xl overflow-hidden focus-within:border-white/20 transition-all duration-300 shadow-2xl">
-              <div className="absolute inset-0 opacity-[0.03] group-focus-within:opacity-[0.08] transition-opacity bg-gradient-to-r from-geist-success via-[#00f0ff] to-geist-success animate-logo-gradient pointer-events-none" />
-              <div className="pl-6 text-accents-4 shrink-0 relative z-10"><Search className="w-5 h-5" /></div>
+      <div className={`transition-all duration-500 ease-out ${hasSearched ? 'pt-0' : 'flex min-h-[55vh] flex-col justify-center pt-6 md:min-h-[50vh] md:pt-10'}`}>
+        <section className={`z-[45] transition-all duration-500 ${hasSearched ? 'sticky top-0 w-full border-b border-white/[0.06] bg-black/80 py-3 px-4 backdrop-blur-xl sm:px-6' : 'mx-auto w-full max-w-2xl border-transparent px-6'}`}>
+          <form onSubmit={handleSearch} className={`relative group mx-auto transition-all duration-500 ${hasSearched ? 'max-w-[1600px]' : 'w-full'}`}>
+            <div className="relative flex items-center overflow-hidden rounded-2xl border border-white/[0.08] bg-zinc-950/60 transition-all duration-300 focus-within:border-white/20">
+              <div className="relative z-10 shrink-0 pl-4 text-zinc-500 sm:pl-5"><Search className="h-4 w-4 sm:h-5 sm:w-5" /></div>
               <input 
                 type="text" 
                 placeholder="Search keywords or topics..." 
                 value={query} 
                 onChange={(e) => setQuery(e.target.value)} 
-                className="w-full py-4 px-4 bg-transparent outline-none text-base font-medium placeholder-accents-3 text-white relative z-10" 
+                className="relative z-10 w-full bg-transparent px-3 py-3.5 text-sm font-medium text-white outline-none placeholder-zinc-600 sm:py-4 sm:text-base" 
               />
-              <div className="flex items-center gap-2 pr-2 relative z-10">
+              <div className="relative z-10 flex items-center gap-2 pr-2">
                 {hasSearched && (
                   <button 
                     type="button"
                     onClick={() => setShowFilters(!showFilters)}
-                    className={`p-2 rounded-xl transition-all ${showFilters ? 'bg-white/10 text-white' : 'text-accents-4 hover:text-white'}`}
+                    className={`rounded-xl p-2 transition-all ${showFilters ? 'bg-white/10 text-white' : 'text-zinc-500 hover:text-white'}`}
                   >
                     <SlidersHorizontal className="w-4 h-4" />
                   </button>
@@ -173,7 +146,7 @@ export default function Home() {
                 <button 
                   type="submit" 
                   disabled={loading} 
-                  className="bg-white text-black px-6 py-2 rounded-xl font-bold hover:opacity-90 active:scale-95 transition-all text-sm"
+                  className="rounded-xl bg-white px-4 py-2 text-xs font-bold text-black transition-all hover:bg-zinc-200 active:scale-95 sm:px-5 sm:text-sm"
                 >
                   Search
                 </button>
@@ -243,58 +216,28 @@ export default function Home() {
                 exit={{ opacity: 0, y: -20 }}
                 className="mb-12 space-y-6"
               >
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
                   {[
-                    { label: 'Market Volume', value: formatNumber(results.reduce((acc, item) => acc + parseInt(item.statistics?.viewCount || 0), 0)), sub: 'Total views in niche', icon: BarChart3, color: 'text-white' },
-                    { label: 'Growth Trend', value: results.length > 25 ? 'High' : 'Steady', sub: 'Content momentum', icon: TrendingUp, color: 'text-[#00f0ff]' },
-                    { label: 'Opportunity', value: `${((results.reduce((acc, item) => acc + calculateViralityScore(item).score, 0) / results.length) * (1 - (results.length / 100))).toFixed(0)}%`, sub: 'Viral potential', icon: Target, color: 'text-geist-success' },
+                    { label: 'Market volume', value: formatNumber(results.reduce((acc, item) => acc + parseInt(item.statistics?.viewCount || 0), 0)), sub: 'Total views', icon: BarChart3, tone: 'text-white' },
+                    { label: 'Growth trend', value: results.length > 25 ? 'High' : 'Steady', sub: 'Momentum', icon: TrendingUp, tone: 'text-[#00f0ff]' },
+                    { label: 'Opportunity', value: `${((results.reduce((acc, item) => acc + calculateViralityScore(item).score, 0) / results.length) * (1 - (results.length / 100))).toFixed(0)}%`, sub: 'Viral potential', icon: Target, tone: 'text-emerald-400' },
+                    { label: 'Avg performance', value: formatNumber(results.reduce((acc, item) => acc + parseInt(item.statistics?.viewCount || 0), 0) / results.length), sub: 'Views / video', icon: Zap, tone: 'text-zinc-200' },
+                    { label: 'Engagement', value: `${(results.reduce((acc, item) => acc + parseFloat(calculateViralityScore(item).engagement), 0) / results.length).toFixed(2)}%`, sub: 'Likes+comments', icon: TrendingUp, tone: 'text-orange-400' },
+                    { label: 'Channels', value: new Set(results.map(i => i.snippet.channelId || i.snippet.channelTitle)).size, sub: 'Unique creators', icon: Users, tone: 'text-zinc-200' },
                   ].map((stat, i) => (
-                    <div key={i} className="bg-white/[0.02] border border-white/5 p-6 rounded-2xl relative overflow-hidden group">
-                      <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                        <stat.icon className="w-12 h-12" />
+                    <div key={i} className="rounded-2xl border border-white/[0.07] bg-zinc-950/50 p-4 sm:p-5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-zinc-600">{stat.label}</p>
+                          <p className={`mt-1.5 font-display text-xl tracking-tight sm:text-2xl ${stat.tone}`}>{stat.value}</p>
+                          <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-zinc-600">{stat.sub}</p>
+                        </div>
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.06] bg-black/40">
+                          <stat.icon className={`h-3.5 w-3.5 ${stat.tone}`} />
+                        </div>
                       </div>
-                      <p className="text-[10px] font-bold text-accents-4 uppercase tracking-wider mb-2">{stat.label}</p>
-                      <div className={`text-3xl font-bold tracking-tight mb-1 ${stat.color}`}>{stat.value}</div>
-                      <p className="text-[10px] text-accents-3 font-medium">{stat.sub}</p>
                     </div>
                   ))}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-white/[0.01] border border-white/5 p-5 rounded-2xl flex items-center justify-between group">
-                    <div>
-                      <p className="text-[10px] font-bold text-accents-4 uppercase tracking-wider mb-1">Avg Performance</p>
-                      <div className="text-xl font-bold text-white">{formatNumber(results.reduce((acc, item) => acc + parseInt(item.statistics?.viewCount || 0), 0) / results.length)}</div>
-                    </div>
-                    <div className="flex items-end gap-1 h-8 opacity-40 group-hover:opacity-100 transition-opacity">
-                      {[0.3, 0.6, 0.4, 0.8, 0.5].map((h, i) => <div key={i} className="w-1 bg-geist-success rounded-t-sm" style={{ height: `${h * 100}%` }}></div>)}
-                    </div>
-                  </div>
-
-                  <div className="bg-white/[0.01] border border-white/5 p-5 rounded-2xl flex items-center justify-between group">
-                    <div>
-                      <p className="text-[10px] font-bold text-accents-4 uppercase tracking-wider mb-1">Niche Engagement</p>
-                      <div className="text-xl font-bold text-white">{(results.reduce((acc, item) => acc + parseFloat(calculateViralityScore(item).engagement), 0) / results.length).toFixed(2)}%</div>
-                    </div>
-                    <div className="w-8 h-8 rounded-full border-2 border-white/10 flex items-center justify-center relative">
-                      <div className="absolute inset-0 border-2 border-[#00f0ff] rounded-full border-t-transparent group-hover:rotate-180 transition-transform duration-1000"></div>
-                      <Zap className="w-3 h-3 text-[#00f0ff]" />
-                    </div>
-                  </div>
-
-                  <div className="bg-white/[0.01] border border-white/5 p-5 rounded-2xl flex items-center justify-between group">
-                    <div>
-                      <p className="text-[10px] font-bold text-accents-4 uppercase tracking-wider mb-1">Unique Channels</p>
-                      <div className="text-xl font-bold text-white">{new Set(results.map(i => i.snippet.channelId || i.snippet.channelTitle)).size}</div>
-                    </div>
-                    <div className="flex -space-x-2">
-                      {[...Array(3)].map((_, i) => (
-                        <div key={i} className="w-6 h-6 rounded-full bg-white/10 border border-black flex items-center justify-center text-[8px] font-bold text-white uppercase">
-                          <Users className="w-3 h-3" />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
                 </div>
               </motion.section>
             )}
@@ -340,21 +283,7 @@ export default function Home() {
         </div>
       </div>
 
-      <AnimatePresence>
-        {loading && (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-8 right-8 z-[100]"
-          >
-            <div className="flex items-center gap-3 bg-black border border-white/10 px-5 py-3 rounded-full shadow-2xl backdrop-blur-md">
-              <div className="w-3 h-3 rounded-full bg-geist-success animate-pulse" />
-              <span className="text-[10px] font-bold text-accents-4 uppercase tracking-wider">{loadingText}</span>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <LoadingToast show={loading} label={loadingText} progress={loadingStage} />
     </div>
   );
 }

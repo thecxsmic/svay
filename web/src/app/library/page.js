@@ -22,7 +22,6 @@ import {
   Target, 
   Activity, 
   Check, 
-  Loader2,
   Archive,
   Layers,
   SearchCode,
@@ -34,6 +33,16 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import ResearchNotesModal from '../components/ResearchNotesModal';
 import VideoDetailsModal from '../components/VideoDetailsModal';
+import {
+  EmptyState,
+  DashPage,
+  DashToolbar,
+  DashBody,
+  DashButton,
+  SkeletonGrid,
+  FadeIn,
+  MetaChip,
+} from '../components/dashboard/ui';
 
 export default function LibraryPage() {
   const router = useRouter();
@@ -260,102 +269,73 @@ export default function LibraryPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black">
-      {/* Sticky Header Navigation */}
-      <nav className="sticky top-0 z-50 border-b border-zinc-800 bg-black/80 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
-              <Layers className="w-5 h-5 text-black" />
+    <DashPage>
+      <DashToolbar
+        left={
+          <>
+            <MetaChip icon={Layers}>
+              {filteredItems.length} item{filteredItems.length === 1 ? "" : "s"}
+            </MetaChip>
+            <div className="relative hidden md:block group">
+              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-500 group-focus-within:text-white" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search vault..."
+                className="h-9 w-56 rounded-full border border-white/[0.08] bg-white/[0.03] pl-9 pr-4 text-xs text-white outline-none transition-colors placeholder:text-zinc-600 focus:border-white/20"
+              />
             </div>
-            <h1 className="text-lg font-medium tracking-tight">Research Hub</h1>
+          </>
+        }
+        mobileLeft={
+          <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5">
+            <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-600">
+              Vault
+            </p>
+            <p className="mt-0.5 text-sm font-semibold text-white">
+              {filteredItems.length} item{filteredItems.length === 1 ? "" : "s"}
+            </p>
           </div>
-          
-          <div className="flex items-center gap-4">
-             <div className="relative hidden md:block group">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500 group-focus-within:text-white transition-colors" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search vault..."
-                  className="bg-zinc-900/50 border border-zinc-800 rounded-full h-9 pl-9 pr-4 text-xs focus:outline-none focus:border-zinc-700 transition-all w-64 placeholder:text-zinc-600"
-                />
-             </div>
-             <button
-               onClick={fetchItems}
-               className="h-9 px-4 rounded-full bg-zinc-900 border border-zinc-800 text-xs font-bold uppercase tracking-widest text-zinc-400 hover:text-white hover:border-zinc-700 transition-all flex items-center gap-2"
-             >
-               <Activity className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-               <span className="hidden sm:inline">Refresh</span>
-             </button>
-          </div>
-        </div>
+        }
+        tabItems={TABS.map((t) => ({ id: t.id, label: t.label, icon: t.icon }))}
+        tabValue={filter}
+        onTabChange={setFilter}
+      >
+        <DashButton
+          variant="secondary"
+          size="sm"
+          onClick={fetchItems}
+          disabled={loading}
+          className="!h-10 !px-2.5 sm:!h-9 sm:!px-3.5"
+        >
+          <Activity className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+          <span className="hidden sm:inline">Refresh</span>
+        </DashButton>
+      </DashToolbar>
 
-        {/* Tab Filters */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex gap-8 overflow-x-auto no-scrollbar">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setFilter(tab.id)}
-              className={`flex items-center gap-2 pb-3 pt-4 text-[10px] uppercase font-bold tracking-[0.2em] transition-all relative whitespace-nowrap ${
-                filter === tab.id ? "text-white" : "text-zinc-500 hover:text-zinc-300"
-              }`}
-            >
-              <tab.icon className="w-3.5 h-3.5" />
-              {tab.label}
-              {filter === tab.id && (
-                <motion.div 
-                  layoutId="library-tab-underline"
-                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-white rounded-full" 
-                />
-              )}
-            </button>
-          ))}
-        </div>
-      </nav>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-12 pb-32">
+      <DashBody className="pb-32">
         <AnimatePresence mode="wait">
           {loading ? (
-            <motion.div
-              key="loading"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center py-40"
-            >
-              <div className="w-64 space-y-4">
-                <div className="flex justify-between text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-600">
-                  <span>Accessing Vault</span>
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                </div>
-                <div className="h-px w-full bg-zinc-900 overflow-hidden">
-                  <motion.div 
-                    initial={{ x: '-100%' }}
-                    animate={{ x: '100%' }}
-                    transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
-                    className="h-full w-full bg-white/20"
-                  />
-                </div>
-              </div>
-            </motion.div>
+            <FadeIn key="loading">
+              <SkeletonGrid count={6} />
+            </FadeIn>
           ) : filteredItems.length > 0 ? (
             <motion.div
               key="grid"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+              className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
             >
               {filteredItems.map((item, idx) => (
                 <motion.div
                   key={item.id}
                   layout
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.05 }}
+                  transition={{ delay: idx * 0.03 }}
                   onClick={() => handleEdit(item)}
-                  className="group p-8 rounded-[2rem] bg-zinc-900/30 border border-zinc-800 hover:bg-zinc-900/50 hover:border-zinc-700 transition-all flex flex-col relative overflow-hidden cursor-pointer"
+                  className="group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-white/[0.07] bg-zinc-950/50 p-5 transition-colors hover:border-white/15 hover:bg-zinc-950 sm:p-6"
                 >
                   {/* Item Type Badge */}
                   <div className="flex items-center justify-between mb-8">
@@ -466,31 +446,24 @@ export default function LibraryPage() {
               ))}
             </motion.div>
           ) : (
-            <motion.div
+            <EmptyState
               key="empty"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="py-48 flex flex-col items-center text-center"
-            >
-              <div className="w-24 h-24 bg-zinc-900/50 border border-zinc-800 rounded-full flex items-center justify-center mb-10 group overflow-hidden relative">
-                 <div className="absolute inset-0 bg-white/5 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
-                 <BookOpen className="w-10 h-10 text-zinc-700 group-hover:text-white transition-colors relative z-10" />
-              </div>
-              <h2 className="text-2xl font-bold tracking-tight mb-4 text-zinc-300">Vault is empty</h2>
-              <p className="text-zinc-600 text-sm max-w-sm mx-auto leading-relaxed font-medium">
-                Save analyzed channels, viral patterns, or custom research ideas to build your competitive edge.
-              </p>
-              <Link 
-                href="/radar"
-                className="mt-10 px-8 py-3 bg-white text-black text-xs font-black uppercase tracking-[0.2em] rounded-full hover:bg-zinc-200 transition-all inline-block"
-              >
-                Scan for Trends
-              </Link>
-            </motion.div>
+              icon={BookOpen}
+              title="Vault is empty"
+              description="Save analyzed channels, viral patterns, or custom research ideas to build your competitive edge."
+              action={
+                <Link
+                  href="/radar"
+                  className="inline-flex items-center rounded-full bg-white px-8 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-black transition-colors hover:bg-zinc-200"
+                >
+                  Scan for Trends
+                </Link>
+              }
+            />
           )}
         </AnimatePresence>
 
-        <ResearchNotesModal 
+        <ResearchNotesModal
           isOpen={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
           item={selectedItem}
@@ -508,9 +481,9 @@ export default function LibraryPage() {
           selectedVideo={selectedVideoModal}
           setSelectedVideo={setSelectedVideoModal}
           formatNumber={formatNumber}
-          filters={{ region: 'US' }}
+          filters={{ region: "US" }}
         />
-      </main>
-    </div>
+      </DashBody>
+    </DashPage>
   );
 }

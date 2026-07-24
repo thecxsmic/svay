@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, Lock, UserPlus, Crown, Loader2 } from "lucide-react";
+import { AlertTriangle, Lock, UserPlus, Crown } from "lucide-react";
 import { formatReset } from "./useToolsQuota";
+import { BrandOrb } from "../dashboard/ui";
 
 /**
  * Account tier + daily remaining + upgrade CTAs for free tools.
@@ -10,8 +11,8 @@ import { formatReset } from "./useToolsQuota";
 export default function ToolsQuotaBanner({ quota, loading, blockedError }) {
   if (loading && !quota) {
     return (
-      <div className="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-950/50 px-4 py-3 text-[11px] text-zinc-500">
-        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+      <div className="flex items-center gap-2.5 rounded-lg border border-zinc-800 bg-zinc-950/50 px-4 py-3 text-[11px] text-zinc-500">
+        <BrandOrb size="xs" pulse />
         Checking account limits…
       </div>
     );

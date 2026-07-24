@@ -5,13 +5,14 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, Save, Trash2, Video, User, Lightbulb, 
-  BarChart3, FileText, Loader2, Eye, Users, TrendingUp, 
+  BarChart3, FileText, Eye, Users, TrendingUp, 
   Calendar, Target, Zap, Activity, ExternalLink, MessageSquare, 
   ThumbsUp, Flame, Rocket, Edit3, Radio, ShieldCheck, 
   History, Globe, Cpu, Network, ChevronRight, Check, Trophy
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import 'react-quill-new/dist/quill.snow.css';
+import { PageLoader, ButtonSpinner } from '../../components/dashboard/ui';
 
 // Dynamically import ReactQuill to avoid SSR issues
 const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
@@ -311,12 +312,7 @@ export default function NotePage({ params }) {
   }), []);
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-4">
-        <Loader2 className="w-6 h-6 text-zinc-500 animate-spin" />
-        <p className="text-xs font-medium text-zinc-600 uppercase tracking-[0.2em]">Loading research...</p>
-      </div>
-    );
+    return <PageLoader label="Loading research…" />;
   }
 
   return (
@@ -346,7 +342,7 @@ export default function NotePage({ params }) {
                 className="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
                 title="Delete Note"
               >
-                {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                {deleting ? <ButtonSpinner className="h-4 w-4" /> : <Trash2 className="w-4 h-4" />}
               </button>
               <button
                 onClick={handleSave}
@@ -359,7 +355,7 @@ export default function NotePage({ params }) {
               >
                 {saving ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <ButtonSpinner className="h-4 w-4" />
                     <span>Saving...</span>
                   </>
                 ) : saveSuccess ? (
@@ -421,7 +417,7 @@ export default function NotePage({ params }) {
                           exit={{ opacity: 0, x: 10 }}
                           className="flex items-center gap-2 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full"
                        >
-                          <Loader2 className="w-3 h-3 text-blue-500 animate-spin" />
+                          <ButtonSpinner className="h-3 w-3 text-blue-500" />
                           <span className="text-[9px] font-bold text-blue-500 uppercase tracking-widest">Saving...</span>
                        </motion.div>
                     )}

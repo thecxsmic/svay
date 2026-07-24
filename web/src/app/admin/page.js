@@ -345,7 +345,11 @@ export default function AdminPage() {
   if (!isLoaded) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-brand-volt animate-spin" />
+        <div className="relative flex h-16 w-16 items-center justify-center">
+          <span className="dash-ring absolute inset-0 rounded-full border border-white/10" />
+          <span className="dash-ring-delay absolute inset-1 rounded-full border border-white/5" />
+          <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-geist-success via-[#00f0ff] to-geist-success animate-logo-gradient dash-orb-pulse shadow-[0_0_18px_rgba(0,112,243,0.4)]" role="status" aria-label="Loading" />
+        </div>
       </div>
     );
   }

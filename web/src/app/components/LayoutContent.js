@@ -4,14 +4,15 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserButton } from "@clerk/nextjs";
-import { Plus, Menu, X, Search, Zap, Users, Trophy, BookOpen, BarChart3, Activity, Radio, HelpCircle, SlidersHorizontal, Trash2, CreditCard, LifeBuoy, Wrench } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Plus, Search, Zap, Users, Trophy, BookOpen, BarChart3, Radio, HelpCircle, SlidersHorizontal, Trash2, CreditCard, LifeBuoy, Wrench, ChevronRight } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useChannel } from '@/contexts/channel';
 import { useUser } from '@/contexts/user';
 import PinnedChannels from "./PinnedChannels";
 import ResearchNotesModal from "./ResearchNotesModal";
 import SetupUserChannelModal from "./SetupUserChannelModal";
 import RemoveUserChannelModal from "./RemoveUserChannelModal";
+import MobileAppShell from "./MobileAppShell";
 
 const navItems = [
   { name: 'Search', href: '/', icon: Search },
@@ -26,11 +27,25 @@ const navItems = [
   { name: 'Docs', href: '/docs', icon: HelpCircle },
 ];
 
+function resolvePageMeta(pathname) {
+  if (pathname === '/') return { title: 'Search', section: 'Intelligence' };
+  if (pathname.startsWith('/radar')) return { title: 'Trend Radar', section: 'Intelligence' };
+  if (pathname.startsWith('/channels')) return { title: 'Channels', section: 'Intelligence' };
+  if (pathname.startsWith('/competitors')) return { title: 'Competitors', section: 'Intelligence' };
+  if (pathname.startsWith('/analytics')) return { title: 'Analytics', section: 'Growth' };
+  if (pathname.startsWith('/library')) return { title: 'Library', section: 'Research' };
+  if (pathname.startsWith('/tools')) return { title: 'Tools', section: 'Utilities' };
+  if (pathname.startsWith('/billing')) return { title: 'Billing', section: 'Account' };
+  if (pathname.startsWith('/support')) return { title: 'Support', section: 'Account' };
+  if (pathname.startsWith('/docs')) return { title: 'Docs', section: 'Help' };
+  if (pathname.startsWith('/admin')) return { title: 'Admin', section: 'Internal' };
+  return { title: 'Dashboard', section: 'Svay' };
+}
+
 export default function LayoutContent({ children, subscription }) {
   const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
   const [isSetupModalOpen, setIsSetupModalOpen] = useState(false);
   const [isRemoveModalOpen, setIsRemoveModalOpen] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { channels, userChannel, selectChannel, loading, refreshChannels } = useChannel();
   const { user } = useUser();
   const [isDemo, setIsDemo] = useState(false);
@@ -54,14 +69,7 @@ export default function LayoutContent({ children, subscription }) {
     window.location.reload();
   };
 
-  // Close mobile menu on route change
-  useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [pathname]);
-
   // Automatically prompt to connect channel if none is connected.
-  // Skip on care pages (support/billing) so paywall users can reach help
-  // without being blocked by the non-dismissible channel setup modal.
   useEffect(() => {
     const isDemoCookie = document.cookie.includes("demo_mode=true");
     const isCarePage =
@@ -71,6 +79,36 @@ export default function LayoutContent({ children, subscription }) {
     }
   }, [loading, userChannel, pathname]);
 
+  const selected = channels.data.find((c) => c.id === channels.selectedId);
+
+  const sharedModals = (
+    <>
+      <ResearchNotesModal 
+        isOpen={isNotesModalOpen} 
+        onClose={() => setIsNotesModalOpen(false)} 
+      />
+
+      {isSetupModalOpen && (
+        <SetupUserChannelModal 
+          onChannelSet={() => {
+            setIsSetupModalOpen(false);
+            refreshChannels();
+          }} 
+        />
+      )}
+
+      {isRemoveModalOpen && (
+        <RemoveUserChannelModal 
+          onClose={() => setIsRemoveModalOpen(false)}
+          onChannelRemoved={() => {
+            setIsRemoveModalOpen(false);
+            refreshChannels();
+          }}
+          channelTitle={userChannel?.title}
+        />
+      )}
+    </>
+  );
 
   const SidebarContent = () => (
     <>
@@ -248,130 +286,164 @@ export default function LayoutContent({ children, subscription }) {
     </>
   );
 
+  const page = resolvePageMeta(pathname);
+
   return (
     <div className="flex h-full overflow-hidden bg-black text-white font-sans selection:bg-geist-success selection:text-white">
-      <ResearchNotesModal 
-        isOpen={isNotesModalOpen} 
-        onClose={() => setIsNotesModalOpen(false)} 
-      />
+      {sharedModals}
 
-      {isSetupModalOpen && (
-        <SetupUserChannelModal 
-          onChannelSet={() => {
-            setIsSetupModalOpen(false);
-            refreshChannels();
-          }} 
-        />
-      )}
+      {/* ═══ MOBILE APP SHELL (phones / Android) ═══ */}
+      <MobileAppShell
+        userChannel={userChannel}
+        isDemo={isDemo}
+        isPromo={isPromo}
+        promoExpiryStr={promoExpiryStr}
+        onOpenNotes={() => setIsNotesModalOpen(true)}
+        onOpenSetup={() => setIsSetupModalOpen(true)}
+        onOpenRemove={() => setIsRemoveModalOpen(true)}
+        onToggleDemo={toggleDemoMode}
+      >
+        <div className="animate-[dash-page-in_0.28s_ease-out]">
+          {children}
+        </div>
+      </MobileAppShell>
 
-      {isRemoveModalOpen && (
-        <RemoveUserChannelModal 
-          onClose={() => setIsRemoveModalOpen(false)}
-          onChannelRemoved={() => {
-            setIsRemoveModalOpen(false);
-            refreshChannels();
-          }}
-          channelTitle={userChannel?.title}
-        />
-      )}
-
-      {/* Desktop Sidebar */}
-      <aside className="w-64 border-r border-accents-2 bg-accents-1 flex flex-col shrink-0 hidden md:flex">
+      {/* ═══ DESKTOP (≥ md) ═══ */}
+      <aside className="hidden w-64 shrink-0 flex-col border-r border-accents-2 bg-accents-1 md:flex">
         <SidebarContent />
       </aside>
 
-      {/* Mobile Menu Overlay */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <>
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] md:hidden"
-            />
-            <motion.aside 
-              initial={{ x: '-100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed inset-y-0 left-0 w-72 bg-accents-1 border-r border-accents-2 z-[101] flex flex-col md:hidden shadow-2xl"
-            >
-              <SidebarContent />
-              <button 
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="absolute top-6 right-4 p-2 text-accents-4 hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
+      <div className="hidden min-w-0 flex-1 flex-col overflow-hidden bg-black md:flex">
+        <header className="relative z-50 shrink-0 border-b border-white/[0.06] bg-black/75 backdrop-blur-xl">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#00f0ff]/30 to-transparent" />
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-black">
-        <header className="h-14 border-b border-accents-2 flex items-center justify-between px-4 md:px-8 bg-black/80 backdrop-blur-md shrink-0 sticky top-0 z-50">
-          <div className="flex items-center gap-4">
-              <button 
-                onClick={() => setIsMobileMenuOpen(true)}
-                className="p-2 -ml-2 text-accents-4 hover:text-white md:hidden transition-colors"
-              >
-                <Menu className="w-5 h-5" />
-              </button>
-              <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-geist-success shadow-[0_0_8px_rgba(0,112,243,0.5)]"></div>
-                <span className="font-display text-xs font-bold text-accents-5 uppercase tracking-tighter">System Online</span>
-              </div>
-          </div>
-          <div className="flex items-center gap-3">
-              {isDemo && (
-                <button 
-                  onClick={toggleDemoMode}
-                  className="flex items-center gap-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/20 px-2.5 py-1 rounded-full text-yellow-500 transition-colors cursor-pointer"
-                  title="Click to Exit Demo Mode"
+          <div className="flex h-[3.75rem] items-center justify-between gap-3 px-6 lg:px-8">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-600">
+                {page.section}
+              </span>
+              <ChevronRight className="h-3 w-3 shrink-0 text-zinc-700" />
+              <h2 className="truncate font-display text-[15px] uppercase tracking-tight text-white">
+                {page.title}
+              </h2>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/[0.07] px-2 py-0.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.7)]" />
+                <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-400/90">
+                  Live
+                </span>
+              </span>
+            </div>
+
+            <div className="flex min-w-0 flex-1 justify-center px-4">
+              {selected || userChannel ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const ch = selected || userChannel;
+                    if (ch?.id) selectChannel(ch.id);
+                  }}
+                  className="group flex max-w-xs items-center gap-2.5 rounded-full border border-white/[0.08] bg-white/[0.03] py-1 pl-1 pr-3 transition-all hover:border-white/15 hover:bg-white/[0.06]"
+                  title="Active research channel"
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse"></span>
-                  <span className="font-display text-[10px] font-bold uppercase tracking-tight">Demo Mode</span>
+                  <div className="h-7 w-7 overflow-hidden rounded-full border border-white/10 bg-zinc-900">
+                    {(selected || userChannel)?.thumbnail ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={(selected || userChannel).thumbnail}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <Radio className="h-3 w-3 text-zinc-600" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0 text-left">
+                    <p className="truncate text-[11px] font-bold text-white">
+                      {(selected || userChannel)?.title || "Channel"}
+                    </p>
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-600 group-hover:text-zinc-500">
+                      Active channel
+                    </p>
+                  </div>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsSetupModalOpen(true)}
+                  className="inline-flex items-center gap-2 rounded-full border border-dashed border-white/10 bg-white/[0.02] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-500 transition-colors hover:border-white/20 hover:text-white"
+                >
+                  <Radio className="h-3.5 w-3.5" />
+                  Connect channel
                 </button>
               )}
+            </div>
+
+            <div className="flex shrink-0 items-center gap-2">
+              {isDemo && (
+                <button
+                  type="button"
+                  onClick={toggleDemoMode}
+                  className="flex items-center gap-1.5 rounded-full border border-yellow-500/25 bg-yellow-500/10 px-2.5 py-1.5 text-yellow-400 transition-colors hover:bg-yellow-500/15"
+                  title="Exit demo mode"
+                >
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-yellow-400" />
+                  <span className="text-[10px] font-bold uppercase tracking-tight">
+                    Demo
+                  </span>
+                </button>
+              )}
+
+              <Link
+                href="/"
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.03] text-zinc-400 transition-colors hover:border-white/15 hover:bg-white/[0.06] hover:text-white"
+                title="Search"
+              >
+                <Search className="h-3.5 w-3.5" />
+              </Link>
+
               <Link
                 href="/support"
-                className="flex items-center justify-center p-1.5 rounded-full border border-white/10 bg-white/5 text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
-                title="Customer care"
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.03] text-zinc-400 transition-colors hover:border-white/15 hover:bg-white/[0.06] hover:text-white"
+                title="Support"
               >
-                <LifeBuoy className="w-3.5 h-3.5" />
+                <LifeBuoy className="h-3.5 w-3.5" />
               </Link>
+
               <Link
                 href="/billing"
-                className="flex items-center gap-2 bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded-full border border-white/10 transition-colors"
+                className="group relative flex h-9 items-center gap-1.5 overflow-hidden rounded-xl border border-[#00f0ff]/20 bg-gradient-to-r from-[#00f0ff]/10 to-[#0070f3]/10 px-3 text-[10px] font-bold uppercase tracking-wider text-white transition-all hover:border-[#00f0ff]/40 hover:from-[#00f0ff]/15 hover:to-[#0070f3]/15"
                 title="Manage subscription"
               >
-                <Zap className="w-3 h-3 text-geist-success" fill="currentColor" />
-                <span className="font-display text-[10px] font-bold text-white uppercase tracking-tight">Pro</span>
+                <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.06] to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                <Zap className="relative h-3 w-3 text-[#00f0ff]" fill="currentColor" />
+                <span className="relative">
+                  {isPromo ? "Promo" : "Pro"}
+                </span>
               </Link>
+            </div>
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto scroll-smooth custom-scrollbar relative bg-black">
-          <div className="max-w-[1600px] mx-auto min-h-full flex flex-col">
-            <div className="flex-1">
+        <main className="relative flex-1 overflow-y-auto scroll-smooth custom-scrollbar bg-black">
+          <div className="mx-auto flex min-h-full max-w-[1600px] flex-col">
+            <div className="flex-1 animate-[dash-page-in_0.28s_ease-out]">
               {children}
             </div>
             
-            <footer className="min-h-[88px] py-6 md:py-0 border-t border-accents-2 px-8 mt-auto flex items-center">
-              <div className="w-full flex flex-col md:flex-row justify-between items-center gap-6">
+            <footer className="mt-auto flex min-h-[88px] items-center border-t border-accents-2 px-8">
+              <div className="flex w-full flex-col items-center justify-between gap-6 md:flex-row">
                 <div className="flex items-center gap-2.5">
-                    <div className="w-4 h-4 bg-white/10 rounded-full flex items-center justify-center">
-                      <div className="w-0 h-0 border-t-[2.5px] border-t-transparent border-l-[4px] border-l-white/40 border-b-[2.5px] border-b-transparent ml-0.5"></div>
+                    <div className="flex h-4 w-4 items-center justify-center rounded-full bg-white/10">
+                      <div className="ml-0.5 h-0 w-0 border-b-[2.5px] border-l-[4px] border-t-[2.5px] border-b-transparent border-l-white/40 border-t-transparent"></div>
                     </div>
-                    <span className="text-[10px] font-medium text-accents-4 tracking-tight">© 2026 Svay Intelligence. All rights reserved.</span>
+                    <span className="text-[10px] font-medium tracking-tight text-accents-4">© 2026 Svay Intelligence. All rights reserved.</span>
                 </div>
                 <div className="flex gap-6 text-[11px] font-medium text-accents-4">
-                    <Link href="/support" className="hover:text-white transition-colors">Support</Link>
-                    <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
-                    <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
+                    <Link href="/support" className="transition-colors hover:text-white">Support</Link>
+                    <Link href="/privacy" className="transition-colors hover:text-white">Privacy</Link>
+                    <Link href="/terms" className="transition-colors hover:text-white">Terms</Link>
                 </div>
               </div>
             </footer>

@@ -5,16 +5,22 @@ import Link from "next/link";
 import { useUser } from "@/contexts/user";
 import {
   LifeBuoy,
-  Loader2,
   Mail,
   MessageSquare,
   BookOpen,
   CreditCard,
   ChevronDown,
-  CheckCircle2,
-  AlertTriangle,
   ExternalLink,
 } from "lucide-react";
+import {
+  DashPage,
+  DashToolbar,
+  DashBody,
+  DashAlert,
+  DashButton,
+  DashPanel,
+  MetaChip,
+} from "../components/dashboard/ui";
 
 const TOPICS = [
   { id: "billing", label: "Billing & plans" },
@@ -118,36 +124,24 @@ export default function SupportPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black">
-      {/* Sticky header — dashboard style */}
-      <nav className="sticky top-0 z-50 border-b border-zinc-800 bg-black/80 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white">
-              <LifeBuoy className="h-5 w-5 text-black" />
-            </div>
-            <div>
-              <h1 className="font-display text-lg uppercase tracking-tight">Support</h1>
-              <p className="hidden text-[10px] font-bold uppercase tracking-widest text-zinc-600 sm:block">
-                Customer care
-              </p>
-            </div>
-          </div>
-          <a
-            href="mailto:help@svay.space"
-            className="inline-flex items-center gap-1.5 rounded-md border border-zinc-800 bg-zinc-950 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-400 transition-colors hover:border-zinc-700 hover:text-white"
-          >
-            <Mail className="h-3 w-3" />
-            help@svay.space
-          </a>
-        </div>
-      </nav>
+    <DashPage>
+      <DashToolbar
+        left={<MetaChip icon={LifeBuoy}>Usually replies in 24h</MetaChip>}
+      >
+        <a
+          href="mailto:help@svay.space"
+          className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 text-[10px] font-bold uppercase tracking-wider text-zinc-400 transition-colors hover:border-white/15 hover:text-white"
+        >
+          <Mail className="h-3 w-3" />
+          help@svay.space
+        </a>
+      </DashToolbar>
 
-      <div className="mx-auto max-w-3xl space-y-6 px-4 py-8 sm:px-6">
+      <DashBody narrow className="space-y-6">
         <p className="text-sm text-zinc-500">
           Quick answers below — or send us a message. We usually reply within 24 hours on business days.
           {!isSignedIn && (
-            <span className="block mt-1 text-xs text-zinc-600">
+            <span className="mt-1 block text-xs text-zinc-600">
               Tip: sign in so we can match your account faster.
             </span>
           )}
@@ -157,10 +151,10 @@ export default function SupportPage() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           {QUICK.map(({ title, desc, href, icon: Icon, external }) => {
             const className =
-              "flex items-start gap-3 rounded-lg border border-zinc-800 bg-zinc-950/50 p-4 transition-colors hover:border-zinc-700 hover:bg-zinc-950";
+              "flex items-start gap-3 rounded-2xl border border-white/[0.07] bg-zinc-950/50 p-4 transition-colors hover:border-white/15 hover:bg-zinc-950";
             const inner = (
               <>
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white/5">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.03]">
                   <Icon className="h-4 w-4 text-zinc-400" />
                 </div>
                 <div className="min-w-0">
@@ -184,14 +178,8 @@ export default function SupportPage() {
           })}
         </div>
 
-        {/* FAQ */}
-        <section className="rounded-lg border border-zinc-800 bg-zinc-950/50">
-          <div className="border-b border-zinc-800/80 px-4 py-3 sm:px-5">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">
-              Common questions
-            </p>
-          </div>
-          <div className="divide-y divide-zinc-800/80">
+        <DashPanel title="Common questions" bodyClassName="">
+          <div className="divide-y divide-white/[0.05]">
             {FAQS.map((item, i) => {
               const open = openFaq === i;
               return (
@@ -225,32 +213,12 @@ export default function SupportPage() {
               );
             })}
           </div>
-        </section>
+        </DashPanel>
 
-        {/* Contact form */}
-        <section className="rounded-lg border border-zinc-800 bg-zinc-950/50">
-          <div className="border-b border-zinc-800/80 px-4 py-3 sm:px-5">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="h-3.5 w-3.5 text-zinc-500" />
-              <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">
-                Message support
-              </p>
-            </div>
-          </div>
-
-          <form onSubmit={onSubmit} className="space-y-4 p-4 sm:p-5">
-            {error && (
-              <div className="flex items-start gap-2 rounded-md border border-red-500/20 bg-red-500/5 px-3 py-2 text-xs text-red-400">
-                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                <p>{error}</p>
-              </div>
-            )}
-            {success && (
-              <div className="flex items-start gap-2 rounded-md border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-xs text-emerald-400">
-                <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                <p>{success}</p>
-              </div>
-            )}
+        <DashPanel title="Message support" icon={MessageSquare} bodyClassName="p-4 sm:p-5">
+          <form onSubmit={onSubmit} className="space-y-4">
+            {error && <DashAlert variant="error">{error}</DashAlert>}
+            {success && <DashAlert variant="success">{success}</DashAlert>}
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <label className="block space-y-1.5">
@@ -318,24 +286,14 @@ export default function SupportPage() {
                   help@svay.space
                 </a>
               </p>
-              <button
-                type="submit"
-                disabled={sending}
-                className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md bg-white px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider text-black transition-colors hover:bg-zinc-200 disabled:opacity-50"
-              >
-                {sending ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <>
-                    <LifeBuoy className="h-3.5 w-3.5" />
-                    Send message
-                  </>
-                )}
-              </button>
+              <DashButton type="submit" disabled={sending} loading={sending}>
+                {!sending && <LifeBuoy className="h-3.5 w-3.5" />}
+                {sending ? "Sending…" : "Send message"}
+              </DashButton>
             </div>
           </form>
-        </section>
-      </div>
-    </div>
+        </DashPanel>
+      </DashBody>
+    </DashPage>
   );
 }

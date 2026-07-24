@@ -8,17 +8,25 @@ import {
   Users, 
   Eye, 
   Video, 
-  ArrowUpRight, 
-  ArrowDownRight, 
   Zap, 
-  Calendar,
   RefreshCw,
-  Info,
   Sparkles,
   Target,
-  Rocket
+  Rocket,
+  Clock,
 } from 'lucide-react';
 import { useChannel } from '@/contexts/channel';
+import {
+  PageLoader,
+  EmptyState,
+  DashPage,
+  DashToolbar,
+  DashBody,
+  DashButton,
+  DashKpi,
+  DashPanel,
+  MetaChip,
+} from '../components/dashboard/ui';
 import { Line, Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -91,6 +99,7 @@ export default function AnalyticsPage() {
   const [error, setError] = useState(null);
   const [syncing, setSyncing] = useState(false);
   const [lastScanTime, setLastScanTime] = useState(null);
+
 
   const fetchData = async () => {
     setLoading(true);
@@ -259,227 +268,242 @@ export default function AnalyticsPage() {
   }, [data, metrics]);
 
   if (loading && !data.channel) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <RefreshCw className="w-8 h-8 text-geist-success animate-spin mb-4" />
-        <p className="text-xs font-bold uppercase tracking-widest text-accents-4">Loading Analytics...</p>
-      </div>
-    );
+    return <PageLoader label="Loading analytics…" />;
   }
 
   if (!userChannel) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6">
-        <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6">
-            <BarChart3 className="w-10 h-10 text-accents-3" />
-        </div>
-        <h2 className="text-2xl font-black uppercase tracking-tighter mb-2">No Channel Connected</h2>
-        <p className="text-accents-4 max-w-sm mb-8">Connect your YouTube channel in the sidebar to unlock historical tracking and growth predictions.</p>
-      </div>
+      <EmptyState
+        icon={BarChart3}
+        title="No Channel Connected"
+        description="Connect your YouTube channel in the sidebar to unlock historical tracking and growth predictions."
+      />
     );
   }
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black">
-      {/* Header */}
-      <nav className="sticky top-0 z-50 border-b border-zinc-800 bg-black/80 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
-              <BarChart3 className="w-5 h-5 text-black" />
-            </div>
-            <h1 className="font-display text-lg tracking-tight uppercase flex items-center gap-3">
-              Analytics <span className="text-zinc-600 font-normal hidden sm:inline">/ {data.channel?.title || 'Loading'}</span>
-            </h1>
-          </div>
-          
-          <div className="flex items-center gap-4">
+    <DashPage>
+      <DashToolbar
+        left={
+          <>
+            {data.channel?.title && (
+              <MetaChip>
+                {data.channel.title}
+              </MetaChip>
+            )}
             {lastScanTime && !syncing && (
-              <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-tighter hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap">
-                <BarChart3 className="w-3.5 h-3.5" />
-                Last scan: {getCacheAge()}
-              </span>
+              <MetaChip icon={Clock}>Scanned {getCacheAge()}</MetaChip>
             )}
-            <button
-              onClick={syncSnapshot}
-              disabled={syncing || !userChannel}
-              className="h-9 px-4 rounded-full bg-white text-black text-sm font-medium hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">{syncing ? 'Syncing' : 'Sync'}</span>
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-10 pb-24">
-
-      {/* Main Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard 
-          label="Subscribers" 
-          value={formatNumber(metrics?.subscribers)} 
-          change={metrics?.subChange} 
-          icon={Users}
-        />
-        <StatCard 
-          label="Total Views" 
-          value={formatNumber(metrics?.views)} 
-          change={metrics?.viewChange} 
-          icon={Eye}
-        />
-        <StatCard 
-          label="Video Count" 
-          value={formatNumber(metrics?.videos)} 
-          icon={Video}
-        />
-        <StatCard 
-          label="Avg. Views" 
-          value={formatNumber(metrics?.avgViews)} 
-          icon={TrendingUp}
-          subLabel="Recent 10 videos"
-        />
-      </div>
-
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-8 bg-[#080808] border border-white/5 rounded-2xl p-6 sm:p-8 min-h-[350px] sm:min-h-[450px] flex flex-col relative overflow-hidden">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-            <div>
-              <h3 className="text-xl font-black uppercase tracking-tighter mb-1">Performance Trajectory</h3>
-              <p className="text-[10px] text-accents-4 font-bold uppercase tracking-[0.2em]">
-                {chartData.isPrediction ? 'Linear projection based on recent video performance' : 'Historical data from daily snapshots'}
+          </>
+        }
+        mobileLeft={
+          <div className="min-w-0">
+            <p className="truncate text-[13px] font-semibold text-white">
+              {data.channel?.title || "Analytics"}
+            </p>
+            {lastScanTime && !syncing && (
+              <p className="truncate text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+                Scanned {getCacheAge()}
               </p>
-            </div>
-            
-            {chartData.isPrediction && (
-              <div className="self-start sm:self-auto flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg backdrop-blur-md shrink-0">
-                <Sparkles className="w-3.5 h-3.5 text-geist-success" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-geist-success">Growth Prediction</span>
-              </div>
             )}
           </div>
+        }
+      >
+        <DashButton
+          size="sm"
+          onClick={syncSnapshot}
+          disabled={syncing || !userChannel}
+          className="!h-10 !px-2.5 sm:!h-9 sm:!px-3.5"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${syncing ? "animate-spin" : ""}`} />
+          <span className="hidden sm:inline">{syncing ? "Syncing" : "Sync"}</span>
+        </DashButton>
+      </DashToolbar>
 
-          <div className="flex-1 min-h-0">
-             <Line 
-               options={{
-                 ...commonOptions,
-                 plugins: {
-                   ...commonOptions.plugins,
-                   legend: { display: true, position: 'bottom', labels: { color: '#666', font: { size: 10, weight: 'bold' }, usePointStyle: true, padding: 20 } }
-                 }
-               }} 
-               data={chartData} 
-             />
+      <DashBody className="space-y-6 pb-24 sm:space-y-8">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <DashKpi
+            label="Subscribers"
+            value={formatNumber(metrics?.subscribers)}
+            icon={Users}
+            tone="text-[#00f0ff]"
+            sub={
+              metrics?.subChange !== undefined
+                ? `${metrics.subChange >= 0 ? "+" : ""}${formatNumber(metrics.subChange)} period`
+                : undefined
+            }
+          />
+          <DashKpi
+            label="Total views"
+            value={formatNumber(metrics?.views)}
+            icon={Eye}
+            tone="text-zinc-200"
+            sub={
+              metrics?.viewChange !== undefined
+                ? `${metrics.viewChange >= 0 ? "+" : ""}${formatNumber(metrics.viewChange)} period`
+                : undefined
+            }
+          />
+          <DashKpi
+            label="Videos"
+            value={formatNumber(metrics?.videos)}
+            icon={Video}
+          />
+          <DashKpi
+            label="Avg views"
+            value={formatNumber(metrics?.avgViews)}
+            icon={TrendingUp}
+            tone="text-orange-400"
+            sub="Recent 10"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+          <DashPanel
+            title="Performance trajectory"
+            icon={BarChart3}
+            className="lg:col-span-8"
+            action={
+              chartData.isPrediction ? (
+                <span className="inline-flex items-center gap-1.5 rounded-md border border-[#00f0ff]/20 bg-[#00f0ff]/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#00f0ff]">
+                  <Sparkles className="h-3 w-3" /> Prediction
+                </span>
+              ) : null
+            }
+            bodyClassName="p-4 sm:p-6 min-h-[320px] sm:min-h-[400px]"
+          >
+            <p className="mb-4 text-[10px] font-bold uppercase tracking-wider text-zinc-600">
+              {chartData.isPrediction
+                ? "Linear projection from recent performance"
+                : "Historical daily snapshots"}
+            </p>
+            <div className="h-[280px] sm:h-[340px]">
+              <Line
+                options={{
+                  ...commonOptions,
+                  plugins: {
+                    ...commonOptions.plugins,
+                    legend: {
+                      display: true,
+                      position: "bottom",
+                      labels: {
+                        color: "#666",
+                        font: { size: 10, weight: "bold" },
+                        usePointStyle: true,
+                        padding: 16,
+                      },
+                    },
+                  },
+                }}
+                data={chartData}
+              />
+            </div>
+          </DashPanel>
+
+          <div className="flex flex-col gap-4 lg:col-span-4">
+            <DashPanel title="Next milestone" icon={Target} bodyClassName="p-5 space-y-5">
+              <p className="text-xs leading-relaxed text-zinc-500">
+                Trajectory to 100K total views based on recent averages.
+              </p>
+              <div>
+                <div className="mb-2 flex items-end justify-between">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-600">
+                    To 100K views
+                  </span>
+                  <span className="text-sm font-bold tabular-nums text-white">
+                    {metrics?.views >= 100000
+                      ? "Reached"
+                      : formatNumber(100000 - (metrics?.views || 0))}
+                  </span>
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/5">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-geist-success to-[#00f0ff]"
+                    style={{
+                      width: `${Math.min(((metrics?.views || 0) / 100000) * 100, 100)}%`,
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
+                <Rocket className="h-4 w-4 text-[#00f0ff]" />
+                <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                  ~{Math.max(0, Math.ceil((100000 - (metrics?.views || 0)) / ((metrics?.avgViews || 0) * 0.1 || 100)))} days to target
+                </p>
+              </div>
+            </DashPanel>
+
+            <div className="flex items-center justify-between rounded-2xl border border-white/[0.07] bg-zinc-950/70 p-5">
+              <div>
+                <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-600">
+                  Channel health
+                </p>
+                <p className="mt-1 font-display text-lg uppercase tracking-tight text-white">
+                  Stable growth
+                </p>
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/10">
+                <Zap className="h-4 w-4 text-emerald-400" />
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="lg:col-span-4 flex flex-col gap-6">
-          <div className="flex-1 bg-white text-black rounded-2xl p-6 sm:p-8 flex flex-col justify-between">
-            <div>
-              <div className="w-12 h-12 bg-black/5 rounded-2xl flex items-center justify-center mb-6">
-                <Target className="w-6 h-6 text-black" />
-              </div>
-              <h3 className="text-2xl font-black uppercase tracking-tighter mb-2">Next Milestone</h3>
-              <p className="text-sm font-medium opacity-60">Based on your current trajectory, you will reach your next milestone soon.</p>
+        <section className="space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Video className="h-3.5 w-3.5 text-zinc-500" />
+              <h3 className="text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-500">
+                Recent performance
+              </h3>
             </div>
-            
-            <div className="mt-8 space-y-6">
-               <div>
-                  <div className="flex justify-between items-end mb-2">
-                    <span className="text-[10px] font-black uppercase tracking-widest opacity-40">To 100K Views</span>
-                    <span className="text-xl font-black tracking-tighter">
-                      {metrics?.views >= 100000 ? 'REACHED' : formatNumber(100000 - metrics?.views)}
+            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-600">
+              Last 10 uploads
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            {data.videos.map((video) => {
+              const views = parseInt(video.statistics?.viewCount || 0, 10);
+              const hot = views > (metrics?.avgViews || 0);
+              return (
+                <div
+                  key={video.id}
+                  className="group overflow-hidden rounded-2xl border border-white/[0.07] bg-zinc-950/50 transition-colors hover:border-white/15"
+                >
+                  <div className="relative aspect-video">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={video.thumbnail}
+                      className="h-full w-full object-cover opacity-80 transition-opacity group-hover:opacity-100"
+                      alt=""
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
+                    <p className="absolute bottom-2 left-3 right-3 line-clamp-1 text-[10px] font-bold text-white/90">
+                      {video.title}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between px-3 py-3">
+                    <span className="inline-flex items-center gap-1 text-xs font-bold tabular-nums text-zinc-300">
+                      <Eye className="h-3 w-3 text-zinc-500" />
+                      {formatNumber(views)}
+                    </span>
+                    <span
+                      className={`rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                        hot
+                          ? "bg-orange-500/10 text-orange-400"
+                          : "bg-white/5 text-zinc-500"
+                      }`}
+                    >
+                      {hot ? "Hot" : "Normal"}
                     </span>
                   </div>
-                  <div className="h-1.5 w-full bg-black/10 rounded-full overflow-hidden">
-                    <div className="h-full bg-black" style={{ width: `${Math.min((metrics?.views / 100000) * 100, 100)}%` }}></div>
-                  </div>
-               </div>
-               
-               <div className="flex items-center gap-3 p-4 bg-black/5 rounded-2xl">
-                  <Rocket className="w-5 h-5" />
-                  <p className="text-[10px] font-bold uppercase tracking-widest leading-tight">
-                    Prediction: {Math.ceil((100000 - metrics?.views) / (metrics?.avgViews * 0.1 || 100))} days to target
-                  </p>
-               </div>
-            </div>
-          </div>
-
-          <div className="bg-[#111] border border-white/5 rounded-2xl p-6 sm:p-8 flex items-center justify-between group cursor-pointer hover:border-white/20 transition-all">
-             <div>
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-accents-4 mb-1">Channel Health</h4>
-                <p className="text-xl font-black uppercase tracking-tighter">Stable Growth</p>
-             </div>
-             <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center group-hover:bg-geist-success/20 transition-all">
-                <Zap className="w-6 h-6 text-geist-success" />
-             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Videos Grid */}
-      <section>
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-             <div className="w-10 h-10 bg-white/5 rounded-2xl flex items-center justify-center">
-                <Video className="w-5 h-5 text-white" />
-             </div>
-             <h3 className="text-2xl font-black uppercase tracking-tighter">Recent Performance</h3>
-          </div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-accents-3">Last 10 Uploads</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-          {data.videos.map((video) => (
-            <div key={video.id} className="group bg-[#080808] border border-white/5 rounded-3xl overflow-hidden hover:border-white/20 transition-all">
-              <div className="relative aspect-video">
-                <img src={video.thumbnail} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" alt="" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60"></div>
-                <div className="absolute bottom-3 left-4 right-4">
-                  <p className="text-[10px] font-black text-white/80 line-clamp-1">{video.title}</p>
                 </div>
-              </div>
-              <div className="p-5 flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                   <Eye className="w-3.5 h-3.5 text-accents-4" />
-                   <span className="text-xs font-black tracking-tight">{formatNumber(video.statistics?.viewCount)}</span>
-                </div>
-                <div className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${
-                  parseInt(video.statistics?.viewCount) > metrics?.avgViews ? 'text-geist-success bg-geist-success/10' : 'text-accents-4 bg-white/5'
-                }`}>
-                  {parseInt(video.statistics?.viewCount) > metrics?.avgViews ? 'Hot' : 'Normal'}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-      </main>
-    </div>
-  );
-}
-
-function StatCard({ label, value, change, icon: Icon, subLabel }) {
-  const isPositive = change >= 0;
-  
-  return (
-    <div className="bg-[#080808] border border-white/5 p-6 sm:p-8 rounded-2xl hover:border-white/10 transition-all group">
-      <div className="flex justify-between items-start mb-6">
-        <div className="w-10 h-10 bg-white/5 rounded-2xl flex items-center justify-center group-hover:bg-white/10 transition-all">
-          <Icon className="w-5 h-5 text-accents-3 group-hover:text-white" />
-        </div>
-        {change !== undefined && (
-          <div className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${isPositive ? 'text-geist-success bg-geist-success/10' : 'text-red-500 bg-red-500/10'}`}>
-            {isPositive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-            {formatNumber(Math.abs(change))}
+              );
+            })}
           </div>
-        )}
-      </div>
-      
-      <p className="text-[10px] font-black uppercase tracking-widest text-accents-4 mb-1">{label}</p>
-      <h4 className="text-3xl font-black tracking-tighter text-white">{value}</h4>
-      {subLabel && <p className="text-[9px] text-accents-3 font-bold uppercase tracking-widest mt-2">{subLabel}</p>}
-    </div>
+        </section>
+      </DashBody>
+    </DashPage>
   );
 }

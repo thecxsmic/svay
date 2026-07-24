@@ -8,7 +8,7 @@ import SvayLoader from "./SvayLoader";
 
 // Code-split heavy shells so the marketing landing JS stays smaller
 const LayoutContent = dynamic(() => import("./LayoutContent"), {
-  loading: () => <SvayLoader fullScreen />,
+  loading: () => <SvayLoader fullScreen withRings />,
   ssr: true,
 });
 const LandingPage = dynamic(() => import("./LandingPage"), {
@@ -16,7 +16,7 @@ const LandingPage = dynamic(() => import("./LandingPage"), {
   ssr: true,
 });
 const UpgradeGate = dynamic(() => import("./UpgradeGate"), {
-  loading: () => <SvayLoader fullScreen />,
+  loading: () => <SvayLoader fullScreen withRings />,
   ssr: true,
 });
 

@@ -11,6 +11,7 @@ import ResearchNotesModal from "../components/ResearchNotesModal";
 import Link from "next/link";
 import { Save, Edit3, Search, Zap, BarChart3, TrendingUp, Target, Users, LayoutDashboard, SlidersHorizontal, ArrowRight, Activity, DollarSign, Video, Pin } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { LoadingToast } from "../components/dashboard/ui";
 
 function ChannelsContent() {
   const searchParams = useSearchParams();
@@ -314,51 +315,23 @@ function ChannelsContent() {
         channelSubs={analysisData?.channel?.statistics?.subscriberCount}
       />
 
-      <div className={`transition-all duration-700 ease-in-out ${hasSearched ? 'pt-0' : 'pt-20 md:pt-32'}`}>
-        <header className={`max-w-5xl mx-auto text-center transition-all duration-700 ${hasSearched ? 'opacity-0 h-0 overflow-hidden mb-0' : 'opacity-100 mb-16'}`}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-6"
-          >
-            <Users className="w-3.5 h-3.5 text-geist-success" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-accents-4">Creators</span>
-          </motion.div>
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="font-display text-4xl md:text-6xl tracking-tight mb-4 text-white uppercase"
-          >
-            Channel Intelligence
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-accents-5 text-base md:text-lg max-w-2xl mx-auto font-medium"
-          >
-            Deep creator analysis and ecosystem tracking.
-          </motion.p>
-        </header>
-
-        <section className={`sticky top-0 z-[45] transition-all duration-700 border-b ${hasSearched ? 'w-full bg-black/80 backdrop-blur-md border-white/5 py-4 px-6 md:px-10' : 'max-w-2xl mx-auto px-6 border-transparent'}`}>
-          <form onSubmit={handleSearch} className={`relative group mx-auto transition-all duration-700 ${hasSearched ? 'max-w-[1600px]' : 'w-full'}`}>
-            <div className="relative flex items-center bg-black border border-white/10 rounded-2xl overflow-hidden focus-within:border-white/20 transition-all duration-300 shadow-2xl">
-              <div className="absolute inset-0 opacity-[0.03] group-focus-within:opacity-[0.08] transition-opacity bg-gradient-to-r from-geist-success via-[#00dfd8] to-geist-success animate-logo-gradient pointer-events-none" />
-              <div className="pl-6 text-accents-4 shrink-0 relative z-10"><Search className="w-5 h-5" /></div>
+      <div className={`transition-all duration-500 ease-out ${hasSearched ? 'pt-0' : 'flex min-h-[55vh] flex-col justify-center pt-6 md:min-h-[50vh] md:pt-10'}`}>
+        <section className={`z-[45] transition-all duration-500 ${hasSearched ? 'sticky top-0 w-full border-b border-white/[0.06] bg-black/80 py-3 px-4 backdrop-blur-xl sm:px-6' : 'mx-auto w-full max-w-2xl border-transparent px-6'}`}>
+          <form onSubmit={handleSearch} className={`relative group mx-auto transition-all duration-500 ${hasSearched ? 'max-w-[1600px]' : 'w-full'}`}>
+            <div className="relative flex items-center overflow-hidden rounded-2xl border border-white/[0.08] bg-zinc-950/60 transition-all duration-300 focus-within:border-white/20">
+              <div className="relative z-10 shrink-0 pl-4 text-zinc-500 sm:pl-5"><Search className="h-4 w-4 sm:h-5 sm:w-5" /></div>
               <input 
                 type="text" 
                 placeholder="Search creators, handles, or IDs..." 
                 value={query} 
                 onChange={(e) => setQuery(e.target.value)} 
-                className="w-full py-4 px-4 bg-transparent outline-none text-base font-medium placeholder-accents-3 text-white relative z-10" 
+                className="relative z-10 w-full bg-transparent px-3 py-3.5 text-sm font-medium text-white outline-none placeholder-zinc-600 sm:py-4 sm:text-base" 
               />
-              <div className="flex items-center gap-2 pr-2 relative z-10">
+              <div className="relative z-10 flex items-center gap-2 pr-2">
                 <button 
                   type="submit" 
                   disabled={loading} 
-                  className="bg-white text-black px-6 py-2 rounded-xl font-bold hover:opacity-90 active:scale-95 transition-all text-sm"
+                  className="rounded-xl bg-white px-4 py-2 text-xs font-bold text-black transition-all hover:bg-zinc-200 active:scale-95 sm:px-5 sm:text-sm"
                 >
                   Search
                 </button>
@@ -912,21 +885,7 @@ function ChannelsContent() {
         </main>
       </div>
 
-      <AnimatePresence>
-        {loading && (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-8 right-8 z-[100]"
-          >
-            <div className="flex items-center gap-3 bg-black border border-white/10 px-5 py-3 rounded-full shadow-2xl backdrop-blur-md">
-              <div className="w-3 h-3 rounded-full bg-geist-success animate-pulse" />
-              <span className="text-[10px] font-bold text-accents-4 uppercase tracking-wider">{loadingText}</span>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <LoadingToast show={loading} label={loadingText} progress={loadingStage} />
 
       {error && (
         <div className="max-w-xl mx-auto mt-12 bg-red-500/10 border border-red-500/20 p-6 rounded-2xl text-center">

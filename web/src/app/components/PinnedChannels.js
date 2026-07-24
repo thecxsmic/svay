@@ -51,8 +51,12 @@ export default function PinnedChannels() {
 
   if (loading) return (
     <div className="px-4 py-2 space-y-2">
-      <div className="h-8 bg-white/5 rounded-lg animate-pulse"></div>
-      <div className="h-8 bg-white/5 rounded-lg animate-pulse"></div>
+      <div className="relative h-8 overflow-hidden rounded-lg bg-white/[0.04]">
+        <div className="dash-shimmer absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+      </div>
+      <div className="relative h-8 overflow-hidden rounded-lg bg-white/[0.04]">
+        <div className="dash-shimmer absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+      </div>
     </div>
   );
 

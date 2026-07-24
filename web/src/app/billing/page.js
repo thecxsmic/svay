@@ -5,11 +5,20 @@ import Link from "next/link";
 import {
   CreditCard,
   ExternalLink,
-  Loader2,
   RefreshCw,
-  AlertTriangle,
-  CheckCircle2,
 } from "lucide-react";
+import {
+  PageLoader,
+  EmptyState,
+  DashPage,
+  DashToolbar,
+  DashBody,
+  DashButton,
+  DashAlert,
+  DashPanel,
+  ButtonSpinner,
+  MetaChip,
+} from "../components/dashboard/ui";
 
 function formatDate(isoOrUnix) {
   if (!isoOrUnix) return "—";
@@ -100,152 +109,117 @@ export default function BillingPage() {
   };
 
   if (loading && !billing) {
-    return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center">
-        <div
-          className="h-8 w-8 rounded-full bg-gradient-to-tr from-geist-success via-[#00f0ff] to-geist-success animate-logo-gradient shadow-[0_0_18px_rgba(0,112,243,0.4)]"
-          role="status"
-          aria-label="Svay"
-        />
-      </div>
-    );
+    return <PageLoader label="Loading billing…" />;
   }
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black">
-      {/* Sticky header — same pattern as Library / Analytics */}
-      <nav className="sticky top-0 z-50 border-b border-zinc-800 bg-black/80 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white">
-              <CreditCard className="h-5 w-5 text-black" />
-            </div>
-            <h1 className="font-display text-lg uppercase tracking-tight">
-              Billing
-            </h1>
-          </div>
+    <DashPage>
+      <DashToolbar
+        left={
+          billing?.hasSubscription ? (
+            <MetaChip icon={CreditCard}>
+              {billing.planName || "Plan"}
+            </MetaChip>
+          ) : (
+            <MetaChip>No active plan</MetaChip>
+          )
+        }
+      >
+        <DashButton
+          variant="secondary"
+          size="sm"
+          onClick={() => {
+            setLoading(true);
+            load();
+          }}
+          disabled={!!actionLoading || loading}
+        >
+          <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
+          Refresh
+        </DashButton>
+      </DashToolbar>
 
-          <button
-            type="button"
-            onClick={() => {
-              setLoading(true);
-              load();
-            }}
-            disabled={!!actionLoading || loading}
-            className="flex cursor-pointer items-center gap-1.5 rounded-md border border-zinc-800 bg-zinc-950 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-400 transition-colors hover:border-zinc-700 hover:text-white disabled:opacity-50"
-          >
-            <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
-            Refresh
-          </button>
-        </div>
-      </nav>
-
-      <div className="mx-auto max-w-3xl space-y-6 px-4 py-8 sm:px-6">
-        {error && (
-          <div className="flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2.5 text-xs text-red-400">
-            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            <p>{error}</p>
-          </div>
-        )}
-        {message && (
-          <div className="flex items-start gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2.5 text-xs text-emerald-400">
-            <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            <p>{message}</p>
-          </div>
-        )}
+      <DashBody narrow className="space-y-6">
+        {error && <DashAlert variant="error">{error}</DashAlert>}
+        {message && <DashAlert variant="success">{message}</DashAlert>}
 
         {!billing?.hasSubscription ? (
-          <div className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-8 text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white/5">
-              <CreditCard className="h-5 w-5 text-zinc-500" />
-            </div>
-            <h2 className="text-sm font-bold uppercase tracking-wider text-white">
-              No active plan
-            </h2>
-            <p className="mx-auto mt-2 max-w-sm text-xs text-zinc-500">
-              Subscribe to Pro to unlock the full dashboard.
-            </p>
-            <Link
-              href="/"
-              className="mt-6 inline-flex items-center rounded-md bg-white px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-black transition-colors hover:bg-zinc-200"
-            >
-              Go to dashboard
-            </Link>
-          </div>
+          <EmptyState
+            icon={CreditCard}
+            title="No active plan"
+            description="Subscribe to Pro to unlock the full dashboard."
+            compact
+            action={
+              <Link
+                href="/"
+                className="inline-flex items-center rounded-xl bg-white px-6 py-2.5 text-[10px] font-bold uppercase tracking-wider text-black transition-colors hover:bg-zinc-200"
+              >
+                Go to dashboard
+              </Link>
+            }
+          />
         ) : (
           <>
-            {/* Plan card */}
-            <section className="rounded-lg border border-zinc-800 bg-zinc-950/50">
-              <div className="flex items-center justify-between border-b border-zinc-800/80 px-4 py-3 sm:px-5">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">
-                  Current plan
+            <DashPanel
+              title="Current plan"
+              icon={CreditCard}
+              action={<StatusLabel billing={billing} />}
+              bodyClassName="px-4 py-5 sm:px-5"
+            >
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h2 className="text-lg font-bold tracking-tight text-white">
+                  {billing.planName}
+                </h2>
+                {billing.amountDisplay && (
+                  <span className="text-xs font-bold text-zinc-400">
+                    {billing.amountDisplay}
+                  </span>
+                )}
+              </div>
+
+              <div className="mt-5 grid grid-cols-2 gap-4 border-t border-white/[0.05] pt-4">
+                <div>
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-600">
+                    {billing.cancelAtNextBillingDate ? "Access until" : "Next billing"}
+                  </p>
+                  <p className="mt-1 text-xs font-bold text-zinc-200">
+                    {formatDate(billing.nextBillingDate || billing.currentPeriodEnd)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-600">
+                    Type
+                  </p>
+                  <p className="mt-1 text-xs font-bold text-zinc-200">
+                    {billing.isPromo
+                      ? "Promo / grant"
+                      : billing.isDodo
+                        ? "Paid (Dodo)"
+                        : "Subscription"}
+                  </p>
+                </div>
+              </div>
+
+              {billing.cancelAtNextBillingDate && (
+                <p className="mt-4 border-t border-white/[0.05] pt-4 text-[11px] leading-relaxed text-yellow-500/90">
+                  Scheduled to cancel. Full access until{" "}
+                  {formatDate(billing.nextBillingDate || billing.currentPeriodEnd)}.
                 </p>
-                <StatusLabel billing={billing} />
-              </div>
+              )}
 
-              <div className="px-4 py-5 sm:px-5">
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <h2 className="text-lg font-bold tracking-tight text-white">
-                    {billing.planName}
-                  </h2>
-                  {billing.amountDisplay && (
-                    <span className="text-xs font-bold text-zinc-400">
-                      {billing.amountDisplay}
-                    </span>
-                  )}
-                </div>
+              {billing.isPromo && (
+                <p className="mt-4 border-t border-white/[0.05] pt-4 text-[11px] leading-relaxed text-zinc-500">
+                  Promo or admin grant — not billed through Dodo.
+                  {billing.currentPeriodEnd
+                    ? ` Ends ${formatDate(billing.currentPeriodEnd)}.`
+                    : ""}
+                </p>
+              )}
+            </DashPanel>
 
-                <div className="mt-5 grid grid-cols-2 gap-4 border-t border-white/5 pt-4">
-                  <div>
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-600">
-                      {billing.cancelAtNextBillingDate ? "Access until" : "Next billing"}
-                    </p>
-                    <p className="mt-1 text-xs font-bold text-zinc-200">
-                      {formatDate(billing.nextBillingDate || billing.currentPeriodEnd)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-600">
-                      Type
-                    </p>
-                    <p className="mt-1 text-xs font-bold text-zinc-200">
-                      {billing.isPromo
-                        ? "Promo / grant"
-                        : billing.isDodo
-                          ? "Paid (Dodo)"
-                          : "Subscription"}
-                    </p>
-                  </div>
-                </div>
-
-                {billing.cancelAtNextBillingDate && (
-                  <p className="mt-4 border-t border-white/5 pt-4 text-[11px] leading-relaxed text-yellow-500/90">
-                    Scheduled to cancel. Full access until{" "}
-                    {formatDate(billing.nextBillingDate || billing.currentPeriodEnd)}.
-                  </p>
-                )}
-
-                {billing.isPromo && (
-                  <p className="mt-4 border-t border-white/5 pt-4 text-[11px] leading-relaxed text-zinc-500">
-                    Promo or admin grant — not billed through Dodo.
-                    {billing.currentPeriodEnd
-                      ? ` Ends ${formatDate(billing.currentPeriodEnd)}.`
-                      : ""}
-                  </p>
-                )}
-              </div>
-            </section>
-
-            {/* Actions */}
             {billing.canManage && (
-              <section className="rounded-lg border border-zinc-800 bg-zinc-950/50">
-                <div className="border-b border-zinc-800/80 px-4 py-3 sm:px-5">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">
-                    Actions
-                  </p>
-                </div>
-
-                <div className="divide-y divide-zinc-800/80">
+              <DashPanel title="Actions" bodyClassName="">
+                <div className="divide-y divide-white/[0.05]">
                   <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
                     <div>
                       <p className="text-xs font-bold text-white">Payment method</p>
@@ -260,7 +234,7 @@ export default function BillingPage() {
                       className="inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-md bg-white px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-black transition-colors hover:bg-zinc-200 disabled:opacity-50"
                     >
                       {actionLoading === "portal" ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        <ButtonSpinner />
                       ) : (
                         <>
                           Manage
@@ -288,7 +262,7 @@ export default function BillingPage() {
                         className="inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-md border border-zinc-700 bg-transparent px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white transition-colors hover:bg-white/5 disabled:opacity-50"
                       >
                         {actionLoading === "resume" ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          <ButtonSpinner />
                         ) : (
                           "Resume"
                         )}
@@ -319,7 +293,7 @@ export default function BillingPage() {
                           className="inline-flex cursor-pointer items-center gap-1.5 rounded-md bg-red-600 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-red-500 disabled:opacity-50"
                         >
                           {actionLoading === "cancel" ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            <ButtonSpinner />
                           ) : (
                             "Confirm"
                           )}
@@ -328,7 +302,7 @@ export default function BillingPage() {
                     )}
                   </div>
                 </div>
-              </section>
+              </DashPanel>
             )}
 
             <p className="text-center text-[10px] text-zinc-600">
@@ -342,7 +316,7 @@ export default function BillingPage() {
             </p>
           </>
         )}
-      </div>
-    </div>
+      </DashBody>
+    </DashPage>
   );
 }

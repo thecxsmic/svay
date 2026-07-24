@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { FileText, Loader2 } from "lucide-react";
+import { FileText } from "lucide-react";
 import ToolsShell from "../../components/tools/ToolsShell";
+import { ButtonSpinner } from "../../components/dashboard/ui";
 import ToolsQuotaBanner from "../../components/tools/ToolsQuotaBanner";
 import { useToolsQuota } from "../../components/tools/useToolsQuota";
 
@@ -84,7 +85,7 @@ export default function ScriptToolPage() {
         >
           {running ? (
             <>
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              <ButtonSpinner />
               Estimating…
             </>
           ) : (

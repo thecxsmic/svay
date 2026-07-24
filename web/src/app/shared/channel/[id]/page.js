@@ -110,6 +110,14 @@ function TabButton({ active, onClick, children }) {
 }
 
 /* ─── Loading skeleton ────────────────────────────────────────────── */
+function Skel({ className = "" }) {
+  return (
+    <div className={`relative overflow-hidden rounded-md bg-white/[0.05] ${className}`}>
+      <div className="dash-shimmer absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/[0.07] to-transparent" />
+    </div>
+  );
+}
+
 function LoadingSkeleton() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white pb-24">
@@ -117,42 +125,42 @@ function LoadingSkeleton() {
       <header className="border-b border-zinc-900 bg-[#0a0a0a]/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-4 h-14 flex justify-between items-center">
           <div className="flex items-center gap-2.5">
-            <div className="w-5 h-5 rounded-full bg-zinc-800 animate-pulse" />
-            <div className="w-12 h-3.5 bg-zinc-800 rounded animate-pulse" />
+            <Skel className="h-5 w-5 rounded-full" />
+            <Skel className="h-3.5 w-12" />
           </div>
-          <div className="w-32 h-8 bg-zinc-800 rounded-lg animate-pulse" />
+          <Skel className="h-8 w-32 rounded-lg" />
         </div>
       </header>
       <main className="max-w-5xl mx-auto px-4 pt-10 space-y-8 relative z-10">
         <div className="bg-zinc-950 border border-zinc-800/80 rounded-2xl p-8">
           <div className="flex items-center gap-5 mb-8">
-            <div className="w-16 h-16 rounded-full bg-zinc-800 animate-pulse shrink-0" />
+            <Skel className="h-16 w-16 shrink-0 rounded-full" />
             <div className="space-y-2.5 flex-1">
-              <div className="h-6 bg-zinc-800 rounded-lg w-1/2 animate-pulse" />
-              <div className="h-3 bg-zinc-800 rounded w-1/3 animate-pulse" />
+              <Skel className="h-6 w-1/2 rounded-lg" />
+              <Skel className="h-3 w-1/3" />
             </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="bg-zinc-900 border border-zinc-800 p-4 rounded-xl space-y-2">
-                <div className="h-2.5 bg-zinc-800 rounded w-1/2 animate-pulse" />
-                <div className="h-5 bg-zinc-800 rounded-lg w-2/3 animate-pulse" />
+                <Skel className="h-2.5 w-1/2" />
+                <Skel className="h-5 w-2/3 rounded-lg" />
               </div>
             ))}
           </div>
         </div>
         <div className="flex gap-6 border-b border-zinc-900 pb-1">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-3 w-14 bg-zinc-800 rounded animate-pulse mb-1" />
+            <Skel key={i} className="mb-1 h-3 w-14" />
           ))}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[...Array(3)].map((_, i) => (
             <div key={i} className="bg-zinc-950 border border-zinc-800 p-6 rounded-2xl space-y-3">
-              <div className="w-8 h-8 bg-zinc-800 rounded-lg animate-pulse" />
-              <div className="h-2.5 bg-zinc-800 rounded w-1/3 animate-pulse" />
-              <div className="h-5 bg-zinc-800 rounded w-1/2 animate-pulse" />
-              <div className="h-2.5 bg-zinc-800 rounded w-2/3 animate-pulse" />
+              <Skel className="h-8 w-8 rounded-lg" />
+              <Skel className="h-2.5 w-1/3" />
+              <Skel className="h-5 w-1/2" />
+              <Skel className="h-2.5 w-2/3" />
             </div>
           ))}
         </div>
