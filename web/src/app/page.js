@@ -113,7 +113,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-full bg-black text-white selection:bg-geist-success pb-24">
+    <div className="mx-auto min-h-full w-full min-w-0 max-w-full overflow-x-hidden bg-black pb-24 text-white selection:bg-geist-success">
       <VideoDetailsModal 
         selectedVideo={selectedVideo} 
         setSelectedVideo={setSelectedVideo} 
@@ -122,8 +122,8 @@ export default function Home() {
       />
 
       <div className={`transition-all duration-500 ease-out ${hasSearched ? 'pt-0' : 'flex min-h-[55vh] flex-col justify-center pt-6 md:min-h-[50vh] md:pt-10'}`}>
-        <section className={`z-[45] transition-all duration-500 ${hasSearched ? 'sticky top-0 w-full border-b border-white/[0.06] bg-black/80 py-3 px-4 backdrop-blur-xl sm:px-6' : 'mx-auto w-full max-w-2xl border-transparent px-6'}`}>
-          <form onSubmit={handleSearch} className={`relative group mx-auto transition-all duration-500 ${hasSearched ? 'max-w-[1600px]' : 'w-full'}`}>
+        <section className={`z-[45] w-full min-w-0 max-w-full transition-all duration-500 ${hasSearched ? 'sticky top-0 border-b border-white/[0.06] bg-black/80 px-4 py-3 backdrop-blur-xl sm:px-6' : 'mx-auto max-w-2xl border-transparent px-4 sm:px-6'}`}>
+          <form onSubmit={handleSearch} className={`relative group mx-auto w-full min-w-0 transition-all duration-500 ${hasSearched ? 'max-w-full md:max-w-[1600px]' : 'w-full'}`}>
             <div className="relative flex items-center overflow-hidden rounded-2xl border border-white/[0.08] bg-zinc-950/60 transition-all duration-300 focus-within:border-white/20">
               <div className="relative z-10 shrink-0 pl-4 text-zinc-500 sm:pl-5"><Search className="h-4 w-4 sm:h-5 sm:w-5" /></div>
               <input 
@@ -207,7 +207,7 @@ export default function Home() {
           </motion.div>
         </section>
 
-        <div className="max-w-[1600px] mx-auto px-6 md:px-10 mt-12">
+        <div className="mx-auto mt-12 w-full min-w-0 max-w-full px-4 md:max-w-[1600px] md:px-10">
           <AnimatePresence mode="wait">
             {results && results.length > 0 && showAnalysis && (
               <motion.section 

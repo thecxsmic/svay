@@ -311,7 +311,7 @@ export default function TrendRadar() {
   }, [data, trends, quickWins, overview]);
 
   return (
-    <div className="min-h-full bg-black text-white font-sans selection:bg-white selection:text-black">
+    <div className="mx-auto min-h-full w-full min-w-0 max-w-full overflow-x-hidden bg-black text-white font-sans selection:bg-white selection:text-black">
       <ResearchNotesModal
         isOpen={isNotesModalOpen}
         onClose={() => setIsNotesModalOpen(false)}
@@ -408,7 +408,7 @@ export default function TrendRadar() {
         </DashButton>
       </DashToolbar>
 
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+      <div className="mx-auto w-full min-w-0 max-w-full px-4 py-6 sm:px-6 sm:py-8 md:max-w-7xl">
         {error && (
           <div className="mb-6">
             <DashAlert variant="error">{error}</DashAlert>

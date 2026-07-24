@@ -108,7 +108,7 @@ export default function MobileAppShell({
   }, [hasPageTabs]);
 
   return (
-    <div className="mobile-app-shell flex h-full flex-col overflow-hidden bg-black text-white md:hidden">
+    <div className="mobile-app-shell flex h-full w-full min-w-0 max-w-full flex-col overflow-hidden bg-black text-white md:hidden">
       {/* Safe area only — no chrome top bar */}
       <div
         className="shrink-0"
@@ -116,17 +116,17 @@ export default function MobileAppShell({
         aria-hidden
       />
 
-      <main className="mobile-app-main relative min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
-        <div className="min-h-full pb-[calc(4.75rem+var(--mobile-page-tabs-h,0px)+env(safe-area-inset-bottom,0px))]">
+      <main className="mobile-app-main relative min-h-0 w-full min-w-0 max-w-full flex-1 overflow-y-auto overflow-x-hidden overscroll-y-contain">
+        <div className="mobile-app-content mx-auto min-h-full w-full min-w-0 max-w-full pb-[calc(4.75rem+var(--mobile-page-tabs-h,0px)+env(safe-area-inset-bottom,0px))]">
           {children}
         </div>
       </main>
 
       {/* Bottom chrome: optional page section tabs + primary nav */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[90] flex flex-col items-center gap-1.5 px-3 pb-[max(0.4rem,env(safe-area-inset-bottom))] md:hidden">
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[90] flex w-full max-w-full flex-col items-center gap-1.5 px-4 pb-[max(0.4rem,env(safe-area-inset-bottom))] md:hidden">
         {hasPageTabs && (
           <nav
-            className="mobile-page-tabs pointer-events-auto flex w-full max-w-[22rem] items-center gap-0.5 overflow-x-auto no-scrollbar rounded-full border border-white/10 bg-black/55 px-1.5 py-1 shadow-lg backdrop-blur-md"
+            className="mobile-page-tabs pointer-events-auto flex w-full max-w-full items-center gap-0.5 overflow-x-auto no-scrollbar rounded-full border border-white/10 bg-black/55 px-1.5 py-1 shadow-lg backdrop-blur-md"
             aria-label="Page sections"
           >
             {pageTabs.items.map((t) => {
@@ -167,7 +167,7 @@ export default function MobileAppShell({
         )}
 
         <nav
-          className="pointer-events-auto relative flex w-full max-w-[22rem] items-center justify-around gap-0.5 rounded-full border border-white/10 bg-black/50 px-1.5 py-1.5 shadow-lg backdrop-blur-md"
+          className="pointer-events-auto relative flex w-full max-w-full items-center justify-around gap-0.5 rounded-full border border-white/10 bg-black/50 px-1.5 py-1.5 shadow-lg backdrop-blur-md"
           aria-label="Primary"
         >
           {PRIMARY_TABS.map((tab) => (

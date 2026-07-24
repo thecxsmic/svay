@@ -294,7 +294,7 @@ export default function LayoutContent({ children, subscription }) {
   const page = resolvePageMeta(pathname);
 
   return (
-    <div className="flex h-full overflow-hidden bg-black text-white font-sans selection:bg-geist-success selection:text-white">
+    <div className="flex h-full w-full min-w-0 max-w-full overflow-hidden bg-black text-white font-sans selection:bg-geist-success selection:text-white">
       {sharedModals}
 
       {/* ═══ MOBILE APP SHELL (phones / Android) ═══ */}
@@ -309,7 +309,7 @@ export default function LayoutContent({ children, subscription }) {
           onOpenRemove={() => setIsRemoveModalOpen(true)}
           onToggleDemo={toggleDemoMode}
         >
-          <div className="animate-[dash-page-in_0.28s_ease-out]">
+          <div className="mx-auto w-full min-w-0 max-w-full animate-[dash-page-in_0.28s_ease-out]">
             {children}
           </div>
         </MobileAppShell>

@@ -385,7 +385,8 @@ export function DashPage({ children, className = "" }) {
   return (
     <div
       className={cn(
-        "min-h-full bg-black text-white font-sans selection:bg-white selection:text-black",
+        // mx-auto keeps the column centered on iPhone (safe-area / overflow drift)
+        "mx-auto min-h-full w-full min-w-0 max-w-full overflow-x-hidden bg-black text-white font-sans selection:bg-white selection:text-black",
         className
       )}
     >
@@ -431,7 +432,7 @@ export function DashToolbar({
     <>
       <div
         className={cn(
-          "sticky top-0 z-40 border-b border-white/[0.06] bg-black/85 backdrop-blur-xl",
+          "sticky top-0 z-40 mx-auto w-full min-w-0 max-w-full border-b border-white/[0.06] bg-black/85 backdrop-blur-xl",
           // Hide empty sticky shell on phone when only bottom tabs exist
           !showMobileTop && "max-md:hidden",
           className
@@ -441,7 +442,8 @@ export function DashToolbar({
         {showMobileTop && (
           <div
             className={cn(
-              "mx-auto flex h-12 items-center gap-2 px-3 md:hidden",
+              // Match DashBody mobile gutter (px-4); mx-auto centers on iPhone
+              "mx-auto flex h-12 w-full min-w-0 max-w-full items-center gap-2 px-4 md:hidden",
               maxWidth
             )}
           >
@@ -791,11 +793,24 @@ export function DashBody({
   maxWidth = "max-w-7xl",
   narrow = false,
 }) {
+  // Desktop caps only — on phone we always use full width + px-4 gutters
+  // so content never shrinks/centers/shifts left under the mobile shell.
+  const desktopMax = narrow
+    ? "md:max-w-3xl"
+    : maxWidth === "max-w-5xl"
+      ? "md:max-w-5xl"
+      : maxWidth === "max-w-6xl"
+        ? "md:max-w-6xl"
+        : maxWidth === "max-w-4xl"
+          ? "md:max-w-4xl"
+          : "md:max-w-7xl";
+
   return (
     <div
       className={cn(
-        "mx-auto w-full px-4 py-6 sm:px-6 sm:py-8",
-        narrow ? "max-w-3xl" : maxWidth,
+        // mx-auto is required on iPhone so the column stays centered
+        "mx-auto w-full min-w-0 max-w-full px-4 py-6 sm:px-6 sm:py-8",
+        desktopMax,
         className
       )}
     >
