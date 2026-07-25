@@ -67,9 +67,9 @@ export default function SetupUserChannelModal({ onChannelSet }) {
             </svg>
           </div>
           
-          <h2 className="text-3xl font-black text-white text-center mb-4 uppercase tracking-tighter">Register Your Channel</h2>
+          <h2 className="text-3xl font-black text-white text-center mb-4 uppercase tracking-tighter">Connect your channel</h2>
           <p className="text-[#888888] text-sm text-center mb-10 font-medium leading-relaxed">
-            To generate personalized AI strategies, you need to associate your YouTube channel with your account.
+            Connect your YouTube channel so we can give you personal tips.
           </p>
 
           <form onSubmit={handleSearch} className="mb-8">
@@ -120,7 +120,7 @@ export default function SetupUserChannelModal({ onChannelSet }) {
         </div>
         
         <div className="bg-white/[0.02] border-t border-white/5 p-6 text-center">
-          <p className="text-[9px] text-[#444] font-bold uppercase tracking-widest">Only one channel can be registered per account</p>
+          <p className="text-[9px] text-[#444] font-bold uppercase tracking-widest">You can connect only one channel per account</p>
         </div>
       </div>
     </div>

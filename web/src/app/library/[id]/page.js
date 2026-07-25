@@ -133,7 +133,7 @@ export default function NotePage({ params }) {
       <div className="space-y-6">
         <div className="flex items-center gap-2 px-1">
            <Trophy className="w-3.5 h-3.5 text-zinc-500" />
-           <h4 className="text-xs font-semibold text-zinc-400">Competitive Landscape</h4>
+           <h4 className="text-xs font-semibold text-zinc-400">Rivals</h4>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -167,7 +167,7 @@ export default function NotePage({ params }) {
       <div className="space-y-6">
         <div className="flex items-center gap-2 px-1">
            <Target className="w-3.5 h-3.5 text-zinc-500" />
-           <h4 className="text-xs font-semibold text-zinc-400">Strategy Overview</h4>
+           <h4 className="text-xs font-semibold text-zinc-400">Idea overview</h4>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -175,7 +175,7 @@ export default function NotePage({ params }) {
              <div className="bg-zinc-900/20 border border-white/5 rounded-2xl p-5 space-y-3">
                 <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
                   <Rocket className="w-3.5 h-3.5 text-purple-500" />
-                  The Opportunity
+                  Why this works
                 </p>
                 <p className="text-sm text-zinc-300 leading-relaxed">"{rationale}"</p>
              </div>
@@ -184,7 +184,7 @@ export default function NotePage({ params }) {
              <div className="bg-zinc-900/20 border border-white/5 rounded-2xl p-5 space-y-3">
                 <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
                   <Flame className="w-3.5 h-3.5 text-orange-500" />
-                  Action Plan
+                  What to do
                 </p>
                 <p className="text-sm text-zinc-300 leading-relaxed">{action}</p>
              </div>
@@ -205,7 +205,7 @@ export default function NotePage({ params }) {
              <div className="bg-zinc-900/20 border border-white/5 rounded-xl px-4 py-2.5 flex items-center gap-3">
                 <Activity className="w-4 h-4 text-blue-500" />
                 <div>
-                   <p className="text-[9px] font-medium text-zinc-500 uppercase">Momentum</p>
+                   <p className="text-[9px] font-medium text-zinc-500 uppercase">Timing</p>
                    <p className="text-xs font-semibold text-zinc-200">{timing}</p>
                 </div>
              </div>
@@ -214,7 +214,7 @@ export default function NotePage({ params }) {
              <div className="bg-zinc-900/20 border border-white/5 rounded-xl px-4 py-2.5 flex items-center gap-3">
                 <TrendingUp className="w-4 h-4 text-red-500" />
                 <div>
-                   <p className="text-[9px] font-medium text-zinc-500 uppercase">Viral Score</p>
+                   <p className="text-[9px] font-medium text-zinc-500 uppercase">Viral score</p>
                    <p className="text-xs font-semibold text-zinc-200">{m.viralScore}/100</p>
                 </div>
              </div>
@@ -235,23 +235,23 @@ export default function NotePage({ params }) {
       <div className="space-y-6">
         <div className="flex items-center gap-2 px-1">
            <Activity className="w-3.5 h-3.5 text-zinc-500" />
-           <h4 className="text-xs font-semibold text-zinc-400">Channel Ecosystem</h4>
+           <h4 className="text-xs font-semibold text-zinc-400">Channel stats</h4>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
            <div className="bg-zinc-900/20 border border-white/5 rounded-2xl p-4">
-              <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Library Size</p>
+              <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Number of videos</p>
               <p className="text-xl font-black text-white">{formatNumber(videoCount)} <span className="text-[10px] text-zinc-600 font-bold uppercase">Videos</span></p>
            </div>
            <div className="bg-zinc-900/20 border border-white/5 rounded-2xl p-4">
-              <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Content ROI</p>
+              <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Average views</p>
               <p className="text-xl font-black text-white">{formatNumber(avgViews)} <span className="text-[10px] text-zinc-600 font-bold uppercase">Avg</span></p>
            </div>
         </div>
 
         {item.metadata?.snippet?.description && (
           <div className="bg-zinc-900/10 border border-white/5 rounded-2xl p-6">
-             <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-4">Channel Positioning</p>
+             <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-4">About this channel</p>
              <p className="text-sm text-zinc-400 leading-relaxed line-clamp-6 whitespace-pre-wrap">{item.metadata.snippet.description}</p>
           </div>
         )}
@@ -267,7 +267,7 @@ export default function NotePage({ params }) {
       <div className="space-y-6">
         <div className="flex items-center gap-2 px-1">
            <BarChart3 className="w-3.5 h-3.5 text-zinc-500" />
-           <h4 className="text-xs font-semibold text-zinc-400">Performance Metrics</h4>
+           <h4 className="text-xs font-semibold text-zinc-400">Video stats</h4>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -331,7 +331,7 @@ export default function NotePage({ params }) {
             <div className="hidden sm:flex items-center gap-2 text-sm text-zinc-400">
                <span className="truncate max-w-[200px] font-medium text-zinc-200">{title || 'Untitled Note'}</span>
                <ChevronRight className="w-3.5 h-3.5 opacity-40" />
-               <span className="text-xs font-medium uppercase tracking-widest opacity-60">Edit Research</span>
+               <span className="text-xs font-medium uppercase tracking-widest opacity-60">Edit note</span>
             </div>
           </div>
           
@@ -407,7 +407,7 @@ export default function NotePage({ params }) {
               <div className="flex items-center justify-between px-2">
                  <div className="flex items-center gap-3">
                     <Edit3 className="w-4 h-4 text-zinc-500" />
-                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-[0.2em]">Notes & Strategy</label>
+                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-[0.2em]">Your notes</label>
                  </div>
                  <AnimatePresence>
                     {saving && (
@@ -429,7 +429,7 @@ export default function NotePage({ params }) {
                   value={content}
                   onChange={setContent}
                   modules={modules}
-                  placeholder="Draft your strategy, ideas, or research notes here..."
+                  placeholder="Write your ideas and notes here..."
                   className="quill-dark flex-1 flex flex-col"
                 />
               </div>
@@ -479,7 +479,7 @@ export default function NotePage({ params }) {
                                  className="flex-1 flex items-center justify-center gap-2 px-6 py-2.5 bg-white text-black hover:bg-zinc-200 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-xl shadow-white/5"
                                >
                                  <BarChart3 className="w-4 h-4" />
-                                 Deep Analysis
+                                 Open analysis
                                </a>
                              )}
                              {(item.type === 'video' || item.type === 'channel') && (
@@ -504,7 +504,7 @@ export default function NotePage({ params }) {
               <div className="bg-zinc-900/20 border border-white/5 rounded-3xl p-6 lg:p-8 space-y-8">
                  <div className="flex items-center justify-between">
                     <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
-                       <ShieldCheck className="w-4 h-4" /> Metadata
+                       <ShieldCheck className="w-4 h-4" /> Details
                     </h4>
                     <div className="px-2.5 py-0.5 bg-green-500/10 border border-green-500/20 rounded-full text-[9px] font-bold text-green-500 uppercase tracking-widest flex items-center gap-1.5">
                        <div className="w-1 h-1 rounded-full bg-green-500"></div>

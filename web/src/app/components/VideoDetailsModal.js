@@ -114,7 +114,7 @@ ${item.snippet?.description || item.description || "No description found."}
               className={`backdrop-blur-md p-2 rounded-full border border-white/10 transition-all ${
                 savedItem ? 'bg-green-500/20 hover:bg-green-500/40 border-green-500/30' : 'bg-black/40 hover:bg-black/60'
               }`}
-              title={savedItem ? "Edit Research Note" : "Save to Research Hub"}
+              title={savedItem ? "Edit note" : "Save to Library"}
             >
               {savedItem ? (
                 <Edit3 className="w-4 h-4 text-green-400" />
@@ -230,7 +230,7 @@ ${item.snippet?.description || item.description || "No description found."}
                       {channelSubs && parseInt(channelSubs) < 1000 
                         ? "Revenue only available for channels with 1,000+ subscribers."
                         : parseInt(selectedVideo.item.statistics?.viewCount || 0) < 10000 
-                        ? "Data is statistically insignificant for videos under 10k views."
+                        ? "Too few views for a good earnings guess (under 10K)."
                         : `Rough guess based on ${filters?.region || 'US'} rates and current exchange.`}
                     </p>
                 </div>
@@ -312,15 +312,15 @@ ${item.snippet?.description || item.description || "No description found."}
                     <>
                       <div className="flex items-center justify-between mb-10 relative z-10">
                         <div>
-                          <h3 className="text-xl font-black text-white uppercase tracking-tight mb-1">Growth Projection</h3>
+                          <h3 className="text-xl font-black text-white uppercase tracking-tight mb-1">Growth forecast</h3>
                           <p className="text-[10px] text-[#666666] font-bold uppercase tracking-[0.2em]">
                             {isDeadArchive 
-                              ? 'Archive State: Zero Growth Predicted'
+                              ? 'Looks inactive: little growth'
                               : isStagnantNewVideo 
-                                ? 'Critical Warning: Stagnant Momentum' 
+                                ? 'Warning: growth has stalled' 
                                 : isLowSustainability 
-                                  ? 'Sustainability Warning: Low Momentum' 
-                                  : 'Predicted trajectory for the next 30 days'}
+                                  ? 'Warning: growth may slow' 
+                                  : 'Guess for the next 30 days'}
                           </p>
                         </div>
                         <div className="text-right">
@@ -371,13 +371,13 @@ ${item.snippet?.description || item.description || "No description found."}
                 })()}
                 <div className="flex justify-between mt-8 text-[10px] font-black text-[#444444] uppercase tracking-[0.3em] border-t border-white/5 pt-6">
                    <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-white/10"></div>Origin</span>
-                   <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{ backgroundColor: selectedVideo.v?.dailyViews < 250 ? '#ff4b2b' : `rgb(${selectedVideo.dominantColor || '0, 112, 243'})` }}></div>Velocity Target</span>
+                   <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{ backgroundColor: selectedVideo.v?.dailyViews < 250 ? '#ff4b2b' : `rgb(${selectedVideo.dominantColor || '0, 112, 243'})` }}></div>Growth target</span>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                  <div className="bg-[#080808] border border-white/5 p-10 rounded-[2.5rem] flex flex-col justify-center">
-                    <label className="text-[10px] uppercase tracking-[0.2em] font-black text-[#666666] mb-10 block text-center">Audience Resonance</label>
+                    <label className="text-[10px] uppercase tracking-[0.2em] font-black text-[#666666] mb-10 block text-center">How engaged viewers are</label>
                     <div className="flex items-center justify-center gap-14">
                        <div className="relative w-40 h-40 flex items-center justify-center">
                           <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">

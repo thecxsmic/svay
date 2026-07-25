@@ -275,8 +275,8 @@ export default function AnalyticsPage() {
     return (
       <EmptyState
         icon={BarChart3}
-        title="No Channel Connected"
-        description="Connect your YouTube channel in the sidebar to unlock historical tracking and growth predictions."
+        title="No channel connected"
+        description="Connect your YouTube channel in the menu to track growth over time."
       />
     );
   }
@@ -360,13 +360,13 @@ export default function AnalyticsPage() {
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
           <DashPanel
-            title="Performance trajectory"
+            title="Growth over time"
             icon={BarChart3}
             className="lg:col-span-8"
             action={
               chartData.isPrediction ? (
                 <span className="inline-flex items-center gap-1.5 rounded-md border border-[#00f0ff]/20 bg-[#00f0ff]/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#00f0ff]">
-                  <Sparkles className="h-3 w-3" /> Prediction
+                  <Sparkles className="h-3 w-3" /> Guess ahead
                 </span>
               ) : null
             }
@@ -374,8 +374,8 @@ export default function AnalyticsPage() {
           >
             <p className="mb-4 text-[10px] font-bold uppercase tracking-wider text-zinc-600">
               {chartData.isPrediction
-                ? "Linear projection from recent performance"
-                : "Historical daily snapshots"}
+                ? "Guess based on recent views"
+                : "Daily history"}
             </p>
             <div className="h-[280px] sm:h-[340px]">
               <Line
@@ -403,7 +403,7 @@ export default function AnalyticsPage() {
           <div className="flex flex-col gap-4 lg:col-span-4">
             <DashPanel title="Next milestone" icon={Target} bodyClassName="p-5 space-y-5">
               <p className="text-xs leading-relaxed text-zinc-500">
-                Trajectory to 100K total views based on recent averages.
+                Path to 100K total views based on recent averages.
               </p>
               <div>
                 <div className="mb-2 flex items-end justify-between">
@@ -436,10 +436,10 @@ export default function AnalyticsPage() {
             <div className="flex items-center justify-between rounded-2xl border border-white/[0.07] bg-zinc-950/70 p-5">
               <div>
                 <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-600">
-                  Channel health
+                  Channel status
                 </p>
                 <p className="mt-1 font-display text-lg uppercase tracking-tight text-white">
-                  Stable growth
+                  Growing steadily
                 </p>
               </div>
               <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/10">

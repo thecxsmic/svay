@@ -80,7 +80,7 @@ export default function VideoCard({ item, setHoverInfo, setSelectedVideo, format
            <div 
             onMouseEnter={() => setHoverInfo({ 
               title: `${v.level} Status (Score: ${v.score})`, 
-              text: `How well this video is performing based on daily views (${formatNumber(v.dailyViews)}/day) and engagement (${v.engagement}%).` 
+              text: `How well this video is doing based on daily views (${formatNumber(v.dailyViews)}/day) and likes/comments (${v.engagement}%).` 
             })} 
             onMouseLeave={() => setHoverInfo(null)} 
             className={`bg-gradient-to-r ${v.color} text-white px-4 py-1.5 rounded-xl font-black text-[10px] tracking-[0.2em] uppercase shadow-2xl cursor-help flex items-center gap-3`}
@@ -102,7 +102,7 @@ export default function VideoCard({ item, setHoverInfo, setSelectedVideo, format
             ></h3>
             {item.distance !== undefined && !isNaN(item.distance) && (
               <span 
-                onMouseEnter={() => setHoverInfo({ title: "Search Match", text: "How well this video matches your search." })} 
+                onMouseEnter={() => setHoverInfo({ title: "Search match", text: "How close this video is to your search." })} 
                 onMouseLeave={() => setHoverInfo(null)} 
                 className="shrink-0 text-[10px] font-black px-3 py-1.5 rounded-full tracking-widest cursor-help border transition-colors whitespace-nowrap"
                 style={{ 
@@ -111,7 +111,7 @@ export default function VideoCard({ item, setHoverInfo, setSelectedVideo, format
                   borderColor: `rgba(${color}, 0.4)`
                 }}
               >
-                MATCH {(item.distance * 100).toFixed(0)}%
+                Match {(item.distance * 100).toFixed(0)}%
               </span>
             )}
           </div>

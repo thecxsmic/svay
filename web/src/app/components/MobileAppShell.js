@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { UserButton } from '@clerk/nextjs';
 import {
   Search,
@@ -24,19 +24,18 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMobilePageTabs } from '@/contexts/mobilePageTabs';
-import { useNavProgress } from '@/contexts/navProgress';
 
 /** Icon-only primary tabs (thumb zone) */
 const PRIMARY_TABS = [
   { name: 'Search', href: '/', icon: Search },
   { name: 'Trends', href: '/radar', icon: Zap },
-  { name: 'Channels', href: '/channels', icon: Users },
+  { name: 'Library', href: '/library', icon: BookOpen },
   { name: 'Rivals', href: '/competitors', icon: Trophy },
 ];
 
 const MORE_LINKS = [
+  { name: 'Channels', href: '/channels', icon: Users, group: 'Grow' },
   { name: 'Analytics', href: '/analytics', icon: BarChart3, group: 'Grow' },
-  { name: 'Library', href: '/library', icon: BookOpen, group: 'Grow' },
   { name: 'Tools', href: '/tools', icon: Wrench, group: 'Grow' },
   { name: 'Billing', href: '/billing', icon: CreditCard, group: 'Account' },
   { name: 'Affiliate', href: '/affiliate', icon: Megaphone, group: 'Account' },
@@ -69,12 +68,10 @@ export default function MobileAppShell({
   onToggleDemo,
 }) {
   const pathname = usePathname();
-  const router = useRouter();
   const [moreOpen, setMoreOpen] = useState(false);
   const moreActive = isMoreActive(pathname);
   const pageTabsCtx = useMobilePageTabs();
   const pageTabs = pageTabsCtx?.config;
-  const navProgress = useNavProgress();
   const hasPageTabs =
     Array.isArray(pageTabs?.items) &&
     pageTabs.items.length > 0 &&
@@ -283,14 +280,11 @@ export default function MobileAppShell({
                         const active = isTabActive(pathname, item.href);
                         const Icon = item.icon;
                         return (
-                          <button
+                          <Link
                             key={item.href}
-                            type="button"
-                            onClick={() => {
-                              setMoreOpen(false);
-                              navProgress?.start({ href: item.href, label: item.name });
-                              router.push(item.href);
-                            }}
+                            href={item.href}
+                            prefetch
+                            onClick={() => setMoreOpen(false)}
                             className={`flex w-full items-center gap-3 px-3.5 py-3.5 text-left active:bg-white/[0.06] ${
                               idx < arr.length - 1 ? 'border-b border-white/[0.05]' : ''
                             } ${active ? 'bg-white/[0.05]' : ''}`}
@@ -312,7 +306,7 @@ export default function MobileAppShell({
                               {item.name}
                             </span>
                             <ChevronRight className="h-4 w-4 text-zinc-600" />
-                          </button>
+                          </Link>
                         );
                       })}
                     </div>
@@ -376,6 +370,7 @@ function NavIcon({ href, icon: Icon, label, active }) {
   return (
     <Link
       href={href}
+      prefetch
       aria-label={label}
       title={label}
       className="relative flex h-11 w-11 items-center justify-center"

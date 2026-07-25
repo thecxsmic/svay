@@ -102,7 +102,7 @@ export default function ToolsQuotaBanner({ quota, loading, blockedError }) {
               <div className="min-w-0">
                 <p className="text-xs font-bold text-white">Upgrade to Pro</p>
                 <p className="mt-0.5 text-[11px] text-zinc-500">
-                  Highest tool caps + full intelligence dashboard
+                  Higher limits + full dashboard
                 </p>
               </div>
             </Link>
@@ -112,8 +112,8 @@ export default function ToolsQuotaBanner({ quota, loading, blockedError }) {
             <div className="flex items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-950/50 p-3.5 sm:col-span-2">
               <Lock className="h-4 w-4 shrink-0 text-zinc-600" />
               <p className="text-[11px] text-zinc-500">
-                Guest sessions are capped and bound to this browser + network (IP). Clearing
-                cookies does not reset the network limit.
+                Guest use is limited per browser and internet connection. Clearing cookies does
+                not reset the limit.
               </p>
             </div>
           )}

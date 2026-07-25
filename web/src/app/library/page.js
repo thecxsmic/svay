@@ -75,7 +75,7 @@ export default function LibraryPage() {
     return (
       <div className="bg-black/40 border border-white/5 rounded-2xl p-5 mb-8 space-y-4">
         <div className="flex items-center justify-between border-b border-white/5 pb-3 mb-1">
-           <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Snapshot Stats</p>
+           <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Saved stats</p>
            <span className="text-[9px] font-black text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded">At Save Time</span>
         </div>
         
@@ -91,7 +91,7 @@ export default function LibraryPage() {
         </div>
 
         <div className="pt-3 border-t border-white/5 flex items-center justify-between">
-           <p className="text-[9px] font-bold text-zinc-600 uppercase">Competitive Set</p>
+           <p className="text-[9px] font-bold text-zinc-600 uppercase">Rivals saved</p>
            <div className="flex -space-x-1.5">
               {competitors.slice(0, 3).map((c, i) => (
                 <img 
@@ -127,7 +127,7 @@ export default function LibraryPage() {
           <div className="space-y-2">
             <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] flex items-center gap-2">
                <Target className="w-3.5 h-3.5" />
-               Strategic Focus
+               Why it matters
             </p>
             <p className="text-xs text-zinc-400 leading-relaxed line-clamp-2">{rationale}</p>
           </div>
@@ -137,7 +137,7 @@ export default function LibraryPage() {
            {effort && (
              <div className="space-y-1">
                <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.2em]">
-                  Complexity
+                  How hard
                </p>
                <p className="text-[11px] font-bold text-zinc-300">{effort}</p>
              </div>
@@ -145,7 +145,7 @@ export default function LibraryPage() {
            {timing && (
              <div className="space-y-1">
                <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.2em]">
-                  Velocity
+                  Timing
                </p>
                <p className="text-[11px] font-bold text-zinc-300">{timing}</p>
              </div>
@@ -261,11 +261,11 @@ export default function LibraryPage() {
   };
 
   const TABS = [
-    { id: 'all', label: 'Vault', icon: Archive },
+    { id: 'all', label: 'All', icon: Archive },
     { id: 'video', label: 'Videos', icon: Video },
     { id: 'channel', label: 'Channels', icon: User },
     { id: 'idea', label: 'Ideas', icon: Lightbulb },
-    { id: 'analysis', label: 'Market DNA', icon: BarChart3 }
+    { id: 'analysis', label: 'Comparisons', icon: BarChart3 }
   ];
 
   return (
@@ -282,7 +282,7 @@ export default function LibraryPage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search vault..."
+                placeholder="Search saved items..."
                 className="h-9 w-56 rounded-full border border-white/[0.08] bg-white/[0.03] pl-9 pr-4 text-xs text-white outline-none transition-colors placeholder:text-zinc-600 focus:border-white/20"
               />
             </div>
@@ -291,7 +291,7 @@ export default function LibraryPage() {
         mobileLeft={
           <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5">
             <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-600">
-              Vault
+              Library
             </p>
             <p className="mt-0.5 text-sm font-semibold text-white">
               {filteredItems.length} item{filteredItems.length === 1 ? "" : "s"}
@@ -397,7 +397,7 @@ export default function LibraryPage() {
                   {!item.content && !getThumbnail(item) && (
                     <div className="flex-1 flex flex-col items-center justify-center p-10 border border-dashed border-zinc-800 rounded-3xl mb-8 opacity-40">
                        <Database className="w-6 h-6 text-zinc-700 mb-3" />
-                       <p className="text-[10px] text-zinc-700 font-bold uppercase tracking-[0.2em]">Data Pending</p>
+                       <p className="text-[10px] text-zinc-700 font-bold uppercase tracking-[0.2em]">No details yet</p>
                     </div>
                   )}
 
@@ -411,7 +411,7 @@ export default function LibraryPage() {
                         title="Analyze"
                       >
                         <BarChart3 className="w-4 h-4" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">Deep Analysis</span>
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">Open analysis</span>
                       </Link>
                     )}
                     {(item.type === 'video' || item.type === 'channel') && (
@@ -437,7 +437,7 @@ export default function LibraryPage() {
                      </div>
                      {item.metadata?.vScore && (
                        <div className="flex items-center gap-2 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full">
-                          <span className="text-[9px] font-black text-blue-500 uppercase tracking-tighter">VIRALITY</span>
+                          <span className="text-[9px] font-black text-blue-500 uppercase tracking-tighter">Viral score</span>
                           <span className="text-[11px] font-black text-blue-400">{item.metadata.vScore}%</span>
                        </div>
                      )}
@@ -449,14 +449,14 @@ export default function LibraryPage() {
             <EmptyState
               key="empty"
               icon={BookOpen}
-              title="Vault is empty"
-              description="Save analyzed channels, viral patterns, or custom research ideas to build your competitive edge."
+              title="Nothing saved yet"
+              description="Save channels, videos, or ideas while you research."
               action={
                 <Link
                   href="/radar"
                   className="inline-flex items-center rounded-full bg-white px-8 py-3 text-[10px] font-bold uppercase tracking-[0.18em] text-black transition-colors hover:bg-zinc-200"
                 >
-                  Scan for Trends
+                  Find trends
                 </Link>
               }
             />

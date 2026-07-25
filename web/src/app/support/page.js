@@ -34,7 +34,7 @@ const TOPICS = [
 const FAQS = [
   {
     q: "How do I cancel or update my subscription?",
-    a: "Open Billing from the sidebar (or the Pro badge). You can cancel at period end, resume a pending cancel, or manage your payment method in the Dodo portal.",
+    a: "Open Billing from the menu (or the Pro badge). You can cancel at period end, resume a pending cancel, or manage payment in the billing portal.",
     href: "/billing",
     linkLabel: "Go to Billing",
   },
@@ -274,7 +274,7 @@ export default function SupportPage() {
                 rows={5}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder="Tell us what happened, what you expected, and any account email or payment details that help."
+                placeholder="Tell us what happened, what you expected, and any account email or payment details that help us."
                 className="w-full resize-y rounded-md border border-zinc-800 bg-black px-3 py-2.5 text-xs leading-relaxed text-white outline-none placeholder:text-zinc-600 focus:border-zinc-600"
               />
             </label>

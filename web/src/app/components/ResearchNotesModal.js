@@ -43,7 +43,7 @@ export default function ResearchNotesModal({ isOpen, onClose, item, onSave, onVi
           <div className="space-y-1">
             <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest flex items-center gap-1.5">
               <Target className="w-2.5 h-2.5" />
-              Strategy / Opportunity
+              Why it matters
             </p>
             <p className="text-[11px] text-zinc-400 leading-relaxed line-clamp-2">{rationale}</p>
           </div>
@@ -62,7 +62,7 @@ export default function ResearchNotesModal({ isOpen, onClose, item, onSave, onVi
             <div className="space-y-1">
               <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest flex items-center gap-1.5">
                 <Activity className="w-2.5 h-2.5 text-blue-500" />
-                Momentum
+                Timing
               </p>
               <p className="text-[10px] font-bold text-zinc-300 uppercase">{timing}</p>
             </div>
@@ -237,7 +237,7 @@ export default function ResearchNotesModal({ isOpen, onClose, item, onSave, onVi
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
-            {base.title || 'Market Snapshot'}
+            {base.title || 'Competitor report'}
           </p>
           <span className="text-[10px] font-bold text-blue-500 uppercase px-2 py-0.5 bg-blue-500/10 rounded">
             {competitors.length} Rivals
@@ -343,7 +343,7 @@ export default function ResearchNotesModal({ isOpen, onClose, item, onSave, onVi
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-white uppercase tracking-tighter">
-                      {dbId ? 'Edit Research Note' : 'Save to Research Hub'}
+                      {dbId ? 'Edit note' : 'Save to Library'}
                     </h3>
                     {item?.title && (
                       <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest truncate max-w-[400px]">
@@ -380,7 +380,7 @@ export default function ResearchNotesModal({ isOpen, onClose, item, onSave, onVi
                           <button
                             onClick={() => onViewDetails(item)}
                             className="absolute bottom-2 right-2 bg-white/10 hover:bg-white/20 backdrop-blur-md p-1.5 rounded-lg border border-white/5 transition-all group"
-                            title="View Full Analytics"
+                            title="View full stats"
                           >
                             <Eye className="w-3.5 h-3.5 text-white" />
                           </button>
@@ -454,7 +454,7 @@ export default function ResearchNotesModal({ isOpen, onClose, item, onSave, onVi
                     </label>
                     {loading && (
                       <span className="text-[9px] font-black text-blue-500 uppercase animate-pulse">
-                        Syncing Intelligence...
+                        Saving...
                       </span>
                     )}
                   </div>

@@ -88,11 +88,11 @@ export default function ToolsIndexPage() {
   const { quota, tiers, loading } = useToolsQuota();
 
   return (
-    <ToolsShell title="Free Tools" description="Rate-limited · account-aware" icon={Wrench}>
+    <ToolsShell title="Free Tools" description="Daily limits · linked to your account" icon={Wrench}>
       <div className="space-y-2">
         <p className="text-sm text-zinc-500">
-          Lightweight creator utilities with server-side quotas. Each run counts against your
-          daily allowance for this account and network.
+          Simple free tools. Each use counts toward your daily limit for this account and internet
+          connection.
         </p>
       </div>
 
@@ -182,11 +182,11 @@ export default function ToolsIndexPage() {
           Want more?
         </p>
         <h2 className="mt-2 text-sm font-bold text-white">
-          Trend radar, competitors, and full channel analytics
+          Trends, competitors, and full channel analytics
         </h2>
         <p className="mt-1.5 text-[12px] leading-relaxed text-zinc-500">
-          Pro unlocks real-time viral analysis, competitor matrices, smart search, and growth
-          tracking — with a 7-day free trial.
+          Pro unlocks trends, rival comparison, smarter search, and growth tracking. Try free for
+          7 days.
         </p>
         <Link
           href="/sign-in"

@@ -19,48 +19,48 @@ export default function DocsPage() {
   const docSections = [
     {
       id: "search",
-      title: "Content Scorer & Search",
-      shortTitle: "Content Scorer",
+      title: "Search & scores",
+      shortTitle: "Search",
       icon: Search,
-      desc: "Analyze search terms and calculate real-time audience demand metrics.",
-      howItWorks: "Queries digital query matrices to identify high-performing content assets. It calculates a customized 'Virality Score' based on the ratio of views to a channel's overall subscriber count, combined with comment-to-view interaction frequency. This filters out outlier viral videos from small channels.",
-      howToUse: "Type any keyword or topic in the main dashboard search bar. Apply filters for geographical region, upload dates, or video duration. Look at the Opportunity indicator—a high percentage suggests low saturation with strong viewer demand, marking a prime entry window."
+      desc: "Search topics and see how strong demand looks right now.",
+      howItWorks: "We search YouTube for your topic. Each video gets a viral score from views vs. channel size and likes/comments. That helps show strong videos, not only huge channels.",
+      howToUse: "Type any topic in the Search bar. Use filters for country, date, or length. Look at Room to grow — a high number means people want the topic and there is space for new videos."
     },
     {
       id: "trends",
-      title: "Trend Radar",
-      shortTitle: "Trend Radar",
+      title: "Trends",
+      shortTitle: "Trends",
       icon: Zap,
-      desc: "Spot high-velocity topics before they saturate the market.",
-      howItWorks: "Continuously tracks sudden spikes in query velocity across distinct categories. By comparing daily average volume against historical standard deviation limits, the Radar identifies breakout concepts before they reach mainstream feed pages.",
-      howToUse: "Open the Trends tab to see current high-growth queries. Pay attention to the momentum tag ('Hot' vs. 'Spike'). Integrate these rising search terms or format hooks into your script drafts."
+      desc: "Spot rising topics before everyone posts about them.",
+      howItWorks: "We watch for sudden jumps in search interest so you can catch trends early.",
+      howToUse: "Open Trends to see hot topics. Use Hot/Spike tags. Put those topics and title ideas into your next script."
     },
     {
       id: "competitors",
-      title: "Competitor Benchmarking",
+      title: "Compare competitors",
       shortTitle: "Competitors",
       icon: Trophy,
-      desc: "Compare subscriber velocity and format benchmarks against rival channels.",
-      howItWorks: "Monitors custom sets of tracking IDs to profile their upload frequency, view density, and audience retention indicators. This lets you see the baseline performance required to rank in your target niche.",
-      howToUse: "Add competitor handles in the Competitors module. Look at the format benchmarks to find recurring themes, length structures, or thumbnail hooks that successfully capture traffic."
+      desc: "Compare growth and video styles with rival channels.",
+      howItWorks: "We track rivals' upload pace, views, and engagement so you know what “good” looks like in your space.",
+      howToUse: "Open Competitors and run a compare. Look at titles, length, and thumbnails that get traffic."
     },
     {
       id: "library",
-      title: "Library & Outliner",
+      title: "Library & notes",
       shortTitle: "Library",
       icon: BookOpen,
-      desc: "Organize research notes, format references, and scripts in one unified space.",
-      howItWorks: "Stores references, drafts, and outline logs in a secure, sandboxed container. Outlines are linked directly to performance data, so you build scripts backed by real statistical hooks.",
-      howToUse: "Save top-performing references to your Library from any search result. Open the library outline editor to draft scripts, take notes, and structure videos alongside reference material."
+      desc: "Keep research notes, references, and scripts in one place.",
+      howItWorks: "You can save videos, channels, and ideas privately. Notes can sit next to real performance data so you write from facts.",
+      howToUse: "Save strong results to Library from Search or Trends. Open an item to write notes and plan your next video."
     },
     {
       id: "analytics",
-      title: "Channel Analytics",
+      title: "Channel analytics",
       shortTitle: "Analytics",
       icon: BarChart3,
-      desc: "Track subscriber growth velocities, reach index, and authority stats.",
-      howItWorks: "Aggregates performance snapshots into interactive charts. It measures Subscriber Net gain, Virality Indices, and Audience Resonance metrics to grade your vertical authority.",
-      howToUse: "Review the Analytics dashboard to check weekly momentum. Use the Subscriber Net charts to correlate specific upload formats with subscriber milestones."
+      desc: "Track subscriber growth, reach, and channel strength.",
+      howItWorks: "We save daily snapshots and show them in charts — subscriber gains, viral scores, and how engaged viewers are.",
+      howToUse: "Open Analytics to check weekly growth. Use the charts to see which video styles help you gain fans."
     }
   ];
 
@@ -220,7 +220,7 @@ export default function DocsPage() {
 
       {/* ── FOOTER ── */}
       <footer className="border-t border-zinc-900 px-4 py-3 text-center text-[9px] font-mono text-zinc-600 font-bold uppercase tracking-widest bg-black shrink-0">
-        © 2026 Svay Intelligence Platform
+        © 2026 Svay
       </footer>
 
     </div>

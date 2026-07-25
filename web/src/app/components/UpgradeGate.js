@@ -19,31 +19,31 @@ import DemoLoginButton from "./DemoLoginButton";
 const FEATURES = [
   {
     icon: Radar,
-    title: "Trend Radar",
-    desc: "Real-time viral analysis & breakout alerts",
+    title: "Trends",
+    desc: "Live trend scans and hot-topic alerts",
   },
   {
     icon: BarChart3,
-    title: "Growth Matrix",
-    desc: "Creator benchmarks & velocity tracking",
+    title: "Growth comparison",
+    desc: "Compare creators and track growth speed",
   },
   {
     icon: Search,
     title: "Smart Search",
-    desc: "Results ranked by virality score",
+    desc: "Results ranked by viral score",
   },
   {
     icon: Zap,
-    title: "7-Day Trial",
+    title: "7-day trial",
     desc: "Full Pro access · cancel in one click",
   },
 ];
 
 const INCLUDED = [
-  "Full Pro suite on day one",
-  "Early-adopter rate locked for life",
+  "All Pro features from day one",
+  "Keep this price for as long as you stay",
   "Priority support & future features",
-  "Unlimited research notebooks",
+  "Unlimited saved notes",
 ];
 
 export default function UpgradeGate({
@@ -77,7 +77,7 @@ export default function UpgradeGate({
 
   const subcopy = isHalted
     ? "We couldn't process your payment. Update billing to restore full access."
-    : "Unlock trend radar, competitor intel, and growth tools built for serious creators.";
+    : "Unlock trends, rival tracking, and growth tools made for YouTube creators.";
 
   const setPlan = (plan) => {
     setBillingInterval(plan);

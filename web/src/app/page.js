@@ -124,14 +124,23 @@ export default function Home() {
       <div className={`transition-all duration-500 ease-out ${hasSearched ? 'pt-0' : 'flex min-h-[55vh] flex-col justify-center pt-6 md:min-h-[50vh] md:pt-10'}`}>
         <section className={`z-[45] w-full min-w-0 max-w-full transition-all duration-500 ${hasSearched ? 'sticky top-0 border-b border-white/[0.06] bg-black/80 px-4 py-3 backdrop-blur-xl sm:px-6' : 'mx-auto max-w-2xl border-transparent px-4 sm:px-6'}`}>
           <form onSubmit={handleSearch} className={`relative group mx-auto w-full min-w-0 transition-all duration-500 ${hasSearched ? 'max-w-full md:max-w-[1600px]' : 'w-full'}`}>
+            {!hasSearched && (
+              <div className="mb-8 flex justify-center sm:mb-10" aria-hidden>
+                <div className="h-[72px] w-[72px] rounded-full bg-gradient-to-tr from-geist-success via-[#00f0ff] to-geist-success animate-logo-gradient shadow-[0_0_32px_rgba(0,112,243,0.45)] sm:h-20 sm:w-20 sm:shadow-[0_0_40px_rgba(0,112,243,0.5)]" />
+              </div>
+            )}
             <div className="relative flex items-center overflow-hidden rounded-2xl border border-white/[0.08] bg-zinc-950/60 transition-all duration-300 focus-within:border-white/20">
-              <div className="relative z-10 shrink-0 pl-4 text-zinc-500 sm:pl-5"><Search className="h-4 w-4 sm:h-5 sm:w-5" /></div>
+              {hasSearched && (
+                <div className="relative z-10 shrink-0 pl-3.5 sm:pl-4" aria-hidden>
+                  <div className="h-5 w-5 rounded-full bg-gradient-to-tr from-geist-success via-[#00f0ff] to-geist-success animate-logo-gradient shadow-[0_0_12px_rgba(0,112,243,0.35)]" />
+                </div>
+              )}
               <input 
                 type="text" 
-                placeholder="Search keywords or topics..." 
+                placeholder="Search a topic or keyword..." 
                 value={query} 
                 onChange={(e) => setQuery(e.target.value)} 
-                className="relative z-10 w-full bg-transparent px-3 py-3.5 text-sm font-medium text-white outline-none placeholder-zinc-600 sm:py-4 sm:text-base" 
+                className={`relative z-10 w-full bg-transparent py-3.5 text-sm font-medium text-white outline-none placeholder-zinc-600 sm:py-4 sm:text-base ${hasSearched ? 'px-3' : 'px-4 sm:px-5'}`}
               />
               <div className="relative z-10 flex items-center gap-2 pr-2">
                 {hasSearched && (
@@ -201,7 +210,7 @@ export default function Home() {
                   <div className={`w-4 h-4 rounded border transition-all ${showAnalysis ? 'bg-white border-white' : 'border-white/20 group-hover:border-white/40'}`}>
                     {showAnalysis && <Search className="w-3 h-3 text-black m-auto" />}
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-accents-4 group-hover:text-white transition-colors">Insights</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-accents-4 group-hover:text-white transition-colors">Stats</span>
                 </label>
              </div>
           </motion.div>
@@ -218,12 +227,12 @@ export default function Home() {
               >
                 <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
                   {[
-                    { label: 'Market volume', value: formatNumber(results.reduce((acc, item) => acc + parseInt(item.statistics?.viewCount || 0), 0)), sub: 'Total views', icon: BarChart3, tone: 'text-white' },
-                    { label: 'Growth trend', value: results.length > 25 ? 'High' : 'Steady', sub: 'Momentum', icon: TrendingUp, tone: 'text-[#00f0ff]' },
-                    { label: 'Opportunity', value: `${((results.reduce((acc, item) => acc + calculateViralityScore(item).score, 0) / results.length) * (1 - (results.length / 100))).toFixed(0)}%`, sub: 'Viral potential', icon: Target, tone: 'text-emerald-400' },
-                    { label: 'Avg performance', value: formatNumber(results.reduce((acc, item) => acc + parseInt(item.statistics?.viewCount || 0), 0) / results.length), sub: 'Views / video', icon: Zap, tone: 'text-zinc-200' },
-                    { label: 'Engagement', value: `${(results.reduce((acc, item) => acc + parseFloat(calculateViralityScore(item).engagement), 0) / results.length).toFixed(2)}%`, sub: 'Likes+comments', icon: TrendingUp, tone: 'text-orange-400' },
-                    { label: 'Channels', value: new Set(results.map(i => i.snippet.channelId || i.snippet.channelTitle)).size, sub: 'Unique creators', icon: Users, tone: 'text-zinc-200' },
+                    { label: 'Total views', value: formatNumber(results.reduce((acc, item) => acc + parseInt(item.statistics?.viewCount || 0), 0)), sub: 'All results', icon: BarChart3, tone: 'text-white' },
+                    { label: 'Topic heat', value: results.length > 25 ? 'High' : 'Steady', sub: 'How busy this topic is', icon: TrendingUp, tone: 'text-[#00f0ff]' },
+                    { label: 'Room to grow', value: `${((results.reduce((acc, item) => acc + calculateViralityScore(item).score, 0) / results.length) * (1 - (results.length / 100))).toFixed(0)}%`, sub: 'Chance for new videos', icon: Target, tone: 'text-emerald-400' },
+                    { label: 'Average views', value: formatNumber(results.reduce((acc, item) => acc + parseInt(item.statistics?.viewCount || 0), 0) / results.length), sub: 'Per video', icon: Zap, tone: 'text-zinc-200' },
+                    { label: 'Engagement', value: `${(results.reduce((acc, item) => acc + parseFloat(calculateViralityScore(item).engagement), 0) / results.length).toFixed(2)}%`, sub: 'Likes + comments', icon: TrendingUp, tone: 'text-orange-400' },
+                    { label: 'Channels', value: new Set(results.map(i => i.snippet.channelId || i.snippet.channelTitle)).size, sub: 'Different creators', icon: Users, tone: 'text-zinc-200' },
                   ].map((stat, i) => (
                     <div key={i} className="rounded-2xl border border-white/[0.07] bg-zinc-950/50 p-4 sm:p-5">
                       <div className="flex items-start justify-between gap-2">

@@ -58,7 +58,7 @@ const CACHE_KEY_PREFIX = 'competitor_analysis_cache_v2_';
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 
 export default function CompetitorsPage() {
-  useTitle("Competitor Matrix");
+  useTitle("Compare competitors");
   const searchParams = useSearchParams();
   const router = useRouter();
   const { channels } = useChannel();
@@ -109,7 +109,7 @@ export default function CompetitorsPage() {
       }
       
       setProgress(70);
-      setCurrentStep('Analyzing rival performance...');
+      setCurrentStep('Checking how rivals are doing...');
       
       const baseSubs = parseInt(subjectData.channel.statistics.subscriberCount);
       
@@ -119,10 +119,10 @@ export default function CompetitorsPage() {
           const cData = await cRes.json();
           if (cData.success && cData.channel) {
             const compSubs = parseInt(cData.channel.statistics.subscriberCount);
-            let matchType = "Emerging Rival";
-            if (compSubs > baseSubs * 10) matchType = "Market Leader";
-            else if (compSubs > baseSubs * 2) matchType = "Growth Target";
-            else if (compSubs >= baseSubs * 0.5) matchType = "Direct Peer";
+            let matchType = "Rising channel";
+            if (compSubs > baseSubs * 10) matchType = "Top channel";
+            else if (compSubs > baseSubs * 2) matchType = "Bigger channel";
+            else if (compSubs >= baseSubs * 0.5) matchType = "Similar size";
             
             return { ...cData.channel, videos: cData.videos || [], matchType };
           }
@@ -201,7 +201,7 @@ export default function CompetitorsPage() {
     setData(null);
 
     try {
-      setCurrentStep('Extracting Channel DNA...');
+      setCurrentStep('Learning about your channel...');
       setProgress(10);
       const res = await fetch(`/api/youtube/channel?channelId=${selectedChannel.id}`);
       const baseData = await res.json();
@@ -209,7 +209,7 @@ export default function CompetitorsPage() {
       
       const baseChannel = { ...baseData.channel, videos: baseData.videos || [] };
 
-      setCurrentStep('Identifying Niche Rivals...');
+      setCurrentStep('Finding rival channels...');
       setProgress(30);
       const topVideos = [...baseChannel.videos]
         .sort((a, b) => parseInt(b.statistics?.viewCount || 0) - parseInt(a.statistics?.viewCount || 0))
@@ -219,14 +219,14 @@ export default function CompetitorsPage() {
         ? topVideos.map(v => v.snippet.title.split(' ').slice(0, 2).join(' ')).join(' ')
         : selectedChannel.title;
 
-      setCurrentStep('Scanning Ecosystem...');
+      setCurrentStep('Searching similar creators...');
       setProgress(50);
       const compRes = await fetch(`/api/youtube/channel?q=${encodeURIComponent(nicheQuery)}`);
       const compData = await compRes.json();
       const initialResults = compData.items || [];
       const currentSubs = parseInt(baseChannel.statistics.subscriberCount || 0);
 
-      setCurrentStep('Crunching Rival Metrics...');
+      setCurrentStep('Comparing their stats...');
       setProgress(70);
       const filtered = initialResults.filter(c => c.id !== selectedChannel.id).slice(0, 4);
       
@@ -236,10 +236,10 @@ export default function CompetitorsPage() {
           const detailData = await detailRes.json();
           if (detailData.success) {
             const compSubs = parseInt(detailData.channel.statistics.subscriberCount);
-            let matchType = "Emerging Rival";
-            if (compSubs > currentSubs * 10) matchType = "Market Leader";
-            else if (compSubs > currentSubs * 2) matchType = "Growth Target";
-            else if (compSubs >= currentSubs * 0.5) matchType = "Direct Peer";
+            let matchType = "Rising channel";
+            if (compSubs > currentSubs * 10) matchType = "Top channel";
+            else if (compSubs > currentSubs * 2) matchType = "Bigger channel";
+            else if (compSubs >= currentSubs * 0.5) matchType = "Similar size";
 
             return {
               ...detailData.channel,
@@ -270,7 +270,7 @@ export default function CompetitorsPage() {
           body: JSON.stringify({
             subjectId: baseChannel.id,
             competitorIds: competitors.map(c => c.id),
-            title: `Matrix: ${baseChannel.title}`
+            title: `Compare: ${baseChannel.title}`
           })
         });
         const saveResult = await saveRes.json();
@@ -475,11 +475,11 @@ export default function CompetitorsPage() {
   };
 
   const typeColor = (t) =>
-    t === 'Market Leader'
+    t === 'Top channel'
       ? 'text-orange-400 border-orange-500/25 bg-orange-500/10'
-      : t === 'Growth Target'
+      : t === 'Bigger channel'
         ? 'text-emerald-400 border-emerald-500/25 bg-emerald-500/10'
-        : t === 'Direct Peer'
+        : t === 'Similar size'
           ? 'text-sky-400 border-sky-500/25 bg-sky-500/10'
           : 'text-zinc-400 border-white/10 bg-white/5';
 
@@ -561,7 +561,7 @@ export default function CompetitorsPage() {
             onClick={() =>
               handleSaveNote(
                 'analysis',
-                `Market Snapshot: ${data.baseChannel.title}`,
+                `Competitor report: ${data.baseChannel.title}`,
                 data
               )
             }
@@ -587,7 +587,7 @@ export default function CompetitorsPage() {
       <DashBody className="space-y-6 pb-20">
         {error && (
           <DashAlert variant="error">
-            <p className="font-bold uppercase tracking-wider">Mapping failed</p>
+            <p className="font-bold uppercase tracking-wider">Could not compare channels</p>
             <p className="mt-0.5 opacity-80">{error}</p>
           </DashAlert>
         )}
@@ -597,15 +597,15 @@ export default function CompetitorsPage() {
             <EmptyState
               key="empty"
               icon={Search}
-              title="Ecosystem mapping"
-              description="Map your channel against rivals for reach gaps, content DNA, and engagement benchmarks."
+              title="Compare your rivals"
+              description="See how you stack up on size, views, and likes."
               action={
                 <DashButton
                   onClick={analyzeCompetitors}
                   disabled={!selectedChannel}
                   size="lg"
                 >
-                  Start analysis
+                  Start compare
                 </DashButton>
               }
             />
@@ -637,13 +637,13 @@ export default function CompetitorsPage() {
                         <Trophy className="mt-0.5 h-5 w-5 text-amber-400" />
                         <div>
                           <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-amber-400/80">
-                            Niche dominance
+                            You lead this group
                           </p>
                           <h3 className="mt-1 font-display text-lg uppercase tracking-tight text-white">
-                            You lead this set
+                            You have the most fans
                           </h3>
                           <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-zinc-400">
-                            No tracked rival exceeds your subscriber count. Focus on defending efficiency and publishing cadence.
+                            You have more subscribers than the rivals we found. Keep posting often and keep views strong.
                           </p>
                         </div>
                       </div>
@@ -676,22 +676,22 @@ export default function CompetitorsPage() {
                       value={`${insights.share.toFixed(0)}%`}
                       icon={Target}
                       tone="text-violet-400"
-                      sub="Niche"
+                      sub="Of this group"
                       className="!p-3 sm:!p-5"
                     />
                     <DashKpi
-                      label="Eff"
+                      label="Views / fan"
                       value={insights.you.viewsPerSub.toFixed(1) + 'x'}
                       icon={Zap}
                       tone="text-orange-400"
-                      sub={insights.bestEff?.isYou ? 'Best' : 'Views/sub'}
+                      sub={insights.bestEff?.isYou ? 'Best here' : 'Views per fan'}
                       className="!p-3 sm:!p-5"
                     />
                   </div>
 
                   <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
                     <DashPanel
-                      title="Strategic radar"
+                      title="Strengths chart"
                       icon={BarChart3}
                       className="lg:col-span-7"
                       bodyClassName="h-80 p-4 sm:p-5"
@@ -704,7 +704,7 @@ export default function CompetitorsPage() {
                     </DashPanel>
 
                     <DashPanel
-                      title="Share of tracked niche"
+                      title="Your share of this group"
                       icon={PieChart}
                       className="lg:col-span-5"
                       bodyClassName="h-80 p-4 sm:p-5"
@@ -767,7 +767,7 @@ export default function CompetitorsPage() {
                             {row.stats.viewsPerSub.toFixed(1)}x
                           </p>
                           <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-600">
-                            eff
+                            views/fan
                           </p>
                         </div>
                       </div>
@@ -776,19 +776,19 @@ export default function CompetitorsPage() {
 
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                     <InsightCard
-                      title="Efficiency leader"
+                      title="Best views per fan"
                       value={insights.bestEff?.isYou ? 'You' : insights.bestEff?.title}
-                      desc={`${(insights.bestEff?.stats?.viewsPerSub || 0).toFixed(1)}x views per subscriber`}
+                      desc={`${(insights.bestEff?.stats?.viewsPerSub || 0).toFixed(1)}x views for each subscriber`}
                       icon={Zap}
                     />
                     <InsightCard
-                      title="Engagement leader"
+                      title="Best engagement"
                       value={insights.bestEng?.isYou ? 'You' : insights.bestEng?.title}
                       desc={`${(insights.bestEng?.stats?.avgEng || 0).toFixed(2)}% avg on recent uploads`}
                       icon={Heart}
                     />
                     <InsightCard
-                      title="Recent avg views"
+                      title="Best recent views"
                       value={
                         insights.bestAvg?.isYou
                           ? 'You lead'
@@ -811,7 +811,7 @@ export default function CompetitorsPage() {
                     {[
                       { id: 'subs', label: 'Subs' },
                       { id: 'views', label: 'Views' },
-                      { id: 'efficiency', label: 'Efficiency' },
+                      { id: 'efficiency', label: 'Views per fan' },
                       { id: 'eng', label: 'Engagement' },
                     ].map((s) => (
                       <DashChip
@@ -823,7 +823,7 @@ export default function CompetitorsPage() {
                       </DashChip>
                     ))}
                     <span className="mx-1 hidden h-4 w-px bg-white/10 sm:inline" />
-                    {['all', 'Market Leader', 'Growth Target', 'Direct Peer', 'Emerging Rival'].map(
+                    {['all', 'Top channel', 'Bigger channel', 'Similar size', 'Rising channel'].map(
                       (t) => (
                         <DashChip
                           key={t}
@@ -903,7 +903,7 @@ export default function CompetitorsPage() {
                           insights.contentHints.total) *
                           100
                       )}%`}
-                      desc="Of sampled titles include numbers — strong CTR pattern in this niche."
+                      desc="Many titles use numbers — that often gets more clicks."
                       icon={BarChart3}
                     />
                     <InsightCard
@@ -912,16 +912,16 @@ export default function CompetitorsPage() {
                         (insights.contentHints.withHow / insights.contentHints.total) *
                           100
                       )}%`}
-                      desc="Educational framing share across you + rivals."
+                      desc="Share of how-to titles among you and rivals."
                       icon={Target}
                     />
                     <InsightCard
-                      title="React / vs formats"
+                      title="React / vs videos"
                       value={`${Math.round(
                         (insights.contentHints.withVs / insights.contentHints.total) *
                           100
                       )}%`}
-                      desc="Response-style packaging in the current sample."
+                      desc="Share of reaction or vs-style titles."
                       icon={Zap}
                     />
                   </div>
@@ -932,7 +932,7 @@ export default function CompetitorsPage() {
                         {insights.you.topTitle}
                       </p>
                       <p className="mt-2 text-xs text-zinc-500">
-                        Highest views in the loaded sample — reverse-engineer hooks and packaging here.
+                        Your best recent video by views — study its title and style.
                       </p>
                     </DashPanel>
                   )}
@@ -963,7 +963,7 @@ export default function CompetitorsPage() {
                   </div>
 
                   <DashPanel
-                    title="Channel benchmarks"
+                    title="Side-by-side comparison"
                     icon={TrendingUp}
                     bodyClassName="h-80 p-4 sm:p-5"
                   >
@@ -974,7 +974,7 @@ export default function CompetitorsPage() {
                   </DashPanel>
 
                   <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                    <DashPanel title="Relative position" icon={Gauge} bodyClassName="divide-y divide-white/[0.04]">
+                    <DashPanel title="How you compare" icon={Gauge} bodyClassName="divide-y divide-white/[0.04]">
                       {insights.bySubs.map((row) => {
                         const delta = row.stats.subs - insights.you.subs;
                         return (
@@ -990,7 +990,7 @@ export default function CompetitorsPage() {
                             </div>
                             {row.isYou ? (
                               <span className="text-[10px] font-bold uppercase tracking-wider text-[#00f0ff]">
-                                baseline
+                                you
                               </span>
                             ) : (
                               <span
@@ -1019,21 +1019,21 @@ export default function CompetitorsPage() {
                         n={1}
                         text={
                           insights.gapToLeader > 0
-                            ? `Close the ${formatNumber(insights.gapToLeader)} sub gap to the nearest leader with consistent weekly uploads.`
-                            : 'You lead on subs — double down on formats with your highest recent avg views.'
+                            ? `You are ${formatNumber(insights.gapToLeader)} subscribers behind the leader. Post every week to catch up.`
+                            : 'You lead on subscribers — make more videos like your best recent ones.'
                         }
                       />
                       <ActionTip
                         n={2}
                         text={
                           insights.bestEff && !insights.bestEff.isYou
-                            ? `Study ${insights.bestEff.title}'s packaging — they convert viewers to long-term reach better (${insights.bestEff.stats.viewsPerSub.toFixed(1)}x).`
-                            : 'You lead views-per-sub — protect that efficiency; avoid dead-weight series.'
+                            ? `Study ${insights.bestEff.title}'s titles and thumbnails — they get more views per fan (${insights.bestEff.stats.viewsPerSub.toFixed(1)}x).`
+                            : 'You get the most views per fan — keep that style and drop weak series.'
                         }
                       />
                       <ActionTip
                         n={3}
-                        text={`Open Content tab and compare scatter vs a peer — steal winning view/like ratios.`}
+                        text="Open the Content tab and compare yourself to a peer. Copy what gets more likes."
                       />
                     </DashPanel>
                   </div>
@@ -1044,7 +1044,7 @@ export default function CompetitorsPage() {
               {activeTab === 'audience' && (
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
                   <DashPanel
-                    title="Your engagement mix"
+                    title="How people interact"
                     icon={PieChart}
                     className="lg:col-span-7"
                     bodyClassName="h-80 p-4 sm:p-5"
@@ -1053,7 +1053,7 @@ export default function CompetitorsPage() {
                       <EngagementPieChart videos={data.baseChannel.videos} />
                     ) : (
                       <p className="flex h-full items-center justify-center text-sm text-zinc-600">
-                        No video sample loaded for engagement mix.
+                        No videos loaded yet for this chart.
                       </p>
                     )}
                   </DashPanel>
@@ -1080,7 +1080,7 @@ export default function CompetitorsPage() {
                       sub={`${formatNumber(insights.you.viewsPerVideo)} views / video lifetime`}
                     />
 
-                    <DashPanel title="Vs rivals (engagement)" bodyClassName="divide-y divide-white/[0.04]">
+                    <DashPanel title="You vs rivals (likes + comments)" bodyClassName="divide-y divide-white/[0.04]">
                       {[
                         { label: 'You', stats: insights.you, you: true },
                         ...insights.rivals.map((r) => ({

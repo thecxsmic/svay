@@ -9,7 +9,7 @@ import VideoCard from "../components/VideoCard";
 import VideoDetailsModal from "../components/VideoDetailsModal";
 import ResearchNotesModal from "../components/ResearchNotesModal";
 import Link from "next/link";
-import { Save, Edit3, Search, Zap, BarChart3, TrendingUp, Target, Users, LayoutDashboard, SlidersHorizontal, ArrowRight, Activity, DollarSign, Video, Pin } from "lucide-react";
+import { Save, Edit3, Zap, BarChart3, TrendingUp, Target, Users, LayoutDashboard, SlidersHorizontal, ArrowRight, Activity, DollarSign, Video, Pin } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { LoadingToast } from "../components/dashboard/ui";
 
@@ -23,7 +23,7 @@ function ChannelsContent() {
   const [analysisData, setAnalysisData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [loadingStage, setLoadingStage] = useState(0);
-  const [loadingText, setLoadingText] = useState("Initializing...");
+  const [loadingText, setLoadingText] = useState("Starting...");
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
   const [hasSearched, setHasSearched] = useState(false);
@@ -132,7 +132,7 @@ function ChannelsContent() {
     
     setLoading(true);
     setLoadingStage(10);
-    setLoadingText("Extracting Niche DNA...");
+    setLoadingText("Learning about this channel...");
     setError(null);
 
     try {
@@ -145,7 +145,7 @@ function ChannelsContent() {
         .join(' ');
 
       setLoadingStage(30);
-      setLoadingText("Scanning Ecosystem...");
+      setLoadingText("Finding similar channels...");
       
       const res = await fetch(`/api/youtube/channel?q=${encodeURIComponent(nicheQuery)}`);
       const data = await res.json();
@@ -172,9 +172,9 @@ function ChannelsContent() {
       }).slice(0, 3);
 
       const topPicks = [];
-      if (peers.length > 0) topPicks.push({ ...peers[0], matchType: 'PEER', matchReason: 'Direct size parity' });
-      if (growthTargets.length > 0) topPicks.push({ ...growthTargets[0], matchType: 'TARGET', matchReason: 'Growth benchmark' });
-      if (marketLeaders.length > 0) topPicks.push({ ...marketLeaders[0], matchType: 'LEADER', matchReason: 'Niche authority' });
+      if (peers.length > 0) topPicks.push({ ...peers[0], matchType: 'PEER', matchReason: 'About the same size' });
+      if (growthTargets.length > 0) topPicks.push({ ...growthTargets[0], matchType: 'TARGET', matchReason: 'Bigger channel to learn from' });
+      if (marketLeaders.length > 0) topPicks.push({ ...marketLeaders[0], matchType: 'LEADER', matchReason: 'Top channel in this space' });
 
       const finalResults = topPicks.length > 0 ? [...topPicks, ...filtered.filter(c => !topPicks.find(p => p.id === c.id))] : filtered;
 
@@ -197,16 +197,16 @@ function ChannelsContent() {
       avgDaily = totalViews / daysDiff;
     }
 
-    if (subs >= 100000000 || avgDaily >= 10000000) return { tier: 1, label: 'Global Icon', sub: 'God Tier Scale' };
-    if (subs >= 50000000 || avgDaily >= 5000000) return { tier: 2, label: 'Diamond', sub: 'Market Leader' };
-    if (subs >= 20000000 || avgDaily >= 2000000) return { tier: 3, label: 'Titan', sub: 'Elite Production' };
-    if (subs >= 10000000 || avgDaily >= 1000000) return { tier: 4, label: 'Gold', sub: 'High Impact' };
-    if (subs >= 5000000 || avgDaily >= 500000) return { tier: 5, label: 'Elite', sub: 'Established Pro' };
-    if (subs >= 1000000 || avgDaily >= 250000) return { tier: 6, label: 'Silver', sub: 'Scale Achieved' };
-    if (subs >= 500000 || avgDaily >= 100000) return { tier: 7, label: 'Major', sub: 'Consistent Growth' };
-    if (subs >= 100000 || avgDaily >= 20000) return { tier: 8, label: 'Established', sub: 'Niche Presence' };
-    if (subs >= 10000 || avgDaily >= 5000) return { tier: 9, label: 'Micro', sub: 'Emerging Talent' };
-    return { tier: 10, label: 'Nano', sub: 'Early Stage' };
+    if (subs >= 100000000 || avgDaily >= 10000000) return { tier: 1, label: 'Huge', sub: 'One of the biggest' };
+    if (subs >= 50000000 || avgDaily >= 5000000) return { tier: 2, label: 'Very large', sub: 'Top of the space' };
+    if (subs >= 20000000 || avgDaily >= 2000000) return { tier: 3, label: 'Large', sub: 'Posts a lot' };
+    if (subs >= 10000000 || avgDaily >= 1000000) return { tier: 4, label: 'Big', sub: 'Strong reach' };
+    if (subs >= 5000000 || avgDaily >= 500000) return { tier: 5, label: 'Pro', sub: 'Solid channel' };
+    if (subs >= 1000000 || avgDaily >= 250000) return { tier: 6, label: 'Growing big', sub: 'Past 1M fans' };
+    if (subs >= 500000 || avgDaily >= 100000) return { tier: 7, label: 'Rising', sub: 'Steady growth' };
+    if (subs >= 100000 || avgDaily >= 20000) return { tier: 8, label: 'Established', sub: 'Known in topic' };
+    if (subs >= 10000 || avgDaily >= 5000) return { tier: 9, label: 'Small', sub: 'Building up' };
+    return { tier: 10, label: 'New', sub: 'Just starting' };
   };
 
   const handleSearch = async (e) => {
@@ -256,8 +256,8 @@ function ChannelsContent() {
       setLoadingStage(prev => {
         if (prev < 90) {
           const next = prev + Math.random() * 10;
-          if (next > 30 && next < 60) setLoadingText("Synthesizing History...");
-          if (next > 60) setLoadingText("Generating Projections...");
+          if (next > 30 && next < 60) setLoadingText("Loading past stats...");
+          if (next > 60) setLoadingText("Estimating growth...");
           return next;
         }
         return prev;
@@ -318,14 +318,23 @@ function ChannelsContent() {
       <div className={`transition-all duration-500 ease-out ${hasSearched ? 'pt-0' : 'flex min-h-[55vh] flex-col justify-center pt-6 md:min-h-[50vh] md:pt-10'}`}>
         <section className={`z-[45] w-full min-w-0 max-w-full transition-all duration-500 ${hasSearched ? 'sticky top-0 border-b border-white/[0.06] bg-black/80 px-4 py-3 backdrop-blur-xl sm:px-6' : 'mx-auto max-w-2xl border-transparent px-4 sm:px-6'}`}>
           <form onSubmit={handleSearch} className={`relative group mx-auto w-full min-w-0 transition-all duration-500 ${hasSearched ? 'max-w-full md:max-w-[1600px]' : 'w-full'}`}>
+            {!hasSearched && (
+              <div className="mb-8 flex justify-center sm:mb-10" aria-hidden>
+                <div className="h-[72px] w-[72px] rounded-full bg-gradient-to-tr from-geist-success via-[#00f0ff] to-geist-success animate-logo-gradient shadow-[0_0_32px_rgba(0,112,243,0.45)] sm:h-20 sm:w-20 sm:shadow-[0_0_40px_rgba(0,112,243,0.5)]" />
+              </div>
+            )}
             <div className="relative flex items-center overflow-hidden rounded-2xl border border-white/[0.08] bg-zinc-950/60 transition-all duration-300 focus-within:border-white/20">
-              <div className="relative z-10 shrink-0 pl-4 text-zinc-500 sm:pl-5"><Search className="h-4 w-4 sm:h-5 sm:w-5" /></div>
+              {hasSearched && (
+                <div className="relative z-10 shrink-0 pl-3.5 sm:pl-4" aria-hidden>
+                  <div className="h-5 w-5 rounded-full bg-gradient-to-tr from-geist-success via-[#00f0ff] to-geist-success animate-logo-gradient shadow-[0_0_12px_rgba(0,112,243,0.35)]" />
+                </div>
+              )}
               <input 
                 type="text" 
-                placeholder="Search creators, handles, or IDs..." 
+                placeholder="Search a channel name, @handle, or ID..." 
                 value={query} 
                 onChange={(e) => setQuery(e.target.value)} 
-                className="relative z-10 w-full bg-transparent px-3 py-3.5 text-sm font-medium text-white outline-none placeholder-zinc-600 sm:py-4 sm:text-base" 
+                className={`relative z-10 w-full bg-transparent py-3.5 text-sm font-medium text-white outline-none placeholder-zinc-600 sm:py-4 sm:text-base ${hasSearched ? 'px-3' : 'px-4 sm:px-5'}`}
               />
               <div className="relative z-10 flex items-center gap-2 pr-2">
                 <button 
@@ -540,7 +549,7 @@ function ChannelsContent() {
                           : 'border-transparent text-accents-4 hover:text-accents-5'
                       }`}
                     >
-                      {tab === 'growth' ? 'projections' : tab}
+                      {tab === 'growth' ? 'forecast' : tab}
                     </button>
                   ))}
                 </div>
@@ -557,9 +566,9 @@ function ChannelsContent() {
                         {(() => {
                           const tierData = getAudienceTier(analysisData.channel.statistics, analysisData.videos);
                           return [
-                            { label: 'Audience Level', value: tierData.label, sub: tierData.sub, icon: Users, color: 'text-geist-success' },
-                            { label: 'Visibility', value: `${(parseInt(analysisData.channel.statistics.viewCount) / 10000000).toFixed(2)}%`, sub: 'Global Reach', icon: Target, color: 'text-[#00dfd8]' },
-                            { label: 'Output Power', value: (parseInt(analysisData.channel.statistics.videoCount) / 10).toFixed(1), sub: 'Production Intensity', icon: Zap, color: 'text-geist-success' }
+                            { label: 'Channel size', value: tierData.label, sub: tierData.sub, icon: Users, color: 'text-geist-success' },
+                            { label: 'How widely seen', value: `${(parseInt(analysisData.channel.statistics.viewCount) / 10000000).toFixed(2)}%`, sub: 'Reach score', icon: Target, color: 'text-[#00dfd8]' },
+                            { label: 'How often they post', value: (parseInt(analysisData.channel.statistics.videoCount) / 10).toFixed(1), sub: 'Upload activity', icon: Zap, color: 'text-geist-success' }
                           ].map((stat, i) => (
                             <div key={i} className="bg-white/[0.02] border border-white/5 p-6 rounded-2xl hover:border-white/10 transition-all group">
                               <div className={`w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center mb-4 ${stat.color}`}>
@@ -575,13 +584,13 @@ function ChannelsContent() {
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="bg-white/[0.02] border border-white/5 p-8 rounded-3xl">
-                          <h4 className="text-[10px] font-bold text-white uppercase tracking-widest mb-6">Channel DNA</h4>
+                          <h4 className="text-[10px] font-bold text-white uppercase tracking-widest mb-6">Channel strengths</h4>
                           <div className="space-y-5">
                             {[
-                              { label: 'Audience Loyalty', value: 88, color: 'bg-geist-success' },
-                              { label: 'Brand Authority', value: 74, color: 'bg-[#00dfd8]' },
-                              { label: 'Market Saturation', value: 42, color: 'bg-accents-5' },
-                              { label: 'Growth Velocity', value: 65, color: 'bg-white' }
+                              { label: 'Fan loyalty', value: 88, color: 'bg-geist-success' },
+                              { label: 'How well known', value: 74, color: 'bg-[#00dfd8]' },
+                              { label: 'How crowded the space is', value: 42, color: 'bg-accents-5' },
+                              { label: 'Growth speed', value: 65, color: 'bg-white' }
                             ].map((dna, i) => (
                               <div key={i}>
                                 <div className="flex justify-between text-[9px] font-bold uppercase mb-2">
@@ -602,16 +611,16 @@ function ChannelsContent() {
 
                         <div className="bg-white/[0.02] border border-white/5 p-8 rounded-3xl flex flex-col justify-between">
                           <div>
-                            <h4 className="text-[10px] font-bold text-white uppercase tracking-widest mb-4">Intelligence Summary</h4>
+                            <h4 className="text-[10px] font-bold text-white uppercase tracking-widest mb-4">Quick summary</h4>
                             <p className="text-sm text-accents-4 font-medium leading-relaxed">
-                              This channel operates at a <span className="text-white font-bold">High Intensity</span> production level. 
-                              The audience resonance suggests <span className="text-[#00dfd8] font-bold">Strong Authority</span> within its niche, 
-                              with an estimated retention rate of <span className="text-white font-bold">72.4%</span> across recent uploads.
+                              This channel posts a <span className="text-white font-bold">lot</span>.
+                              Fans look <span className="text-[#00dfd8] font-bold">loyal</span> in this topic,
+                              and about <span className="text-white font-bold">72%</span> of recent viewers may stick around.
                             </p>
                           </div>
                           <div className="pt-6 mt-6 border-t border-white/5 flex items-center gap-3">
                             <Activity className="w-4 h-4 text-geist-success" />
-                            <span className="text-[10px] font-bold text-accents-5 uppercase tracking-widest">Ecosystem Tracked by Svay Neural</span>
+                            <span className="text-[10px] font-bold text-accents-5 uppercase tracking-widest">Tracked by Svay</span>
                           </div>
                         </div>
                       </div>
@@ -648,13 +657,13 @@ function ChannelsContent() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                               <div className="bg-white/[0.02] border border-white/5 p-8 rounded-3xl">
-                                <h4 className="text-[10px] font-bold text-white uppercase tracking-widest mb-8">Growth Velocity</h4>
+                                <h4 className="text-[10px] font-bold text-white uppercase tracking-widest mb-8">Growth speed</h4>
                                 <div className="h-64">
                                   <GrowthChart history={history} />
                                 </div>
                               </div>
                               <div className="bg-white/[0.02] border border-white/5 p-8 rounded-3xl">
-                                <h4 className="text-[10px] font-bold text-white uppercase tracking-widest mb-8">Acquisition</h4>
+                                <h4 className="text-[10px] font-bold text-white uppercase tracking-widest mb-8">New subscribers</h4>
                                 <div className="h-64">
                                   <SubsChangeChart history={history} />
                                 </div>
@@ -664,8 +673,8 @@ function ChannelsContent() {
                             <div className="bg-white/[0.02] border border-white/5 p-8 rounded-3xl">
                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
                                   <div>
-                                     <h4 className="text-[10px] font-bold text-white uppercase tracking-widest mb-2">Content Resonance</h4>
-                                     <p className="text-[10px] text-accents-5 font-bold uppercase mb-6">Engagement Spread</p>
+                                     <h4 className="text-[10px] font-bold text-white uppercase tracking-widest mb-2">How people react</h4>
+                                     <p className="text-[10px] text-accents-5 font-bold uppercase mb-6">Likes vs views</p>
                                      <div className="space-y-4">
                                         {[
                                            { label: 'High (4% +)', count: analysisData.videos.filter(v => (parseInt(v.statistics?.likeCount||0)/parseInt(v.statistics?.viewCount||1)*100) > 4).length, color: 'border-geist-success' },
@@ -719,10 +728,10 @@ function ChannelsContent() {
                           <>
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                {[
-                                 { label: 'Viral Efficiency', value: `${hitRate.toFixed(1)}%`, sub: 'Hit Rate', color: 'text-white' },
-                                 { label: 'Engagement', value: `${avgEngagement.toFixed(2)}%`, sub: 'Avg Engagement', color: 'text-[#00dfd8]' },
-                                 { label: 'Velocity', value: `+${formatNumber(avgDailyViews)}`, sub: 'Avg Daily Views', color: 'text-geist-success' },
-                                 { label: 'Cadence', value: `${avgInterval.toFixed(1)}d`, sub: 'Upload Frequency', color: 'text-white' }
+                                 { label: 'Viral hit rate', value: `${hitRate.toFixed(1)}%`, sub: 'Videos that take off', color: 'text-white' },
+                                 { label: 'Engagement', value: `${avgEngagement.toFixed(2)}%`, sub: 'Average likes+comments', color: 'text-[#00dfd8]' },
+                                 { label: 'Daily views', value: `+${formatNumber(avgDailyViews)}`, sub: 'Average per day', color: 'text-geist-success' },
+                                 { label: 'Upload pace', value: `${avgInterval.toFixed(1)}d`, sub: 'Days between uploads', color: 'text-white' }
                                ].map((stat, i) => (
                                  <div key={i} className="bg-white/[0.02] border border-white/5 p-6 rounded-2xl">
                                     <p className="text-[9px] font-bold text-accents-4 uppercase tracking-widest mb-1">{stat.label}</p>
@@ -735,8 +744,8 @@ function ChannelsContent() {
                             <div className="bg-white/[0.02] border border-white/5 p-8 rounded-3xl">
                                <div className="flex justify-between items-center mb-10">
                                   <div>
-                                     <h4 className="text-[10px] font-bold text-white uppercase tracking-widest">Momentum spread</h4>
-                                     <p className="text-[10px] text-accents-5 font-bold uppercase mt-1">Relative Viral Intensity</p>
+                                     <h4 className="text-[10px] font-bold text-white uppercase tracking-widest">How strong each video was</h4>
+                                     <p className="text-[10px] text-accents-5 font-bold uppercase mt-1">Compared across uploads</p>
                                   </div>
                                </div>
                                <div className="h-40 flex items-end gap-1 px-2">
@@ -774,8 +783,8 @@ function ChannelsContent() {
                              <TrendingUp className="w-40 h-40 text-[#00dfd8]" />
                           </div>
                           <div className="relative z-10 text-center">
-                             <h4 className="text-[10px] font-bold text-accents-4 uppercase tracking-widest mb-2">Neural Forecast</h4>
-                             <p className="text-2xl text-white font-bold tracking-tight mb-12">Revenue Trajectory (30D)</p>
+                             <h4 className="text-[10px] font-bold text-accents-4 uppercase tracking-widest mb-2">Growth forecast</h4>
+                             <p className="text-2xl text-white font-bold tracking-tight mb-12">Money estimate (next 30 days)</p>
                              <div className="h-80">
                                 <RevenueProjectionChart history={generateChannelHistory(analysisData.channel.statistics, 14)} />
                              </div>
@@ -817,10 +826,10 @@ function ChannelsContent() {
                              const revMax = isMonetized ? (opt30DViews / 1000) * 10.00 : 0;
 
                              return [
-                                { label: 'Predicted Subs', value: `+${formatNumber(subVelocity * 0.7)} — +${formatNumber(subVelocity * 1.4)}`, color: 'text-[#00dfd8]', icon: Users },
-                                { label: 'Predicted Views', value: `+${formatNumber(base30DViews)} — +${formatNumber(opt30DViews)}`, color: 'text-geist-success', icon: Activity },
-                                { label: 'Monetization', value: isMonetized ? 'ACTIVE' : 'PENDING', color: 'text-white', icon: DollarSign },
-                                { label: 'Est. Revenue', value: `$${formatNumber(revMin)} — $${formatNumber(revMax)}`, color: 'text-white', icon: TrendingUp }
+                                { label: 'Expected new fans', value: `+${formatNumber(subVelocity * 0.7)} — +${formatNumber(subVelocity * 1.4)}`, color: 'text-[#00dfd8]', icon: Users },
+                                { label: 'Expected views', value: `+${formatNumber(base30DViews)} — +${formatNumber(opt30DViews)}`, color: 'text-geist-success', icon: Activity },
+                                { label: 'Ads status', value: isMonetized ? 'On' : 'Not yet', color: 'text-white', icon: DollarSign },
+                                { label: 'Est. ad money', value: `$${formatNumber(revMin)} — $${formatNumber(revMax)}`, color: 'text-white', icon: TrendingUp }
                              ].map((p, i) => (
                                 <div key={i} className="bg-white/[0.02] border border-white/5 p-6 rounded-2xl">
                                    <div className="flex items-center gap-3 mb-4">

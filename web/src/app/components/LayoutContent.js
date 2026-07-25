@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { UserButton } from "@clerk/nextjs";
 import { Plus, Search, Zap, Users, Trophy, BookOpen, BarChart3, Radio, HelpCircle, SlidersHorizontal, Trash2, CreditCard, LifeBuoy, Wrench, ChevronRight, Megaphone } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -14,8 +14,6 @@ import SetupUserChannelModal from "./SetupUserChannelModal";
 import RemoveUserChannelModal from "./RemoveUserChannelModal";
 import MobileAppShell from "./MobileAppShell";
 import { MobilePageTabsProvider } from "@/contexts/mobilePageTabs";
-import { NavProgressProvider } from "@/contexts/navProgress";
-import DashboardNavLoader from "./DashboardNavLoader";
 
 const navItems = [
   { name: 'Search', href: '/', icon: Search },
@@ -31,14 +29,28 @@ const navItems = [
   { name: 'Docs', href: '/docs', icon: HelpCircle },
 ];
 
+/** Prefetch every dashboard route so nav switches skip the RSC/JS fetch. */
+const PREFETCH_ROUTES = [
+  ...navItems.map((i) => i.href),
+  '/tools/title',
+  '/tools/tags',
+  '/tools/script',
+  '/tools/seo',
+  '/tools/chapters',
+  '/tools/earnings',
+  '/tools/engagement',
+  '/tools/milestones',
+  '/admin',
+];
+
 function resolvePageMeta(pathname) {
-  if (pathname === '/') return { title: 'Search', section: 'Intelligence' };
-  if (pathname.startsWith('/radar')) return { title: 'Trend Radar', section: 'Intelligence' };
-  if (pathname.startsWith('/channels')) return { title: 'Channels', section: 'Intelligence' };
-  if (pathname.startsWith('/competitors')) return { title: 'Competitors', section: 'Intelligence' };
-  if (pathname.startsWith('/analytics')) return { title: 'Analytics', section: 'Growth' };
-  if (pathname.startsWith('/library')) return { title: 'Library', section: 'Research' };
-  if (pathname.startsWith('/tools')) return { title: 'Tools', section: 'Utilities' };
+  if (pathname === '/') return { title: 'Search', section: 'Explore' };
+  if (pathname.startsWith('/radar')) return { title: 'Trends', section: 'Explore' };
+  if (pathname.startsWith('/channels')) return { title: 'Channels', section: 'Explore' };
+  if (pathname.startsWith('/competitors')) return { title: 'Competitors', section: 'Explore' };
+  if (pathname.startsWith('/analytics')) return { title: 'Analytics', section: 'Track' };
+  if (pathname.startsWith('/library')) return { title: 'Library', section: 'Saved' };
+  if (pathname.startsWith('/tools')) return { title: 'Tools', section: 'Tools' };
   if (pathname.startsWith('/billing')) return { title: 'Billing', section: 'Account' };
   if (pathname.startsWith('/affiliate')) return { title: 'Affiliate', section: 'Account' };
   if (pathname.startsWith('/support')) return { title: 'Support', section: 'Account' };
@@ -55,6 +67,7 @@ export default function LayoutContent({ children, subscription }) {
   const { user } = useUser();
   const [isDemo, setIsDemo] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
   const isPromo = subscription?.subscriptionId?.startsWith("promo_") || 
                   subscription?.planId?.startsWith("promo_") ||
@@ -68,6 +81,39 @@ export default function LayoutContent({ children, subscription }) {
   useEffect(() => {
     setIsDemo(document.cookie.includes("demo_mode=true"));
   }, []);
+
+  // Warm all dashboard pages in the background so clicks navigate instantly.
+  useEffect(() => {
+    let cancelled = false;
+    let idleId = null;
+    let timeoutId = null;
+
+    const run = () => {
+      if (cancelled) return;
+      for (const href of PREFETCH_ROUTES) {
+        try {
+          router.prefetch(href);
+        } catch {
+          // Prefetch is best-effort; ignore unsupported routes.
+        }
+      }
+    };
+
+    // Prefer idle time so first paint of the current page stays snappy.
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      idleId = window.requestIdleCallback(run, { timeout: 1500 });
+    } else {
+      timeoutId = window.setTimeout(run, 200);
+    }
+
+    return () => {
+      cancelled = true;
+      if (idleId != null && typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
+        window.cancelIdleCallback(idleId);
+      }
+      if (timeoutId != null) clearTimeout(timeoutId);
+    };
+  }, [router]);
 
   const toggleDemoMode = () => {
     document.cookie = "demo_mode=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
@@ -128,7 +174,7 @@ export default function LayoutContent({ children, subscription }) {
 
       <nav className="flex-1 px-3 space-y-0.5 mt-2 overflow-y-auto no-scrollbar">
         <div className="pb-2 px-3">
-          <p className="font-display text-[10px] font-bold text-accents-4 uppercase tracking-widest">Intelligence</p>
+          <p className="font-display text-[10px] font-bold text-accents-4 uppercase tracking-widest">Explore</p>
         </div>
         {navItems.map((item) => {
           const isActive =
@@ -138,7 +184,8 @@ export default function LayoutContent({ children, subscription }) {
           return (
             <Link 
               key={item.name}
-              href={item.href} 
+              href={item.href}
+              prefetch
               className={`flex items-center gap-3 px-3 py-2 rounded-md text-[11px] font-bold uppercase tracking-wider transition-all relative group ${
                 isActive 
                   ? 'text-white bg-white/[0.08]' 
@@ -296,10 +343,8 @@ export default function LayoutContent({ children, subscription }) {
   const page = resolvePageMeta(pathname);
 
   return (
-    <NavProgressProvider>
     <div className="flex h-full w-full min-w-0 max-w-full overflow-hidden bg-black text-white font-sans selection:bg-geist-success selection:text-white">
       {sharedModals}
-      <DashboardNavLoader />
 
       {/* ═══ MOBILE APP SHELL (phones / Android) ═══ */}
       <MobilePageTabsProvider>
@@ -354,7 +399,7 @@ export default function LayoutContent({ children, subscription }) {
                     if (ch?.id) selectChannel(ch.id);
                   }}
                   className="group flex max-w-xs items-center gap-2.5 rounded-full border border-white/[0.08] bg-white/[0.03] py-1 pl-1 pr-3 transition-all hover:border-white/15 hover:bg-white/[0.06]"
-                  title="Active research channel"
+                  title="Selected channel"
                 >
                   <div className="h-7 w-7 overflow-hidden rounded-full border border-white/10 bg-zinc-900">
                     {(selected || userChannel)?.thumbnail ? (
@@ -375,7 +420,7 @@ export default function LayoutContent({ children, subscription }) {
                       {(selected || userChannel)?.title || "Channel"}
                     </p>
                     <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-600 group-hover:text-zinc-500">
-                      Active channel
+                      Selected channel
                     </p>
                   </div>
                 </button>
@@ -449,7 +494,7 @@ export default function LayoutContent({ children, subscription }) {
                     <div className="flex h-4 w-4 items-center justify-center rounded-full bg-white/10">
                       <div className="ml-0.5 h-0 w-0 border-b-[2.5px] border-l-[4px] border-t-[2.5px] border-b-transparent border-l-white/40 border-t-transparent"></div>
                     </div>
-                    <span className="text-[10px] font-medium tracking-tight text-accents-4">© 2026 Svay Intelligence. All rights reserved.</span>
+                    <span className="text-[10px] font-medium tracking-tight text-accents-4">© 2026 Svay. All rights reserved.</span>
                 </div>
                 <div className="flex gap-6 text-[11px] font-medium text-accents-4">
                     <Link href="/support" className="transition-colors hover:text-white">Support</Link>
@@ -462,6 +507,5 @@ export default function LayoutContent({ children, subscription }) {
         </main>
       </div>
     </div>
-    </NavProgressProvider>
   );
 }

@@ -49,11 +49,11 @@ const TABS = [
   { id: 'trends', label: 'Trends', icon: Rocket },
   { id: 'actions', label: 'Actions', icon: ListOrdered },
   { id: 'ideas', label: 'Ideas', icon: Video },
-  { id: 'playbook', label: 'Playbook', icon: BookOpen },
+  { id: 'playbook', label: 'How-to', icon: BookOpen },
 ];
 
 export default function TrendRadar() {
-  useTitle('Trend Radar');
+  useTitle('Trends');
   const { channels } = useChannel();
   const { user } = useUser();
   const [loading, setLoading] = useState(false);
@@ -420,11 +420,11 @@ export default function TrendRadar() {
             <EmptyState
               key="empty"
               icon={Target}
-              title="Market Intelligence"
+              title="Find trending ideas"
               description={
                 selectedChannel
-                  ? `Scan ${selectedChannel.title} for viral trends, timing windows, quick wins, and video concepts.`
-                  : 'Select a channel in the sidebar to start scanning.'
+                  ? `Scan ${selectedChannel.title} for hot topics, easy wins, and video ideas.`
+                  : 'Pick a channel in the menu to start scanning.'
               }
               action={
                 <button
@@ -434,7 +434,7 @@ export default function TrendRadar() {
                   className="inline-flex h-11 items-center gap-2 rounded-xl bg-white px-6 text-[11px] font-bold uppercase tracking-wider text-black transition-colors hover:bg-zinc-200 disabled:opacity-40"
                 >
                   <Radar className="h-3.5 w-3.5" />
-                  Start analysis
+                  Start scan
                 </button>
               }
             />
@@ -444,7 +444,7 @@ export default function TrendRadar() {
             <ProgressLoader
               key="loading"
               progress={progress}
-              step={currentStep || 'Initializing…'}
+              step={currentStep || 'Starting…'}
             />
           )}
 
@@ -462,13 +462,13 @@ export default function TrendRadar() {
                 <>
                   <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                     <Kpi
-                      label="Viral potential"
+                      label="Chance to go viral"
                       value={overview?.viralPotential}
                       icon={Flame}
                       tone="text-orange-400"
                     />
                     <Kpi
-                      label="Momentum"
+                      label="Trend strength"
                       value={overview?.marketMomentum}
                       icon={TrendingUp}
                       tone="text-[#00f0ff]"
@@ -493,7 +493,7 @@ export default function TrendRadar() {
                         <div className="flex items-center gap-2">
                           <Sparkles className="h-3.5 w-3.5 text-[#00f0ff]" />
                           <h3 className="text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-500">
-                            Market summary
+                            Summary
                           </h3>
                         </div>
                       </div>
@@ -505,14 +505,14 @@ export default function TrendRadar() {
                     <section className="rounded-2xl border border-white/[0.07] bg-zinc-950/70 lg:col-span-5">
                       <div className="border-b border-white/[0.05] px-5 py-3">
                         <h3 className="text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-500">
-                          Snapshot
+                          Quick stats
                         </h3>
                       </div>
                       <div className="grid grid-cols-2 gap-px bg-white/[0.04] p-px">
-                        <Snap label="Avg viral score" value={stats?.avg} />
+                        <Snap label="Average score" value={stats?.avg} />
                         <Snap label="Hot trends" value={stats?.hot} />
                         <Snap label="Easy trends" value={stats?.easy} />
-                        <Snap label="Low-effort wins" value={stats?.lowEffort} />
+                        <Snap label="Easy wins" value={stats?.lowEffort} />
                       </div>
                     </section>
                   </div>
@@ -523,7 +523,7 @@ export default function TrendRadar() {
                       <div className="flex items-center gap-2">
                         <ListOrdered className="h-3.5 w-3.5 text-zinc-500" />
                         <h3 className="text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-500">
-                          Do this next
+                          Next steps
                         </h3>
                       </div>
                       <button
@@ -531,7 +531,7 @@ export default function TrendRadar() {
                         onClick={() => setTab('actions')}
                         className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 hover:text-white"
                       >
-                        Full queue →
+                        See full list →
                       </button>
                     </div>
                     <div className="divide-y divide-white/[0.04]">
@@ -565,7 +565,7 @@ export default function TrendRadar() {
                     </span>
                     {[
                       { id: 'score', label: 'Score' },
-                      { id: 'hot', label: 'Momentum' },
+                      { id: 'hot', label: 'Hottest first' },
                       { id: 'easy', label: 'Easiest first' },
                     ].map((s) => (
                       <Chip
@@ -620,10 +620,10 @@ export default function TrendRadar() {
                 <section className="rounded-2xl border border-white/[0.07] bg-zinc-950/70">
                   <div className="border-b border-white/[0.05] px-5 py-3">
                     <h3 className="text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-500">
-                      Priority action queue
+                      What to do first
                     </h3>
                     <p className="mt-1 text-xs text-zinc-600">
-                      Ranked by viral score, momentum, and effort — ship the top items first.
+                      Sorted by score, heat, and ease. Start at the top.
                     </p>
                   </div>
                   <div className="divide-y divide-white/[0.04]">
@@ -698,7 +698,7 @@ export default function TrendRadar() {
                           1
                         </span>
                         <span>
-                          Open <button type="button" onClick={() => setTab('actions')} className="font-semibold text-white underline-offset-2 hover:underline">Actions</button> and ship the #1 item while the window is open.
+                          Open <button type="button" onClick={() => setTab('actions')} className="font-semibold text-white underline-offset-2 hover:underline">Actions</button> and do the #1 idea while the trend is hot.
                         </span>
                       </li>
                       <li className="flex gap-3">
@@ -706,7 +706,7 @@ export default function TrendRadar() {
                           2
                         </span>
                         <span>
-                          Copy a title hook + pair it with a hot trend topic for your next upload.
+                          Copy a title idea and pair it with a hot topic for your next video.
                         </span>
                       </li>
                       <li className="flex gap-3">
@@ -714,7 +714,7 @@ export default function TrendRadar() {
                           3
                         </span>
                         <span>
-                          Save strong concepts to Library so you can batch-script later.
+                          Save good ideas to Library so you can write them later.
                         </span>
                       </li>
                       <li className="flex gap-3">
@@ -722,7 +722,7 @@ export default function TrendRadar() {
                           4
                         </span>
                         <span>
-                          Rescan after publishing to compare momentum shifts.
+                          Scan again after you post to see what changed.
                         </span>
                       </li>
                     </ol>

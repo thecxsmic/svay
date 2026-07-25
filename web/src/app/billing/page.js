@@ -147,7 +147,7 @@ export default function BillingPage() {
           <EmptyState
             icon={CreditCard}
             title="No active plan"
-            description="Subscribe to Pro to unlock the full dashboard."
+            description="Subscribe to Pro to use the full dashboard."
             compact
             action={
               <Link
@@ -209,7 +209,7 @@ export default function BillingPage() {
 
               {billing.isPromo && (
                 <p className="mt-4 border-t border-white/[0.05] pt-4 text-[11px] leading-relaxed text-zinc-500">
-                  Promo or admin grant — not billed through Dodo.
+                  Free promo access — not charged on our payment page.
                   {billing.currentPeriodEnd
                     ? ` Ends ${formatDate(billing.currentPeriodEnd)}.`
                     : ""}
@@ -224,7 +224,7 @@ export default function BillingPage() {
                     <div>
                       <p className="text-xs font-bold text-white">Payment method</p>
                       <p className="mt-0.5 text-[11px] text-zinc-500">
-                        Update card, invoices, billing email via Dodo portal
+                        Update card, invoices, and email in the payment portal
                       </p>
                     </div>
                     <button

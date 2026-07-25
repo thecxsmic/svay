@@ -129,8 +129,8 @@ export default function ToolsShell({
       <footer className="border-t border-zinc-900 py-8">
         <div className="mx-auto flex max-w-3xl flex-col items-center gap-3 px-4 text-center sm:px-6">
           <p className="text-[11px] leading-relaxed text-zinc-600">
-            Free tools are rate-limited by account tier and network. Abuse is blocked
-            automatically. For unlimited creator intel —{" "}
+            Free tools have daily limits by account and network. Abuse is blocked
+            automatically. For full creator tools —{" "}
             <Link
               href="/sign-in"
               className="text-zinc-400 underline-offset-2 hover:text-white hover:underline"
