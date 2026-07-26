@@ -7,26 +7,46 @@ import { apiSuccess, apiError } from "@/lib/utils/response";
 export async function POST(req) {
   try {
     console.log("[Competitor Email API] Received request");
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     const { analysisId, email, userId: providedUserId } = body;
     
-    let userId = (await auth()).userId;
-    let userEmail = email;
+    let userId = null;
+    let userEmail = email || null;
+
+    try {
+      const authObj = await auth();
+      userId = authObj?.userId || null;
+    } catch (e) {
+      console.warn("[Competitor Email API] auth() warning:", e?.message);
+    }
 
     if (!userId && providedUserId) {
       console.log("[Competitor Email API] Using background userId:", providedUserId);
       userId = providedUserId;
-      const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
-      const user = await clerk.users.getUser(userId);
-      userEmail = userEmail || user.emailAddresses[0]?.emailAddress;
-    } else if (userId) {
-      const user = await currentUser();
-      userEmail = userEmail || user.emailAddresses[0]?.emailAddress;
+    }
+
+    if (userId && !userEmail) {
+      try {
+        const user = await currentUser();
+        userEmail = user?.emailAddresses?.[0]?.emailAddress || null;
+      } catch (e) {
+        console.warn("[Competitor Email API] currentUser() warning:", e?.message);
+      }
+    }
+
+    if (userId && !userEmail && process.env.CLERK_SECRET_KEY) {
+      try {
+        const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
+        const user = await clerk.users.getUser(userId);
+        userEmail = user?.emailAddresses?.[0]?.emailAddress || null;
+      } catch (e) {
+        console.warn("[Competitor Email API] Clerk getUser warning:", e?.message);
+      }
     }
     
     if (!userId || !userEmail) {
-      console.error("[Competitor Email API] Unauthorized: No user or userId");
-      return apiError(new Error("Unauthorized"), 401);
+      console.error("[Competitor Email API] Unauthorized: Could not resolve user or user email");
+      return apiError(new Error("Unauthorized: User email not found"), 401);
     }
 
     console.log("[Competitor Email API] Analysis ID:", analysisId);
@@ -66,31 +86,38 @@ export async function POST(req) {
 
     console.log("[Competitor Email API] Target Email:", userEmail);
     
-    // Fetch full competitor details and recent videos from YouTube for the email content
+    // Fetch competitor details and recent videos from YouTube for the email content
     const apiKey = process.env.YOUTUBE_API_KEY;
-    console.log("[Competitor Email API] Using YT API Key:", apiKey ? "Present" : "MISSING");
     
-    const competitorsData = await Promise.all(
-      analysis.competitor_ids.map(async (id) => {
-        try {
-          const cRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${id}&key=${apiKey}`);
-          const cData = await cRes.json();
-          const channel = cData.items?.[0];
-          
-          if (!channel) return null;
+    let competitorsData = [];
+    if (apiKey && Array.isArray(analysis.competitor_ids)) {
+      competitorsData = await Promise.all(
+        analysis.competitor_ids.map(async (id) => {
+          try {
+            const cRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${id}&key=${apiKey}`);
+            const cData = await cRes.json();
+            const channel = cData.items?.[0];
+            
+            if (!channel) return null;
 
-          // Fetch recent 3 videos
-          const vRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${id}&order=date&type=video&maxResults=3&key=${apiKey}`);
-          const vData = await vRes.json();
-          const videos = vData.items || [];
+            // Fetch recent 3 videos
+            let videos = [];
+            try {
+              const vRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${id}&order=date&type=video&maxResults=3&key=${apiKey}`);
+              const vData = await vRes.json();
+              videos = vData.items || [];
+            } catch (ve) {
+              console.warn(`[Competitor Email API] Could not fetch videos for ${id}:`, ve?.message);
+            }
 
-          return { channel, videos };
-        } catch (e) {
-          console.error(`[Competitor Email API] Error fetching YT data for ${id}:`, e);
-          return null;
-        }
-      })
-    );
+            return { channel, videos };
+          } catch (e) {
+            console.error(`[Competitor Email API] Error fetching YT data for ${id}:`, e?.message);
+            return null;
+          }
+        })
+      );
+    }
 
     const validData = competitorsData.filter(Boolean);
     console.log("[Competitor Email API] Valid competitors found:", validData.length);
@@ -102,7 +129,7 @@ export async function POST(req) {
       competitors: validData,
     });
 
-    console.log("[Competitor Email API] Sending via Resend...");
+    console.log("[Competitor Email API] Sending via Resend to:", userEmail);
     const result = await sendEmail({
       to: userEmail,
       subject: emailContent.subject,
@@ -112,14 +139,13 @@ export async function POST(req) {
 
     if (!result.success) {
       console.error("[Competitor Email API] Resend Error:", result.error);
-      return apiError(new Error(result.error), 500);
+      return apiError(new Error(result.error || "Failed to deliver email"), 500);
     }
 
     console.log("[Competitor Email API] Success! Logging to DB...");
-    // 2. Log the email send
     await logEmail(userId, 'competitor_analysis', analysisId);
 
-    return apiSuccess({ success: true, message: "Email sent successfully" }, 200, rateLimitHeaders);
+    return apiSuccess({ success: true, message: `Email sent to ${userEmail}` }, 200, rateLimitHeaders);
   } catch (error) {
     console.error("[Competitor Email API] Global Error:", error);
     return apiError(error);

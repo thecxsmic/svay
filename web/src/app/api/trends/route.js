@@ -126,9 +126,13 @@ export async function POST(req) {
               
           // Trigger email report in background if not sent in last 24h
           const origin = req.headers.get('origin') || req.nextUrl.origin;
+          const cookieHeader = req.headers.get('cookie');
           fetch(`${origin}/api/trends/email`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              ...(cookieHeader ? { cookie: cookieHeader } : {})
+            },
             body: JSON.stringify({ channelId, userId })
           }).catch(err => {
             console.error("[Trends API] Error triggering cached email:", err);
@@ -384,9 +388,13 @@ INSTRUCTIONS:
 
           // Trigger email report in background
           const origin = req.headers.get('origin') || req.nextUrl.origin;
+          const cookieHeader = req.headers.get('cookie');
           fetch(`${origin}/api/trends/email`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              ...(cookieHeader ? { cookie: cookieHeader } : {})
+            },
             body: JSON.stringify({ channelId, userId })
           }).catch(err => {
             console.error("[Trends API] Error triggering email:", err);

@@ -12,6 +12,7 @@ import {
   Ticket,
   Crown,
   Wrench,
+  Megaphone,
 } from "lucide-react";
 import SubscriptionButton from "./SubscriptionButton";
 import DemoLoginButton from "./DemoLoginButton";
@@ -311,6 +312,15 @@ export default function UpgradeGate({
                 className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-zinc-800 bg-transparent py-3 text-[10px] font-bold uppercase tracking-wider text-zinc-400 transition-colors hover:border-zinc-700 hover:bg-white/[0.03] hover:text-white"
               />
 
+              {/* Affiliate nudge */}
+              <Link
+                href="/affiliate"
+                className="flex w-full items-center justify-center gap-2 rounded-md border border-zinc-800/60 bg-transparent py-2.5 text-[10px] font-bold uppercase tracking-wider text-zinc-500 transition-colors hover:border-zinc-700 hover:text-zinc-300"
+              >
+                <Megaphone className="h-3 w-3" />
+                Earn instead — join the affiliate program
+              </Link>
+
               {/* Promo */}
               <div className="pt-1 text-center">
                 {!showPromoInput ? (
@@ -392,6 +402,13 @@ export default function UpgradeGate({
             className="text-zinc-400 underline-offset-2 hover:text-white hover:underline"
           >
             Billing
+          </Link>
+          {" · "}
+          <Link
+            href="/affiliate"
+            className="text-zinc-400 underline-offset-2 hover:text-white hover:underline"
+          >
+            Affiliate program
           </Link>
         </p>
       </div>

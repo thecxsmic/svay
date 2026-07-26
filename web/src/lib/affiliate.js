@@ -6,9 +6,16 @@ const db = createClient({
   authToken: process.env.TURSO_AUTH_TOKEN || "",
 });
 
-/** Default commission: 15% of paid revenue for 6 months after the referred user joins. */
-export const AFFILIATE_COMMISSION_RATE = 0.15;
-export const AFFILIATE_COMMISSION_MONTHS = 6;
+/**
+ * Only commission plan: 'lifetime' — 10% forever, no expiry.
+ */
+export const COMMISSION_PLANS = {
+  lifetime: { rate: 0.10, months: null, label: '10% lifetime' },
+};
+
+/** Defaults (kept for backward compat with existing rows). */
+export const AFFILIATE_COMMISSION_RATE = 0.10;
+export const AFFILIATE_COMMISSION_MONTHS = null;
 
 /** Fallback amounts (cents) when webhook payload has no total. Matches public pricing. */
 export const PLAN_AMOUNTS_CENTS = {
@@ -32,10 +39,16 @@ export async function ensureAffiliateSchema() {
       status TEXT DEFAULT 'active',
       commission_rate REAL DEFAULT 0.15,
       commission_months INTEGER DEFAULT 6,
+      commission_type TEXT DEFAULT 'boosted',
       created_at INTEGER,
       updated_at INTEGER
     )
   `);
+
+  // Migrate: add commission_type if missing (idempotent)
+  try {
+    await db.execute(`ALTER TABLE affiliates ADD COLUMN commission_type TEXT DEFAULT 'boosted'`);
+  } catch { /* column already exists */ }
 
   await db.execute(`
     CREATE TABLE IF NOT EXISTS affiliate_referrals (
@@ -165,6 +178,7 @@ export async function upsertAffiliateProfile({
   displayName,
   paypalEmail,
   code: requestedCode,
+  commissionType,
 }) {
   await ensureAffiliateSchema();
   const now = Math.floor(Date.now() / 1000);
@@ -178,12 +192,26 @@ export async function upsertAffiliateProfile({
         ? displayName.trim()
         : existing.display_name;
     // Code is immutable after creation
-    await db.execute({
-      sql: `UPDATE affiliates
-            SET paypal_email = ?, display_name = ?, email = COALESCE(?, email), updated_at = ?
-            WHERE id = ?`,
-      args: [paypal || null, name || null, email || null, now, existing.id],
-    });
+    // Commission type can be changed before first referral payout
+    const plan = COMMISSION_PLANS[commissionType];
+    if (plan) {
+      await db.execute({
+        sql: `UPDATE affiliates
+              SET paypal_email = ?, display_name = ?, email = COALESCE(?, email),
+                  commission_rate = ?, commission_months = ?, commission_type = ?,
+                  updated_at = ?
+              WHERE id = ?`,
+        args: [paypal || null, name || null, email || null,
+               plan.rate, plan.months, commissionType, now, existing.id],
+      });
+    } else {
+      await db.execute({
+        sql: `UPDATE affiliates
+              SET paypal_email = ?, display_name = ?, email = COALESCE(?, email), updated_at = ?
+              WHERE id = ?`,
+        args: [paypal || null, name || null, email || null, now, existing.id],
+      });
+    }
     return getAffiliateByUserId(userId);
   }
 
@@ -208,12 +236,15 @@ export async function upsertAffiliateProfile({
     code = `${code.slice(0, 16)}${crypto.randomBytes(2).toString("hex").toUpperCase()}`;
   }
 
+  const plan = COMMISSION_PLANS[commissionType] || COMMISSION_PLANS.boosted;
+  const chosenType = COMMISSION_PLANS[commissionType] ? commissionType : 'boosted';
+
   const id = crypto.randomUUID();
   await db.execute({
     sql: `INSERT INTO affiliates
             (id, user_id, code, display_name, email, paypal_email, status,
-             commission_rate, commission_months, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?)`,
+             commission_rate, commission_months, commission_type, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?)`,
     args: [
       id,
       userId,
@@ -221,8 +252,9 @@ export async function upsertAffiliateProfile({
       displayName?.trim() || null,
       email || null,
       paypalEmail?.trim() || null,
-      AFFILIATE_COMMISSION_RATE,
-      AFFILIATE_COMMISSION_MONTHS,
+      plan.rate,
+      plan.months,
+      chosenType,
       now,
       now,
     ],
@@ -316,7 +348,8 @@ export async function recordAffiliateEarningFromPayment({
   }
 
   const refRs = await db.execute({
-    sql: `SELECT r.*, a.commission_rate, a.commission_months, a.status AS affiliate_status
+    sql: `SELECT r.*, a.commission_rate, a.commission_months, a.commission_type,
+                 a.status AS affiliate_status
           FROM affiliate_referrals r
           JOIN affiliates a ON a.id = r.affiliate_id
           WHERE r.referred_user_id = ? AND r.status = 'active'`,
@@ -332,6 +365,8 @@ export async function recordAffiliateEarningFromPayment({
     return { ok: false, reason: "affiliate_inactive" };
   }
 
+  const commissionType = referral.commission_type || 'boosted';
+  const isLifetime = commissionType === 'lifetime';
   const commissionMonths =
     referral.commission_months ?? AFFILIATE_COMMISSION_MONTHS;
   const commissionRate =
@@ -339,7 +374,8 @@ export async function recordAffiliateEarningFromPayment({
       ? referral.commission_rate
       : AFFILIATE_COMMISSION_RATE;
 
-  if (!isWithinCommissionWindow(referral.joined_at, paidAt, commissionMonths)) {
+  // Lifetime affiliates always earn — no time window check
+  if (!isLifetime && !isWithinCommissionWindow(referral.joined_at, paidAt, commissionMonths)) {
     return { ok: false, reason: "outside_window" };
   }
 
@@ -497,7 +533,8 @@ export async function getAffiliateDashboard(userId) {
           : "monthly"
       : null;
 
-    const windowOpen = isWithinCommissionWindow(
+    const isLifetime = (affiliate.commission_type || 'boosted') === 'lifetime';
+    const windowOpen = isLifetime || isWithinCommissionWindow(
       r.joined_at,
       now,
       affiliate.commission_months ?? AFFILIATE_COMMISSION_MONTHS
@@ -527,6 +564,7 @@ export async function getAffiliateDashboard(userId) {
       status: affiliate.status,
       commissionRate: affiliate.commission_rate ?? AFFILIATE_COMMISSION_RATE,
       commissionMonths: affiliate.commission_months ?? AFFILIATE_COMMISSION_MONTHS,
+      commissionType: affiliate.commission_type || 'boosted',
       createdAt: affiliate.created_at,
     },
     stats: {

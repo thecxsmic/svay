@@ -69,10 +69,42 @@ export default function TrendRadar() {
   const [sortBy, setSortBy] = useState('score'); // score | easy | hot
   const [diffFilter, setDiffFilter] = useState('all'); // all | easy | medium | hard
   const [copiedKey, setCopiedKey] = useState(null);
-
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailSuccessMsg, setEmailSuccessMsg] = useState(null);
 
   const selectedChannel = channels.data.find((c) => c.id === channels.selectedId);
   const getCacheKey = () => `${CACHE_KEY_PREFIX}${selectedChannel?.id || 'default'}`;
+
+  const handleSendEmail = async () => {
+    if (!selectedChannel || sendingEmail) return;
+    setSendingEmail(true);
+    setEmailSuccessMsg(null);
+    setError(null);
+    try {
+      const res = await fetch('/api/trends/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          channelId: selectedChannel.id,
+          userId: user?.id,
+          email: user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress
+        })
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) {
+        throw new Error(json.error || 'Failed to send email');
+      }
+      const now = Date.now();
+      setLastEmailSentAt(now);
+      cacheData(data, now);
+      setEmailSuccessMsg(json.message || 'Trend radar report emailed successfully!');
+      setTimeout(() => setEmailSuccessMsg(null), 5000);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSendingEmail(false);
+    }
+  };
 
   const loadCachedData = useCallback(() => {
     if (!selectedChannel) return null;
@@ -339,15 +371,6 @@ export default function TrendRadar() {
             {lastScanTime && !loading && (
               <MetaChip icon={Clock}>{getCacheAge()}</MetaChip>
             )}
-            {lastEmailSentAt && !loading && (
-              <MetaChip icon={Mail}>
-                Emailed{' '}
-                {new Date(lastEmailSentAt).toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </MetaChip>
-            )}
           </>
         }
         mobileLeft={
@@ -409,6 +432,11 @@ export default function TrendRadar() {
       </DashToolbar>
 
       <div className="mx-auto w-full min-w-0 max-w-full px-4 py-6 sm:px-6 sm:py-8 md:max-w-7xl">
+        {emailSuccessMsg && (
+          <div className="mb-6">
+            <DashAlert variant="success">{emailSuccessMsg}</DashAlert>
+          </div>
+        )}
         {error && (
           <div className="mb-6">
             <DashAlert variant="error">{error}</DashAlert>

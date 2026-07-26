@@ -7,26 +7,46 @@ import { apiSuccess, apiError } from "@/lib/utils/response";
 export async function POST(req) {
   try {
     console.log("[Trend Email API] Received request");
-    const body = await req.json();
-    const { channelId, userId: providedUserId } = body;
-    
-    let userId = (await auth()).userId;
-    let userEmail = null;
+    const body = await req.json().catch(() => ({}));
+    const { channelId, userId: providedUserId, email: providedEmail } = body;
+
+    let userId = null;
+    let userEmail = providedEmail || null;
+
+    try {
+      const authObj = await auth();
+      userId = authObj?.userId || null;
+    } catch (e) {
+      console.warn("[Trend Email API] auth() warning:", e?.message);
+    }
 
     if (!userId && providedUserId) {
       console.log("[Trend Email API] Using background userId:", providedUserId);
       userId = providedUserId;
-      const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
-      const user = await clerk.users.getUser(userId);
-      userEmail = user.emailAddresses[0]?.emailAddress;
-    } else if (userId) {
-      const user = await currentUser();
-      userEmail = user.emailAddresses[0]?.emailAddress;
     }
-    
+
+    if (userId && !userEmail) {
+      try {
+        const user = await currentUser();
+        userEmail = user?.emailAddresses?.[0]?.emailAddress || null;
+      } catch (e) {
+        console.warn("[Trend Email API] currentUser() warning:", e?.message);
+      }
+    }
+
+    if (userId && !userEmail && process.env.CLERK_SECRET_KEY) {
+      try {
+        const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
+        const user = await clerk.users.getUser(userId);
+        userEmail = user?.emailAddresses?.[0]?.emailAddress || null;
+      } catch (e) {
+        console.warn("[Trend Email API] Clerk getUser warning:", e?.message);
+      }
+    }
+
     if (!userId || !userEmail) {
-      console.error("[Trend Email API] Unauthorized: No valid user session or ID");
-      return apiError(new Error("Unauthorized"), 401);
+      console.error("[Trend Email API] Unauthorized: Could not resolve user or user email");
+      return apiError(new Error("Unauthorized: User email not found"), 401);
     }
 
     if (!channelId) return apiError(new Error("Channel ID is required"), 400);
@@ -70,7 +90,7 @@ export async function POST(req) {
       channelId,
     });
 
-    console.log("[Trend Email API] Sending via Resend...");
+    console.log("[Trend Email API] Sending via Resend to:", userEmail);
     const result = await sendEmail({
       to: userEmail,
       subject: emailContent.subject,
@@ -80,13 +100,13 @@ export async function POST(req) {
 
     if (!result.success) {
       console.error("[Trend Email API] Resend Error:", result.error);
-      return apiError(new Error(result.error), 500);
+      return apiError(new Error(result.error || "Failed to deliver email"), 500);
     }
 
     console.log("[Trend Email API] Success! Logging to DB...");
     await logEmail(userId, 'trend_radar', channelId);
 
-    return apiSuccess({ success: true, message: "Trend radar email sent" }, 200, rateLimitHeaders);
+    return apiSuccess({ success: true, message: `Trend radar email sent to ${userEmail}` }, 200, rateLimitHeaders);
   } catch (error) {
     console.error("[Trend Email API] Global Error:", error);
     return apiError(error);

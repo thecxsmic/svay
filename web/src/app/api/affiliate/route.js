@@ -6,6 +6,7 @@ import {
   normalizeAffiliateCode,
   AFFILIATE_COMMISSION_RATE,
   AFFILIATE_COMMISSION_MONTHS,
+  COMMISSION_PLANS,
 } from "@/lib/affiliate";
 
 /**
@@ -23,11 +24,12 @@ export async function GET() {
     if (!dashboard) {
       return NextResponse.json({
         enrolled: false,
+        plans: COMMISSION_PLANS,
         program: {
           commissionRate: AFFILIATE_COMMISSION_RATE,
           commissionMonths: AFFILIATE_COMMISSION_MONTHS,
           description:
-            "Earn 15% of revenue from users you refer, for 6 months after they join. Monthly plans pay each month; yearly plans pay once on the annual charge.",
+            "Earn 10% lifetime commission on every payment from users you refer — forever, with no expiry.",
         },
       });
     }
@@ -39,11 +41,13 @@ export async function GET() {
 
     return NextResponse.json({
       enrolled: true,
+      plans: COMMISSION_PLANS,
       program: {
         commissionRate: dashboard.affiliate.commissionRate,
         commissionMonths: dashboard.affiliate.commissionMonths,
+        commissionType: dashboard.affiliate.commissionType,
       },
-      referralLink: `${baseUrl.replace(/\/$/, "")}/?ref=${dashboard.affiliate.code}`,
+      referralLink: `${baseUrl.replace(/\/$/, "")}/r/${dashboard.affiliate.code}`,
       ...dashboard,
     });
   } catch (error) {
@@ -63,7 +67,7 @@ export async function POST(req) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { paypalEmail, displayName, code } = body;
+    const { paypalEmail, displayName, code, commissionType } = body;
 
     if (paypalEmail && typeof paypalEmail === "string") {
       const email = paypalEmail.trim();
@@ -102,6 +106,7 @@ export async function POST(req) {
       displayName: displayName || userName,
       paypalEmail,
       code,
+      commissionType: 'lifetime', // only plan currently available
     });
 
     const dashboard = await getAffiliateDashboard(userId);

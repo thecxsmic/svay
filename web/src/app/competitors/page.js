@@ -77,10 +77,41 @@ export default function CompetitorsPage() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [barMetric, setBarMetric] = useState('views');
   const [rivalId, setRivalId] = useState(null);
-
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailSuccessMsg, setEmailSuccessMsg] = useState(null);
 
   const selectedChannel = channels.data.find(c => c.id === channels.selectedId);
   const getCacheKey = () => `${CACHE_KEY_PREFIX}${selectedChannel?.id || 'default'}`;
+
+  const handleSendEmail = async () => {
+    const analysisId = searchParams.get('analysisId');
+    if (!analysisId || sendingEmail) return;
+    setSendingEmail(true);
+    setEmailSuccessMsg(null);
+    setError(null);
+    try {
+      const res = await fetch('/api/competitors/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          analysisId,
+          userId: user?.id,
+          email: user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress
+        })
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) {
+        throw new Error(json.error || 'Failed to send email');
+      }
+      setLastEmailSentAt(Date.now());
+      setEmailSuccessMsg(json.message || 'Report emailed successfully!');
+      setTimeout(() => setEmailSuccessMsg(null), 5000);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSendingEmail(false);
+    }
+  };
 
   const loadAnalysisById = useCallback(async (id) => {
     setLoading(true);
@@ -503,15 +534,6 @@ export default function CompetitorsPage() {
                 Rank #{insights.rank} of {insights.all.length}
               </MetaChip>
             )}
-            {searchParams.get('analysisId') && data && !loading && lastEmailSentAt && (
-              <MetaChip icon={Mail}>
-                Emailed{' '}
-                {new Date(lastEmailSentAt).toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </MetaChip>
-            )}
           </>
         }
         mobileLeft={
@@ -585,6 +607,12 @@ export default function CompetitorsPage() {
       </DashToolbar>
 
       <DashBody className="space-y-6 pb-20">
+        {emailSuccessMsg && (
+          <DashAlert variant="success">
+            <p className="font-bold uppercase tracking-wider">Email sent</p>
+            <p className="mt-0.5 opacity-80">{emailSuccessMsg}</p>
+          </DashAlert>
+        )}
         {error && (
           <DashAlert variant="error">
             <p className="font-bold uppercase tracking-wider">Could not compare channels</p>

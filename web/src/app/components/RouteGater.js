@@ -124,7 +124,8 @@ export default function RouteGater({
     pathname.startsWith("/cookies") ||
     pathname.startsWith("/refund") ||
     pathname.startsWith("/shared") ||
-    pathname.startsWith("/affiliate");
+    pathname.startsWith("/affiliate") ||
+    pathname.startsWith("/home");
 
   // Always reachable even on the paywall (support + billing care + affiliate)
   const isCarePage =

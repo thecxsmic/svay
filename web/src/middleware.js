@@ -14,6 +14,8 @@ const isPublicRoute = createRouteMatcher([
   '/refund(.*)',
   '/shared(.*)',
   '/affiliate(.*)',
+  '/r(.*)',
+  '/home(.*)',
 ])
 
 export default clerkMiddleware(async (auth, request) => {
@@ -23,7 +25,7 @@ export default clerkMiddleware(async (auth, request) => {
   const url = request.nextUrl;
   const pathname = url.pathname;
 
-  // Affiliate referral capture: /?ref=CODE → cookie for checkout attribution
+  // Affiliate referral capture via ?ref=CODE or ?aff=CODE query param
   const refParam = url.searchParams.get("ref") || url.searchParams.get("aff");
   let affiliateCookie = null;
   if (refParam) {
@@ -34,6 +36,24 @@ export default clerkMiddleware(async (auth, request) => {
       .slice(0, 24);
     if (code) {
       affiliateCookie = code;
+    }
+  }
+
+  // Affiliate referral capture via /r/CODE path — redirect to / with cookie
+  const rMatch = pathname.match(/^\/r\/([A-Za-z0-9_-]{1,24})(?:\/.*)?$/);
+  if (rMatch) {
+    const code = rMatch[1].toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 24);
+    if (code) {
+      const redirectUrl = new URL("/", url.origin);
+      const redirectResponse = NextResponse.redirect(redirectUrl, { status: 302 });
+      redirectResponse.cookies.set("svay_ref", code, {
+        path: "/",
+        maxAge: 60 * 24 * 60 * 60,
+        sameSite: "lax",
+        httpOnly: false,
+        secure: process.env.NODE_ENV === "production",
+      });
+      return redirectResponse;
     }
   }
 
