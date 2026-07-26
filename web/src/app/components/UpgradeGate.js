@@ -62,12 +62,12 @@ export default function UpgradeGate({
   const isHalted = initialSubscription?.isHalted;
   const isExpired = initialSubscription?.isExpired;
   const isYearly = billingInterval === "yearly";
-  const price = isYearly ? "6.66" : "9.99";
-  const struck = isYearly ? "9.99" : "14.99";
-  const billedAs = isYearly ? "$79.99 billed yearly" : "Billed monthly after trial";
-  const effectiveNote = isYearly
-    ? "≈ $6.66/mo · ~4 months free"
-    : "$9.99/mo after trial";
+  const price = isYearly ? "9.99" : "14.99";
+  const struck = isYearly ? "14.99" : "19.99";
+  const billedAs = isYearly ? "$119.99 billed yearly" : "Billed monthly after trial";
+  const subtotal = isYearly
+    ? "≈ $9.99/mo · ~4 months free"
+    : "$14.99/mo after trial";
 
   const headline = isHalted
     ? "Update billing"
@@ -246,7 +246,7 @@ export default function UpgradeGate({
               </div>
               <p className="mt-2 text-[12px] text-zinc-500">{billedAs}</p>
               <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-zinc-600">
-                {effectiveNote}
+                {subtotal}
               </p>
               <p className="mt-1.5 text-[11px] text-zinc-500">
                 Prices do not include applicable taxes.
@@ -256,7 +256,7 @@ export default function UpgradeGate({
             {/* Trial note */}
             <div className="rounded-md border border-zinc-800 bg-black px-3.5 py-3">
               <p className="text-[11px] font-bold text-zinc-300">
-                7 days free · then {isYearly ? "$79.99/yr" : "$9.99/mo"}
+                7 days free · then {isYearly ? "$119.99/yr" : "$14.99/mo"}
               </p>
               <p className="mt-0.5 text-[11px] text-zinc-600">
                 Cancel anytime during trial. No charge today. Taxes not included.

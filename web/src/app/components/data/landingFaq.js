@@ -22,6 +22,6 @@ export const FAQ_ITEMS = [
   },
   {
     q: 'How does the free trial and cancellation work?',
-    a: 'Your trial runs for 7 days with full features unlocked. No credit card is required upfront. If you choose to continue after your trial, billing starts at $9.99/month (or $6.66/month if choosing the yearly plan). Listed prices do not include applicable taxes, which may be added at checkout. You can cancel with a single click in your settings at any time.',
+    a: 'Your trial runs for 7 days with full features unlocked. No credit card is required upfront. If you choose to continue after your trial, billing starts at $14.99/month (or $9.99/month if choosing the yearly plan, billed annually as $119.99/year). Listed prices do not include applicable taxes, which may be added at checkout. You can cancel with a single click in your settings at any time.',
   },
 ];

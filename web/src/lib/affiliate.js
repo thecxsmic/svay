@@ -12,8 +12,8 @@ export const AFFILIATE_COMMISSION_MONTHS = 6;
 
 /** Fallback amounts (cents) when webhook payload has no total. Matches public pricing. */
 export const PLAN_AMOUNTS_CENTS = {
-  monthly: 999, // $9.99
-  yearly: 7999, // $79.99
+  monthly: 1499, // $14.99
+  yearly: 11999, // $119.99
 };
 
 let schemaReady = false;

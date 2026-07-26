@@ -43,6 +43,6 @@ export const PRICING_FEATURE_GROUPS = [
 
 /** Monthly / yearly price in USD ($). */
 export const PRICING = {
-  monthly: 9.99,
-  yearly: 6.66,
+  monthly: 14.99,
+  yearly: 9.99,
 };

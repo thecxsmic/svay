@@ -40,7 +40,7 @@ export default function JsonLd() {
           "Track viral YouTube trends, map competitors, and grow faster with creator analytics built for content strategy.",
         offers: {
           "@type": "Offer",
-          price: "9.99",
+          price: "14.99",
           priceCurrency: "USD",
           priceValidUntil: "2027-12-31",
           availability: "https://schema.org/InStock",

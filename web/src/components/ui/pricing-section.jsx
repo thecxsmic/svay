@@ -22,20 +22,20 @@ const PLANS = {
   monthly: {
     label: "Monthly",
     price: PRICING.monthly,
-    struck: "14.99",
-    save: "33%",
+    struck: "19.99",
+    save: "25%",
     billing: "Billed monthly after trial",
-    subtotal: "$9.99/mo",
+    subtotal: "$14.99/mo",
     note: "Flexible — cancel anytime",
     cta: "Start monthly trial",
   },
   yearly: {
     label: "Yearly",
     price: PRICING.yearly,
-    struck: "9.99",
+    struck: "14.99",
     save: "33%",
-    billing: "Billed $79.99/year",
-    subtotal: "$6.66/mo effective",
+    billing: "Billed $119.99/year",
+    subtotal: "$9.99/mo effective",
     note: "Best value — ~4 months free",
     cta: "Start yearly trial",
   },
@@ -257,7 +257,7 @@ export function Pricing({
                 </div>
               </div>
 
-              {/* Price — fixed-width tabular so 9.99 ↔ 6.66 doesn't jump layout */}
+              {/* Price — fixed-width tabular so 14.99 ↔ 9.99 doesn't jump layout */}
               <div className="flex items-end gap-1 min-h-[4.75rem] sm:min-h-[5.25rem]">
                 <span className="mb-2 font-display text-2xl text-white/25 sm:mb-3">
                   $

@@ -170,14 +170,14 @@ export default function LandingPricing({
                 <div className="flex items-center gap-2">
                   {billingInterval === 'monthly' ? (
                     <>
-                      <span className="text-zinc-500 line-through text-sm font-bold">$14.99/mo</span>
+                      <span className="text-zinc-500 line-through text-sm font-bold">$19.99/mo</span>
                       <span className="bg-brand-rose/15 text-brand-rose border border-brand-rose/25 font-black text-[9px] px-2 py-0.5 rounded tracking-wide uppercase">
-                        SAVE 33%
+                        SAVE 25%
                       </span>
                     </>
                   ) : (
                     <>
-                      <span className="text-zinc-500 line-through text-sm font-bold">$9.99/mo</span>
+                      <span className="text-zinc-500 line-through text-sm font-bold">$14.99/mo</span>
                       <span className="bg-brand-rose/15 text-brand-rose border border-brand-rose/25 font-black text-[9px] px-2 py-0.5 rounded tracking-wide uppercase">
                         SAVE 33%
                       </span>
@@ -203,8 +203,8 @@ export default function LandingPricing({
               </button>
               <p className="text-[10px] text-zinc-500 text-center mt-3 font-semibold tracking-wide">
                 {billingInterval === 'yearly'
-                  ? 'Billed annually at $79.99/year ($6.66/mo) · Taxes not included · Cancel at any time · Secure checkout powered by Dodo Payments'
-                  : 'Thereafter $9.99/month · Taxes not included · Cancel at any time · Secure checkout powered by Dodo Payments'}
+                  ? 'Billed annually at $119.99/year ($9.99/mo) · Taxes not included · Cancel at any time · Secure checkout powered by Dodo Payments'
+                  : 'Thereafter $14.99/month · Taxes not included · Cancel at any time · Secure checkout powered by Dodo Payments'}
               </p>
             </div>
           </div>
