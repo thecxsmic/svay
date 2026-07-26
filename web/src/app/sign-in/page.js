@@ -12,27 +12,6 @@ export default function SignInPage() {
       
       {/* Centered card container */}
       <div className="w-full max-w-[380px] z-10 flex flex-col gap-6 relative">
-        
-        {/* Wordmark & Heading */}
-        <div className="text-center space-y-4">
-          {/* Svay Logo Icon & Font */}
-          <div className="flex justify-center">
-            <div className="flex flex-col items-center gap-3">
-              {/* Official SVG Svay Icon */}
-              <svg width="36" height="36" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="shadow-[0_0_15px_rgba(0,112,243,0.35)] rounded-full">
-                <rect width="32" height="32" rx="16" fill="url(#signIn_paint0_linear)"/>
-                <defs>
-                  <linearGradient id="signIn_paint0_linear" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#0070f3"/>
-                    <stop offset="1" stopColor="#00f0ff"/>
-                  </linearGradient>
-                </defs>
-              </svg>
-              <span className="font-medium text-xs text-[#FAFAFA] tracking-[0.25em]" style={{ fontFamily: "var(--font-righteous)" }}>SVAY</span>
-            </div>
-          </div>
-        </div>
-
         {/* Clerk loading state - Skeleton Loading */}
         <ClerkLoading>
           <div className="w-full bg-black border border-white/10 p-6 rounded-lg flex flex-col gap-5 min-h-[385px] shadow-none animate-pulse">
