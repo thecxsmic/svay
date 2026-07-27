@@ -263,13 +263,6 @@ function ChannelHeader({ selectedChannel }) {
  * SearchHero
  * ════════════════════════════════════════════════════════════════════════════ */
 function SearchHero({ query, setQuery, searching, handleSearch, inputRef }) {
-  const chips = [
-    { label: 'Shorts Ideas', query: 'Shorts viral ideas' },
-    { label: 'AI Automation', query: 'AI automation workflow' },
-    { label: 'Dev Setup', query: 'Developer desk setup' },
-    { label: 'System Design', query: 'System design tutorial' },
-  ];
-
   return (
     <div className="relative overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-zinc-600/40 to-transparent" />
@@ -323,19 +316,6 @@ function SearchHero({ query, setQuery, searching, handleSearch, inputRef }) {
           </div>
         </form>
 
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-          <span className="text-[11px] text-zinc-600">Try:</span>
-          {chips.map(chip => (
-            <button
-              key={chip.label}
-              type="button"
-              onClick={() => setQuery(chip.query)}
-              className="rounded-lg border border-zinc-800 bg-zinc-900 px-2.5 py-1 text-[11px] text-zinc-400 transition-colors hover:border-zinc-700 hover:text-white"
-            >
-              {chip.label}
-            </button>
-          ))}
-        </div>
       </div>
     </div>
   );
