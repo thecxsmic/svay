@@ -17,7 +17,7 @@ import { MobilePageTabsProvider } from "@/contexts/mobilePageTabs";
 
 const navItems = [
   { name: 'Home', href: '/dashboard', icon: Home },
-  { name: 'Search', href: '/', icon: Search },
+  { name: 'Search', href: '/search', icon: Search },
   { name: 'Trends', href: '/radar', icon: Zap },
   { name: 'Channels', href: '/channels', icon: Users },
   { name: 'Competitors', href: '/competitors', icon: Trophy },
@@ -48,6 +48,7 @@ const PREFETCH_ROUTES = [
 function resolvePageMeta(pathname) {
   if (pathname === '/dashboard') return { title: 'Home', section: 'Dashboard' };
   if (pathname === '/') return { title: 'Search', section: 'Explore' };
+  if (pathname.startsWith('/search')) return { title: 'Search', section: 'Explore' };
   if (pathname.startsWith('/radar')) return { title: 'Trends', section: 'Explore' };
   if (pathname.startsWith('/channels')) return { title: 'Channels', section: 'Explore' };
   if (pathname.startsWith('/competitors')) return { title: 'Competitors', section: 'Explore' };
