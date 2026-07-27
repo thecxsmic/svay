@@ -433,34 +433,11 @@ export function DashToolbar({
       <div
         className={cn(
           "sticky top-0 z-40 mx-auto w-full min-w-0 max-w-full border-b border-white/[0.06] bg-black/85 backdrop-blur-xl",
-          // Hide empty sticky shell on phone when only bottom tabs exist
-          !showMobileTop && "max-md:hidden",
+          // Always hide the sticky toolbar on mobile — desktop only
+          "max-md:hidden",
           className
         )}
       >
-        {/* ── Mobile / phone shell: actions + meta (tabs live at bottom) ─ */}
-        {showMobileTop && (
-          <div
-            className={cn(
-              // Match DashBody mobile gutter (px-4); mx-auto centers on iPhone
-              "mx-auto flex h-12 w-full min-w-0 max-w-full items-center gap-2 px-4 md:hidden",
-              maxWidth
-            )}
-          >
-            {hasStructuredTabs ? (
-              mobileLeft ? (
-                <MobileMetaTrigger meta={mobileLeft} />
-              ) : (
-                <div className="min-w-0 flex-1" />
-              )
-            ) : (
-              <div className="min-w-0 flex-1">{mobileLeft}</div>
-            )}
-            {children && (
-              <div className="flex shrink-0 items-center gap-1.5">{children}</div>
-            )}
-          </div>
-        )}
 
         {/* ── Desktop (≥ md, matches LayoutContent sidebar shell) ───── */}
         <div className="hidden md:block">
