@@ -71,6 +71,7 @@ function maybeResetQuota() {
 // DB helpers
 // -------------------------------------------------------------------
 async function ensureTable() {
+  // Create table if it doesn't exist
   await db.execute(`
     CREATE TABLE IF NOT EXISTS youtube_api_keys (
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -81,6 +82,44 @@ async function ensureTable() {
       created_at  INTEGER NOT NULL DEFAULT (strftime('%s','now'))
     )
   `);
+
+  // Migration: add any columns that may be missing in older schema versions
+  // (Turso/SQLite doesn't support IF NOT EXISTS on ADD COLUMN in all versions,
+  //  so we catch and ignore "duplicate column" errors gracefully)
+  const migrations = [
+    "ALTER TABLE youtube_api_keys ADD COLUMN label       TEXT    NOT NULL DEFAULT ''",
+    "ALTER TABLE youtube_api_keys ADD COLUMN daily_quota INTEGER NOT NULL DEFAULT 10000",
+    "ALTER TABLE youtube_api_keys ADD COLUMN enabled     INTEGER NOT NULL DEFAULT 1",
+    "ALTER TABLE youtube_api_keys ADD COLUMN created_at  INTEGER NOT NULL DEFAULT (strftime('%s','now'))",
+  ];
+  for (const sql of migrations) {
+    try {
+      await db.execute(sql);
+    } catch {
+      // Column already exists — safe to ignore
+    }
+  }
+
+  // Seed: if the table is empty and YOUTUBE_API_KEY env var is set, add it automatically
+  const envKey = process.env.YOUTUBE_API_KEY;
+  if (envKey) {
+    try {
+      const existing = await db.execute({
+        sql: "SELECT id FROM youtube_api_keys WHERE key = ?",
+        args: [envKey],
+      });
+      if (existing.rows.length === 0) {
+        await db.execute({
+          sql: `INSERT INTO youtube_api_keys (key, label, daily_quota, enabled)
+                VALUES (?, ?, 10000, 1)`,
+          args: [envKey, "Default (from env)"],
+        });
+        console.log("[KeyManager] Seeded YOUTUBE_API_KEY env var into key pool");
+      }
+    } catch (err) {
+      console.warn("[KeyManager] Could not seed env key:", err.message);
+    }
+  }
 }
 
 async function loadPool(force = false) {
