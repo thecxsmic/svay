@@ -35,7 +35,7 @@ const PRIMARY_TABS = [
 ];
 
 const MORE_LINKS = [
-  { name: 'Search', href: '/', icon: Search, group: 'Grow' },
+  { name: 'Search', href: '/search', icon: Search, group: 'Grow' },
   { name: 'Channels', href: '/channels', icon: Users, group: 'Grow' },
   { name: 'Analytics', href: '/analytics', icon: BarChart3, group: 'Grow' },
   { name: 'Tools', href: '/tools', icon: Wrench, group: 'Grow' },
@@ -46,8 +46,8 @@ const MORE_LINKS = [
 ];
 
 function isTabActive(pathname, href) {
-  if (href === '/dashboard') return pathname === '/dashboard' || pathname === '/';
-  if (href === '/') return pathname === '/';
+  if (href === '/dashboard') return pathname === '/dashboard';
+  if (href === '/search') return pathname === '/search' || pathname.startsWith('/search');
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
