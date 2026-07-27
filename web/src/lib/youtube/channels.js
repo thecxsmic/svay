@@ -2,24 +2,47 @@
  * YouTube Channel Fetching Layer
  */
 
+import { getYouTubeApiKey, markKeyExhausted } from "@/lib/youtube/apiKeyManager";
+
+/**
+ * Wrapper: fetch with automatic quota-exhaustion fallback
+ */
+async function ytFetch(url, callType) {
+  const apiKey = await getYouTubeApiKey(callType);
+  url.searchParams.set("key", apiKey);
+
+  const res = await fetch(url.toString());
+  const data = await res.json();
+
+  if (!res.ok) {
+    // If quota exceeded, mark the key and retry once with the next key
+    if (res.status === 403 && data?.error?.errors?.[0]?.reason === "quotaExceeded") {
+      markKeyExhausted(apiKey);
+      const nextKey = await getYouTubeApiKey(callType);
+      url.searchParams.set("key", nextKey);
+      const retry = await fetch(url.toString());
+      return { res: retry, data: await retry.json() };
+    }
+    return { res, data };
+  }
+
+  return { res, data };
+}
+
 /**
  * Fetch channel details by various identifiers or search query
  */
 export async function fetchYouTubeChannels(query) {
-  const apiKey = process.env.YOUTUBE_API_KEY;
-  if (!apiKey) throw new Error("YOUTUBE_API_KEY is not configured");
-
   // 1. Identify query type for direct lookups
   if (query.startsWith("UC") && query.length === 24) {
     const channels = await getChannelDetails([query]);
     return channels || [];
   } else if (query.startsWith("@")) {
-    let url = new URL("https://www.googleapis.com/youtube/v3/channels");
+    const url = new URL("https://www.googleapis.com/youtube/v3/channels");
     url.searchParams.set("part", "snippet,statistics,contentDetails");
     url.searchParams.set("forHandle", query);
-    url.searchParams.set("key", apiKey);
-    const response = await fetch(url.toString());
-    const data = await response.json();
+
+    const { res, data } = await ytFetch(url, "channels.list");
     if (data.items?.length > 0) return data.items;
     // Fallback to search if handle lookup fails
     return await searchChannels(query);
@@ -42,13 +65,12 @@ export async function fetchYouTubeChannels(query) {
  */
 async function getChannelDetails(ids) {
   if (!ids || !ids.length) return [];
-  const apiKey = process.env.YOUTUBE_API_KEY;
+
   const url = new URL("https://www.googleapis.com/youtube/v3/channels");
   url.searchParams.set("part", "snippet,statistics,contentDetails");
   url.searchParams.set("id", ids.filter(Boolean).join(","));
-  url.searchParams.set("key", apiKey);
-  const res = await fetch(url.toString());
-  const data = await res.json();
+
+  const { data } = await ytFetch(url, "channels.list");
   return data.items || [];
 }
 
@@ -56,22 +78,19 @@ async function getChannelDetails(ids) {
  * Search for multiple channels
  */
 async function searchChannels(query) {
-  const apiKey = process.env.YOUTUBE_API_KEY;
   const url = new URL("https://www.googleapis.com/youtube/v3/search");
   url.searchParams.set("part", "snippet");
   url.searchParams.set("q", query);
   url.searchParams.set("type", "channel");
   url.searchParams.set("maxResults", "25");
-  url.searchParams.set("key", apiKey);
 
-  const response = await fetch(url.toString());
-  const data = await response.json();
+  const { res, data } = await ytFetch(url, "search.list");
 
-  if (!response.ok || !data.items || data.items.length === 0) {
+  if (!res.ok || !data.items || data.items.length === 0) {
     return [];
   }
 
-  const channelIds = data.items.map(item => item.id.channelId);
+  const channelIds = data.items.map((item) => item.id.channelId);
   return await getChannelDetails(channelIds);
 }
 
@@ -79,8 +98,6 @@ async function searchChannels(query) {
  * Fetch recent videos for a channel (max 50)
  */
 export async function fetchChannelVideos(channelId, maxResults = 50, pageToken = null) {
-  const apiKey = process.env.YOUTUBE_API_KEY;
-  
   // 1. Search for videos from this channel
   const searchUrl = new URL("https://www.googleapis.com/youtube/v3/search");
   searchUrl.searchParams.set("part", "snippet");
@@ -89,31 +106,27 @@ export async function fetchChannelVideos(channelId, maxResults = 50, pageToken =
   searchUrl.searchParams.set("order", "date");
   searchUrl.searchParams.set("maxResults", String(maxResults));
   if (pageToken) searchUrl.searchParams.set("pageToken", pageToken);
-  searchUrl.searchParams.set("key", apiKey);
 
-  const searchRes = await fetch(searchUrl.toString());
-  const searchData = await searchRes.json();
+  const { res: searchRes, data: searchData } = await ytFetch(searchUrl, "search.list");
 
   if (!searchRes.ok || !searchData.items) {
     return { items: [], nextPageToken: null };
   }
 
-  const videoIds = searchData.items.map(item => item.id.videoId);
-  const nextPageToken = searchData.nextPageToken || null;
-  
-  // 2. Fetch detailed stats for these videos
-  if (videoIds.length === 0) return { items: [], nextPageToken };
+  const videoIds   = searchData.items.map((item) => item.id.videoId);
+  const nextToken  = searchData.nextPageToken || null;
 
+  if (videoIds.length === 0) return { items: [], nextPageToken: null };
+
+  // 2. Fetch detailed stats for these videos
   const statsUrl = new URL("https://www.googleapis.com/youtube/v3/videos");
   statsUrl.searchParams.set("part", "snippet,statistics,contentDetails");
   statsUrl.searchParams.set("id", videoIds.join(","));
-  statsUrl.searchParams.set("key", apiKey);
 
-  const statsRes = await fetch(statsUrl.toString());
-  const statsData = await statsRes.json();
+  const { data: statsData } = await ytFetch(statsUrl, "videos.list");
 
-  return { 
-    items: statsData.items || [], 
-    nextPageToken 
+  return {
+    items:         statsData.items || [],
+    nextPageToken: nextToken,
   };
 }

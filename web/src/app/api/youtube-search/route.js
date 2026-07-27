@@ -56,10 +56,8 @@ function buildYouTubeSearchURL(filters) {
     url.searchParams.set("publishedAfter", now.toISOString());
   }
 
-  const apiKey = process.env.YOUTUBE_API_KEY;
-  if (!apiKey) {
-    throw new Error("YOUTUBE_API_KEY is not configured");
-  }
+  const { getYouTubeApiKey } = await import("@/lib/youtube/apiKeyManager");
+  const apiKey = await getYouTubeApiKey("search.list");
   url.searchParams.set("key", apiKey);
 
   return url;

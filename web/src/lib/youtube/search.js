@@ -31,7 +31,10 @@ export async function fetchVideoStats(videoIds) {
   const url = new URL("https://www.googleapis.com/youtube/v3/videos");
   url.searchParams.set("part", "statistics,snippet,contentDetails");
   url.searchParams.set("id", videoIds.join(","));
-  url.searchParams.set("key", process.env.YOUTUBE_API_KEY);
+
+  const { getYouTubeApiKey } = await import("@/lib/youtube/apiKeyManager");
+  const apiKey = await getYouTubeApiKey("videos.list");
+  url.searchParams.set("key", apiKey);
 
   const response = await fetch(url.toString());
   const data = await response.json();

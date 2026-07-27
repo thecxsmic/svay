@@ -73,6 +73,30 @@ const searchQueriesSchema = z.object({
   queries: z.array(z.string()).min(3).max(5).describe("Highly specific search queries to find current trending videos in the channel's niche")
 });
 
+export async function GET(req) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const channelId = searchParams.get("channelId");
+
+    if (await getIsDemoMode()) {
+      return Response.json({ success: true, data: MOCK_TREND_RADAR });
+    }
+
+    if (!channelId) {
+      return Response.json({ success: false, error: "Channel ID is required" }, { status: 400 });
+    }
+
+    const cached = await getTrendRadar(channelId);
+    return Response.json({
+      success: true,
+      data: cached?.data || null,
+      last_updated: cached?.last_updated || null
+    });
+  } catch (error) {
+    return Response.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
 export async function POST(req) {
   const isDemo = await getIsDemoMode();
   let userId = null;
@@ -150,15 +174,16 @@ export async function POST(req) {
         
         let channel = null;
         let recentVideos = [];
-        const apiKey = process.env.YOUTUBE_API_KEY;
+        const { getYouTubeApiKey } = await import("@/lib/youtube/apiKeyManager");
 
         // 1. Fetch channel data & videos
         if (channelBased && channelId) {
           try {
+            const channelKey = await getYouTubeApiKey("channels.list");
             const channelUrl = new URL("https://www.googleapis.com/youtube/v3/channels");
             channelUrl.searchParams.set("part", "snippet,statistics");
             channelUrl.searchParams.set("id", channelId);
-            channelUrl.searchParams.set("key", apiKey);
+            channelUrl.searchParams.set("key", channelKey);
             const channelRes = await fetch(channelUrl.toString());
             const channelData = await channelRes.json();
             
@@ -166,13 +191,14 @@ export async function POST(req) {
               channel = channelData.items[0];
             }
 
+            const searchKey = await getYouTubeApiKey("search.list");
             const searchUrl = new URL("https://www.googleapis.com/youtube/v3/search");
             searchUrl.searchParams.set("part", "snippet");
             searchUrl.searchParams.set("channelId", channelId);
             searchUrl.searchParams.set("type", "video");
             searchUrl.searchParams.set("order", "date");
             searchUrl.searchParams.set("maxResults", "10");
-            searchUrl.searchParams.set("key", apiKey);
+            searchUrl.searchParams.set("key", searchKey);
 
             const searchRes = await fetch(searchUrl.toString());
             const searchData = await searchRes.json();
@@ -180,10 +206,11 @@ export async function POST(req) {
             if (searchData.items) {
               const videoIds = searchData.items.map(item => item.id.videoId);
               if (videoIds.length > 0) {
+                const statsKey = await getYouTubeApiKey("videos.list");
                 const statsUrl = new URL("https://www.googleapis.com/youtube/v3/videos");
                 statsUrl.searchParams.set("part", "snippet,statistics");
                 statsUrl.searchParams.set("id", videoIds.join(","));
-                statsUrl.searchParams.set("key", apiKey);
+                statsUrl.searchParams.set("key", statsKey);
 
                 const statsRes = await fetch(statsUrl.toString());
                 const statsData = await statsRes.json();

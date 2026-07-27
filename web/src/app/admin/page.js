@@ -26,7 +26,12 @@ import {
   Database,
   Megaphone,
   DollarSign,
-  Wallet
+  Wallet,
+  Key,
+  ToggleLeft,
+  ToggleRight,
+  RefreshCw,
+  AlertTriangle
 } from "lucide-react";
 
 function usd(cents) {
@@ -93,6 +98,17 @@ export default function AdminPage() {
   const [loadingAffiliates, setLoadingAffiliates] = useState(false);
   const [markingPaidId, setMarkingPaidId] = useState(null);
 
+  // API Keys admin
+  const [apiKeys, setApiKeys] = useState([]);
+  const [loadingApiKeys, setLoadingApiKeys] = useState(false);
+  const [newKeyValue, setNewKeyValue] = useState("");
+  const [newKeyLabel, setNewKeyLabel] = useState("");
+  const [newKeyQuota, setNewKeyQuota] = useState("10000");
+  const [addingKey, setAddingKey] = useState(false);
+  const [editingQuotaId, setEditingQuotaId] = useState(null);
+  const [editingQuotaValue, setEditingQuotaValue] = useState("");
+  const [editingLabelValue, setEditingLabelValue] = useState("");
+
   // Check admin authorization
   useEffect(() => {
     if (isLoaded) {
@@ -102,6 +118,7 @@ export default function AdminPage() {
         fetchAdminData();
         fetchChannels();
         fetchAffiliates();
+        fetchApiKeys();
       } else {
         setIsAdmin(false);
         setLoadingData(false);
@@ -428,6 +445,120 @@ export default function AdminPage() {
     });
   };
 
+  const fetchApiKeys = async () => {
+    try {
+      setLoadingApiKeys(true);
+      const res = await fetch("/api/admin/api-keys");
+      if (res.ok) {
+        const data = await res.json();
+        setApiKeys(data.keys || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch API keys:", err);
+    } finally {
+      setLoadingApiKeys(false);
+    }
+  };
+
+  const handleAddApiKey = async (e) => {
+    e.preventDefault();
+    if (!newKeyValue.trim()) return;
+    setAddingKey(true);
+    try {
+      const res = await fetch("/api/admin/api-keys", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "add",
+          key: newKeyValue.trim(),
+          label: newKeyLabel.trim(),
+          daily_quota: parseInt(newKeyQuota, 10) || 10000,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to add key");
+      showToast("API key added successfully");
+      setNewKeyValue("");
+      setNewKeyLabel("");
+      setNewKeyQuota("10000");
+      fetchApiKeys();
+    } catch (err) {
+      showToast(err.message, "error");
+    } finally {
+      setAddingKey(false);
+    }
+  };
+
+  const handleToggleApiKey = async (id, currentEnabled) => {
+    try {
+      const res = await fetch("/api/admin/api-keys", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "toggle", id, enabled: !currentEnabled }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      showToast(data.message);
+      fetchApiKeys();
+    } catch (err) {
+      showToast(err.message, "error");
+    }
+  };
+
+  const handleUpdateQuota = async (id) => {
+    const quota = parseInt(editingQuotaValue, 10);
+    if (!quota || quota < 1) { showToast("Invalid quota", "error"); return; }
+    try {
+      const res = await fetch("/api/admin/api-keys", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "update_quota", id, daily_quota: quota, label: editingLabelValue }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      showToast("Quota updated");
+      setEditingQuotaId(null);
+      fetchApiKeys();
+    } catch (err) {
+      showToast(err.message, "error");
+    }
+  };
+
+  const handleResetUsage = async (id) => {
+    try {
+      const res = await fetch("/api/admin/api-keys", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reset_usage", id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      showToast("Usage counter reset");
+      fetchApiKeys();
+    } catch (err) {
+      showToast(err.message, "error");
+    }
+  };
+
+  const handleDeleteApiKey = (id, label) => {
+    setConfirmModal({
+      title: "Delete API Key",
+      message: `Delete key "${label || id}"? This cannot be undone.`,
+      isDanger: true,
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/admin/api-keys?id=${id}`, { method: "DELETE" });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Failed");
+          showToast("API key deleted");
+          fetchApiKeys();
+        } catch (err) {
+          showToast(err.message, "error");
+        }
+      },
+    });
+  };
+
   function formatNumber(num) {
     if (!num) return "0";
     const parsed = parseInt(num, 10);
@@ -501,7 +632,8 @@ export default function AdminPage() {
             { id: "promos", label: "Promo & Subscriptions", icon: Ticket },
             { id: "affiliates", label: "Affiliates & Payouts", icon: Megaphone },
             { id: "shares", label: "Public Share Reports", icon: Globe },
-            { id: "cache", label: "Cache Manager", icon: Database }
+            { id: "cache", label: "Cache Manager", icon: Database },
+            { id: "apikeys", label: "API Keys", icon: Key }
           ].map((tab) => (
             <button
               key={tab.id}
@@ -1454,6 +1586,265 @@ export default function AdminPage() {
                 </div>
               )}
             </section>
+          </div>
+        )}
+
+        {activeTab === "apikeys" && (
+          <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
+
+            {/* Add new key card */}
+            <section className="bg-zinc-950/80 border border-white/[0.06] rounded-2xl sm:rounded-[2rem] p-4 sm:p-8 backdrop-blur-md relative overflow-hidden">
+              <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-brand-volt/30 to-transparent" />
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-brand-volt/10 rounded-xl border border-brand-volt/20">
+                  <Key className="w-4 sm:w-5 h-4 sm:h-5 text-brand-volt" />
+                </div>
+                <div>
+                  <h2 className="font-display font-extrabold text-base sm:text-lg text-white uppercase">Add YouTube API Key</h2>
+                  <p className="text-zinc-500 text-[10px] sm:text-xs mt-0.5">Add keys from different Google Cloud projects to multiply your daily quota. Default is 10,000 units/day per key.</p>
+                </div>
+              </div>
+
+              <form onSubmit={handleAddApiKey} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl">
+                <div className="space-y-1.5 lg:col-span-2">
+                  <label className="text-[9px] font-black text-zinc-400 uppercase tracking-wider">API Key</label>
+                  <input
+                    type="text"
+                    placeholder="AIzaSy..."
+                    value={newKeyValue}
+                    onChange={(e) => setNewKeyValue(e.target.value)}
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-xs font-mono focus:outline-none focus:border-brand-volt transition-all placeholder:text-zinc-600"
+                    required
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-black text-zinc-400 uppercase tracking-wider">Label (optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Project 2, Backup"
+                    value={newKeyLabel}
+                    onChange={(e) => setNewKeyLabel(e.target.value)}
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-brand-volt transition-all placeholder:text-zinc-600"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-black text-zinc-400 uppercase tracking-wider">Daily Quota (units)</label>
+                  <input
+                    type="number"
+                    placeholder="10000"
+                    value={newKeyQuota}
+                    onChange={(e) => setNewKeyQuota(e.target.value)}
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-brand-volt transition-all placeholder:text-zinc-600"
+                    min="1"
+                    required
+                  />
+                </div>
+                <div className="sm:col-span-2 lg:col-span-4 flex justify-start">
+                  <button
+                    type="submit"
+                    disabled={addingKey}
+                    className="px-6 py-3 bg-brand-volt hover:bg-brand-volt/90 text-black font-black text-xs uppercase tracking-wider rounded-xl transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    {addingKey ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-3.5 h-3.5 stroke-[3]" /> Add Key</>}
+                  </button>
+                </div>
+              </form>
+            </section>
+
+            {/* Live key pool table */}
+            <section className="bg-zinc-950/80 border border-white/[0.06] rounded-2xl sm:rounded-[2rem] p-4 sm:p-8 backdrop-blur-md">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white/[0.04] rounded-xl border border-white/[0.08]">
+                    <Key className="w-4 sm:w-5 h-4 sm:h-5 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="font-display font-extrabold text-base sm:text-lg text-white uppercase">Key Pool — Live Usage</h2>
+                    <p className="text-zinc-500 text-[10px] sm:text-xs mt-0.5">Usage resets at midnight Pacific Time (YouTube's quota schedule).</p>
+                  </div>
+                </div>
+                <button
+                  onClick={fetchApiKeys}
+                  className="px-3.5 py-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-white transition-all cursor-pointer flex items-center gap-1.5 w-full sm:w-auto justify-center"
+                >
+                  <RefreshCw className="w-3 h-3" /> Refresh
+                </button>
+              </div>
+
+              {loadingApiKeys ? (
+                <div className="py-12 flex justify-center">
+                  <Loader2 className="w-6 h-6 text-brand-volt animate-spin" />
+                </div>
+              ) : apiKeys.length === 0 ? (
+                <div className="py-12 text-center space-y-2">
+                  <Key className="w-8 h-8 text-zinc-700 mx-auto" />
+                  <p className="text-zinc-500 text-sm">No API keys added yet.</p>
+                  <p className="text-zinc-600 text-xs">The system will fall back to the <code className="font-mono text-zinc-400">YOUTUBE_API_KEY</code> env var until you add keys here.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {apiKeys.map((k) => {
+                    const isEditing = editingQuotaId === k.id;
+                    const pct = k.pctUsed ?? 0;
+                    const isExhausted = k.exhaustedAt != null;
+                    const barColor = isExhausted || pct >= 100 ? "bg-rose-500" : pct >= 80 ? "bg-amber-400" : "bg-brand-volt";
+
+                    return (
+                      <div
+                        key={k.id}
+                        className={`border rounded-2xl p-4 sm:p-5 transition-all ${
+                          !k.enabled
+                            ? "border-zinc-800/50 bg-zinc-900/30 opacity-60"
+                            : isExhausted
+                            ? "border-rose-500/20 bg-rose-500/5"
+                            : "border-white/[0.06] bg-zinc-900/40"
+                        }`}
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          {/* Left: key info */}
+                          <div className="flex-1 min-w-0 space-y-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-mono text-xs text-zinc-300 bg-zinc-800 px-2 py-0.5 rounded-lg">
+                                {k.keyMasked}
+                              </span>
+                              {k.label && (
+                                <span className="text-[10px] text-zinc-400 font-medium">{k.label}</span>
+                              )}
+                              {isExhausted && (
+                                <span className="flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-full">
+                                  <AlertTriangle className="w-2.5 h-2.5" /> Exhausted
+                                </span>
+                              )}
+                              {!k.enabled && (
+                                <span className="text-[9px] font-black uppercase tracking-wider text-zinc-500 bg-zinc-800 border border-zinc-700 px-2 py-0.5 rounded-full">
+                                  Disabled
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Usage bar */}
+                            <div className="space-y-1 max-w-sm">
+                              <div className="flex justify-between items-center">
+                                <span className="text-[10px] text-zinc-500">
+                                  {k.usedToday.toLocaleString()} / {k.daily_quota.toLocaleString()} units used today
+                                </span>
+                                <span className={`text-[10px] font-bold tabular-nums ${pct >= 80 ? "text-amber-400" : "text-zinc-400"}`}>
+                                  {pct}%
+                                </span>
+                              </div>
+                              <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all ${barColor}`}
+                                  style={{ width: `${Math.min(pct, 100)}%` }}
+                                />
+                              </div>
+                              <p className="text-[9px] text-zinc-600">
+                                {(k.daily_quota - k.usedToday).toLocaleString()} units remaining
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Right: actions */}
+                          <div className="flex flex-wrap items-center gap-2 shrink-0">
+                            {/* Inline quota/label edit */}
+                            {isEditing ? (
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="text"
+                                  value={editingLabelValue}
+                                  onChange={(e) => setEditingLabelValue(e.target.value)}
+                                  placeholder="Label"
+                                  className="w-24 bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-1.5 text-[10px] focus:outline-none focus:border-brand-volt"
+                                />
+                                <input
+                                  type="number"
+                                  value={editingQuotaValue}
+                                  onChange={(e) => setEditingQuotaValue(e.target.value)}
+                                  placeholder="Quota"
+                                  className="w-24 bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-1.5 text-[10px] focus:outline-none focus:border-brand-volt"
+                                  min="1"
+                                />
+                                <button
+                                  onClick={() => handleUpdateQuota(k.id)}
+                                  className="px-2.5 py-1.5 rounded-lg bg-brand-volt text-black text-[9px] font-black uppercase tracking-wider cursor-pointer"
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  onClick={() => setEditingQuotaId(null)}
+                                  className="px-2.5 py-1.5 rounded-lg bg-zinc-800 text-zinc-300 text-[9px] font-black uppercase tracking-wider cursor-pointer"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  setEditingQuotaId(k.id);
+                                  setEditingQuotaValue(String(k.daily_quota));
+                                  setEditingLabelValue(k.label || "");
+                                }}
+                                className="px-2.5 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-300 text-[9px] font-black uppercase tracking-wider cursor-pointer hover:text-white"
+                              >
+                                Edit
+                              </button>
+                            )}
+
+                            {/* Reset usage */}
+                            <button
+                              onClick={() => handleResetUsage(k.id)}
+                              title="Reset today's usage counter"
+                              className="px-2.5 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-400 text-[9px] font-black uppercase tracking-wider cursor-pointer hover:text-white flex items-center gap-1"
+                            >
+                              <RefreshCw className="w-3 h-3" /> Reset
+                            </button>
+
+                            {/* Toggle enabled */}
+                            <button
+                              onClick={() => handleToggleApiKey(k.id, k.enabled)}
+                              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-wider cursor-pointer transition-all ${
+                                k.enabled
+                                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20"
+                                  : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-white"
+                              }`}
+                            >
+                              {k.enabled ? (
+                                <><ToggleRight className="w-3.5 h-3.5" /> On</>
+                              ) : (
+                                <><ToggleLeft className="w-3.5 h-3.5" /> Off</>
+                              )}
+                            </button>
+
+                            {/* Delete */}
+                            <button
+                              onClick={() => handleDeleteApiKey(k.id, k.label || k.keyMasked)}
+                              className="p-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-lg text-rose-400 hover:text-white transition-all cursor-pointer"
+                              title="Delete key"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+
+            {/* Info card */}
+            <section className="bg-zinc-950/80 border border-white/[0.06] rounded-2xl p-4 sm:p-6">
+              <h3 className="text-[10px] font-black uppercase tracking-wider text-zinc-400 mb-3">How it works</h3>
+              <ul className="space-y-1.5 text-[11px] text-zinc-500 leading-relaxed">
+                <li>• Each key has its own daily quota. The pool auto-rotates to the next available key when one fills up.</li>
+                <li>• <span className="text-zinc-300">search.list</span> costs <span className="text-amber-400 font-bold">100 units</span> · <span className="text-zinc-300">videos.list / channels.list</span> cost <span className="text-brand-volt font-bold">1 unit</span></li>
+                <li>• A 10,000-unit key supports ~100 searches/day. Add more keys from different Google Cloud projects to scale.</li>
+                <li>• Quota resets at midnight <span className="text-zinc-300">Pacific Time</span> (YouTube's official schedule). Use Reset to manually clear a counter.</li>
+                <li>• If no keys are added here, the system falls back to the <code className="font-mono text-zinc-400">YOUTUBE_API_KEY</code> environment variable.</li>
+              </ul>
+            </section>
+
           </div>
         )}
 

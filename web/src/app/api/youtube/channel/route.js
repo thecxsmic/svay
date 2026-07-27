@@ -96,7 +96,8 @@ export async function GET(req) {
 
 async function fetchChannelDetailsList(ids) {
   try {
-    const apiKey = process.env.YOUTUBE_API_KEY;
+    const { getYouTubeApiKey } = await import("@/lib/youtube/apiKeyManager");
+    const apiKey = await getYouTubeApiKey("channels.list");
     const url = new URL("https://www.googleapis.com/youtube/v3/channels");
     url.searchParams.set("part", "snippet,statistics");
     url.searchParams.set("id", ids.filter(Boolean).join(","));

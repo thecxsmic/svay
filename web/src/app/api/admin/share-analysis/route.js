@@ -350,7 +350,7 @@ function generateLocalTrendsAndIdeas(channel, videos) {
 
 async function generateRealTrendsAndIdeas(youtubeChannel, youtubeVideos) {
   const recentVideos = youtubeVideos || [];
-  const apiKey = process.env.YOUTUBE_API_KEY;
+  const { getYouTubeApiKey } = await import("@/lib/youtube/apiKeyManager");
 
   // 1. AI generates search queries based on user's videos
   let searchQueries = [];
@@ -387,7 +387,7 @@ Do not generate generic queries. Generate specific, trend-focused queries.`;
       const date45DaysAgo = new Date();
       date45DaysAgo.setDate(date45DaysAgo.getDate() - 45);
       url.searchParams.set("publishedAfter", date45DaysAgo.toISOString());
-      url.searchParams.set("key", apiKey);
+      url.searchParams.set("key", await getYouTubeApiKey("search.list"));
 
       const res = await fetch(url.toString());
       const data = await res.json();
@@ -422,7 +422,7 @@ Do not generate generic queries. Generate specific, trend-focused queries.`;
         const statsUrl = new URL("https://www.googleapis.com/youtube/v3/videos");
         statsUrl.searchParams.set("part", "snippet,statistics");
         statsUrl.searchParams.set("id", chunk.join(","));
-        statsUrl.searchParams.set("key", apiKey);
+        statsUrl.searchParams.set("key", await getYouTubeApiKey("videos.list"));
         const statsRes = await fetch(statsUrl.toString());
         const statsData = await statsRes.json();
         if (statsData.items) {

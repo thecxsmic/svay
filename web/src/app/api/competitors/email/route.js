@@ -87,14 +87,15 @@ export async function POST(req) {
     console.log("[Competitor Email API] Target Email:", userEmail);
     
     // Fetch competitor details and recent videos from YouTube for the email content
-    const apiKey = process.env.YOUTUBE_API_KEY;
+    const { getYouTubeApiKey } = await import("@/lib/youtube/apiKeyManager");
     
     let competitorsData = [];
-    if (apiKey && Array.isArray(analysis.competitor_ids)) {
+    if (Array.isArray(analysis.competitor_ids)) {
       competitorsData = await Promise.all(
         analysis.competitor_ids.map(async (id) => {
           try {
-            const cRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${id}&key=${apiKey}`);
+            const channelKey = await getYouTubeApiKey("channels.list");
+            const cRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${id}&key=${channelKey}`);
             const cData = await cRes.json();
             const channel = cData.items?.[0];
             
@@ -103,7 +104,8 @@ export async function POST(req) {
             // Fetch recent 3 videos
             let videos = [];
             try {
-              const vRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${id}&order=date&type=video&maxResults=3&key=${apiKey}`);
+              const searchKey = await getYouTubeApiKey("search.list");
+              const vRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${id}&order=date&type=video&maxResults=3&key=${searchKey}`);
               const vData = await vRes.json();
               videos = vData.items || [];
             } catch (ve) {
