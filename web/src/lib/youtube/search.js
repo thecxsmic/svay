@@ -5,7 +5,7 @@
 import { buildYouTubeSearchURL } from "./filters";
 
 export async function fetchYouTubeVideos(filters) {
-  const url = buildYouTubeSearchURL(filters);
+  const url = await buildYouTubeSearchURL(filters);
   const response = await fetch(url.toString());
   const data = await response.json();
 

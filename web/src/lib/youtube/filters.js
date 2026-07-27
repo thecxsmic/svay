@@ -23,7 +23,7 @@ export function parseFilters(req) {
   };
 }
 
-export function buildYouTubeSearchURL(filters) {
+export async function buildYouTubeSearchURL(filters) {
   const url = new URL("https://www.googleapis.com/youtube/v3/search");
 
   url.searchParams.set("part", "snippet");

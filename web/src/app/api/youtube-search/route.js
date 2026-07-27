@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
 |--------------------------------------------------------------------------
 */
 
-function buildYouTubeSearchURL(filters) {
+async function buildYouTubeSearchURL(filters) {
   const url = new URL("https://www.googleapis.com/youtube/v3/search");
 
   url.searchParams.set("part", "snippet");
@@ -105,7 +105,7 @@ export async function GET(req) {
       return NextResponse.json({ items });
     }
 
-    const url = buildYouTubeSearchURL(filters);
+    const url = await buildYouTubeSearchURL(filters);
     const response = await fetch(url.toString());
     const data = await response.json();
 
