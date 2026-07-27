@@ -62,7 +62,7 @@ export default function SearchPage() {
     try {
       const res = await fetch(`/api/youtube/search?${params.toString()}`);
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error?.message || "Search failed");
+      if (!res.ok) throw new Error(data.error?.message || data.error || "Search failed");
       setLoadingStage(100);
       setLoadingText("Ready.");
       setTimeout(() => {

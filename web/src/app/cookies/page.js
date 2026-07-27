@@ -114,6 +114,10 @@ export default function CookiesPage() {
               <p>
                 You can block or delete cookies through your web browser's setting menus. However, please note that blocking essential authentication cookies (such as Clerk's session cookies) will prevent you from logging in and accessing your private workspace.
               </p>
+              <p>
+                For questions about how we use cookies or to request changes, email us at{' '}
+                <a href="mailto:help@svay.space" className="text-brand-volt font-mono">help@svay.space</a>.
+              </p>
             </section>
           </div>
         </main>

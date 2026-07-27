@@ -102,7 +102,67 @@ export default clerkMiddleware(async (auth, request) => {
       );
     }
 
-    // 2. Check specific route limit
+    // 2. Per-user search limits: 25/hour and 35/day for both search endpoints
+    const isSearchEndpoint =
+      (pathname === '/api/youtube/search' || pathname === '/api/youtube/channel') &&
+      request.method === 'GET';
+
+    if (isSearchEndpoint) {
+      const SEARCH_HOUR_LIMIT = 25;
+      const SEARCH_DAY_LIMIT  = 35;
+      const HOUR_MS = 60 * 60 * 1000;        // 1 hour
+      const DAY_MS  = 24 * 60 * 60 * 1000;   // 24 hours
+
+      const hourKey  = `search:hour:${rateLimitKey}`;
+      const dayKey   = `search:day:${rateLimitKey}`;
+
+      const hourResult = checkRateLimit(hourKey, SEARCH_HOUR_LIMIT, HOUR_MS);
+      const dayResult  = checkRateLimit(dayKey,  SEARCH_DAY_LIMIT,  DAY_MS);
+
+      if (hourResult.limited) {
+        const resetIn = Math.ceil((hourResult.reset - Date.now()) / 1000 / 60);
+        console.warn(`[Rate Limiter] Search hourly limit hit for: ${rateLimitKey}`);
+        return new NextResponse(
+          JSON.stringify({
+            success: false,
+            error: `You've reached the 25 searches/hour limit. Resets in ~${resetIn} minute${resetIn !== 1 ? 's' : ''}.`,
+          }),
+          {
+            status: 429,
+            headers: {
+              'Content-Type': 'application/json',
+              'X-RateLimit-Limit': String(SEARCH_HOUR_LIMIT),
+              'X-RateLimit-Remaining': '0',
+              'X-RateLimit-Reset': String(hourResult.reset),
+              'X-RateLimit-Window': 'hour',
+            },
+          }
+        );
+      }
+
+      if (dayResult.limited) {
+        const resetIn = Math.ceil((dayResult.reset - Date.now()) / 1000 / 60 / 60);
+        console.warn(`[Rate Limiter] Search daily limit hit for: ${rateLimitKey}`);
+        return new NextResponse(
+          JSON.stringify({
+            success: false,
+            error: `You've reached the 35 searches/day limit. Resets in ~${resetIn} hour${resetIn !== 1 ? 's' : ''}.`,
+          }),
+          {
+            status: 429,
+            headers: {
+              'Content-Type': 'application/json',
+              'X-RateLimit-Limit': String(SEARCH_DAY_LIMIT),
+              'X-RateLimit-Remaining': '0',
+              'X-RateLimit-Reset': String(dayResult.reset),
+              'X-RateLimit-Window': 'day',
+            },
+          }
+        );
+      }
+    }
+
+    // 3. Check specific route limit
     let limit = 60; // default 60 requests per minute per route
     const isHeavyEndpoint = 
       (pathname === '/api/trends' && request.method === 'POST') ||

@@ -221,6 +221,10 @@ export default function DocsPage() {
       {/* ── FOOTER ── */}
       <footer className="border-t border-zinc-900 px-4 py-3 text-center text-[9px] font-mono text-zinc-600 font-bold uppercase tracking-widest bg-black shrink-0">
         © 2026 Svay
+        <span className="mx-2 text-zinc-800">·</span>
+        <a href="mailto:help@svay.space" className="text-zinc-500 hover:text-white transition-colors normal-case tracking-normal">help@svay.space</a>
+        <span className="mx-2 text-zinc-800">·</span>
+        <a href="/support" className="hover:text-white transition-colors">Support</a>
       </footer>
 
     </div>

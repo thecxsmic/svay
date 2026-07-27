@@ -49,7 +49,7 @@ export default function PaymentButton({ amount, planName = "Pro Plan", onSuccess
         },
         prefill: {
           name: "Svay Administrator",
-          email: "admin@svay.space",
+          email: "team@svay.space",
         },
         theme: {
           color: "#0070f3",

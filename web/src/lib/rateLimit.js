@@ -70,8 +70,9 @@ export function isRateLimited(key, limit, windowMs = 60000) {
 if (typeof setInterval !== 'undefined') {
   setInterval(() => {
     const now = Date.now();
+    const MAX_WINDOW = 25 * 60 * 60 * 1000; // 25 hours — covers daily search windows
     for (const [key, timestamps] of rateLimitStore.entries()) {
-      const validTimestamps = timestamps.filter(time => now - time < 3600000); // 1 hour
+      const validTimestamps = timestamps.filter(time => now - time < MAX_WINDOW);
       if (validTimestamps.length === 0) {
         rateLimitStore.delete(key);
       } else {

@@ -41,6 +41,7 @@ export default function LandingFooter() {
               <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
               <Link href="/cookies" className="hover:text-white transition-colors">Cookies</Link>
               <Link href="/refund" className="hover:text-white transition-colors">Refund</Link>
+              <a href="mailto:help@svay.space" className="hover:text-white transition-colors normal-case font-mono tracking-normal">help@svay.space</a>
             </div>
           </div>
         </div>
