@@ -21,19 +21,21 @@ import {
   ChevronRight,
   LayoutGrid,
   Megaphone,
+  Home,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMobilePageTabs } from '@/contexts/mobilePageTabs';
 
 /** Icon-only primary tabs (thumb zone) */
 const PRIMARY_TABS = [
-  { name: 'Search', href: '/', icon: Search },
+  { name: 'Home', href: '/dashboard', icon: Home },
   { name: 'Trends', href: '/radar', icon: Zap },
   { name: 'Library', href: '/library', icon: BookOpen },
   { name: 'Rivals', href: '/competitors', icon: Trophy },
 ];
 
 const MORE_LINKS = [
+  { name: 'Search', href: '/', icon: Search, group: 'Grow' },
   { name: 'Channels', href: '/channels', icon: Users, group: 'Grow' },
   { name: 'Analytics', href: '/analytics', icon: BarChart3, group: 'Grow' },
   { name: 'Tools', href: '/tools', icon: Wrench, group: 'Grow' },
@@ -44,6 +46,7 @@ const MORE_LINKS = [
 ];
 
 function isTabActive(pathname, href) {
+  if (href === '/dashboard') return pathname === '/dashboard' || pathname === '/';
   if (href === '/') return pathname === '/';
   return pathname === href || pathname.startsWith(`${href}/`);
 }

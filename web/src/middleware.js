@@ -39,6 +39,17 @@ export default clerkMiddleware(async (auth, request) => {
     }
   }
 
+  // Redirect authenticated users from / to /dashboard (the new default home)
+  if (pathname === '/') {
+    try {
+      const { userId } = await auth();
+      if (userId) {
+        const dashUrl = new URL('/dashboard', url.origin);
+        return NextResponse.redirect(dashUrl, { status: 302 });
+      }
+    } catch {}
+  }
+
   // Affiliate referral capture via /r/CODE path — redirect to / with cookie
   const rMatch = pathname.match(/^\/r\/([A-Za-z0-9_-]{1,24})(?:\/.*)?$/);
   if (rMatch) {

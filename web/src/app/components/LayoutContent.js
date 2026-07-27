@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { UserButton } from "@clerk/nextjs";
-import { Plus, Search, Zap, Users, Trophy, BookOpen, BarChart3, Radio, HelpCircle, SlidersHorizontal, Trash2, CreditCard, LifeBuoy, Wrench, ChevronRight, Megaphone } from 'lucide-react';
+import { Plus, Search, Zap, Users, Trophy, BookOpen, BarChart3, Radio, HelpCircle, SlidersHorizontal, Trash2, CreditCard, LifeBuoy, Wrench, ChevronRight, Megaphone, Home } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useChannel } from '@/contexts/channel';
 import { useUser } from '@/contexts/user';
@@ -16,6 +16,7 @@ import MobileAppShell from "./MobileAppShell";
 import { MobilePageTabsProvider } from "@/contexts/mobilePageTabs";
 
 const navItems = [
+  { name: 'Home', href: '/dashboard', icon: Home },
   { name: 'Search', href: '/', icon: Search },
   { name: 'Trends', href: '/radar', icon: Zap },
   { name: 'Channels', href: '/channels', icon: Users },
@@ -31,6 +32,7 @@ const navItems = [
 
 /** Prefetch every dashboard route so nav switches skip the RSC/JS fetch. */
 const PREFETCH_ROUTES = [
+  '/dashboard',
   ...navItems.map((i) => i.href),
   '/tools/title',
   '/tools/tags',
@@ -44,6 +46,7 @@ const PREFETCH_ROUTES = [
 ];
 
 function resolvePageMeta(pathname) {
+  if (pathname === '/dashboard') return { title: 'Home', section: 'Dashboard' };
   if (pathname === '/') return { title: 'Search', section: 'Explore' };
   if (pathname.startsWith('/radar')) return { title: 'Trends', section: 'Explore' };
   if (pathname.startsWith('/channels')) return { title: 'Channels', section: 'Explore' };
