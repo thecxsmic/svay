@@ -394,10 +394,21 @@ export default function NotePage({ params }) {
                     </span>
                  </div>
               </div>
-              <input 
+              <textarea
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full bg-transparent border-none p-0 text-3xl md:text-4xl font-bold tracking-tight text-white focus:ring-0 placeholder-zinc-800 transition-all"
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  e.target.style.height = 'auto';
+                  e.target.style.height = e.target.scrollHeight + 'px';
+                }}
+                ref={(el) => {
+                  if (el) {
+                    el.style.height = 'auto';
+                    el.style.height = el.scrollHeight + 'px';
+                  }
+                }}
+                rows={1}
+                className="w-full bg-transparent border-none p-0 text-3xl md:text-4xl font-bold tracking-tight text-white focus:ring-0 placeholder-zinc-800 transition-all resize-none overflow-hidden leading-tight"
                 placeholder="Note Title"
               />
             </header>
