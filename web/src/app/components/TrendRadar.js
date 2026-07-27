@@ -428,17 +428,6 @@ export default function TrendRadar() {
             <span className="hidden sm:inline">Copy hooks</span>
           </DashButton>
         )}
-        <DashButton
-          size="sm"
-          onClick={scanTrends}
-          disabled={loading || !selectedChannel}
-          className="!h-9 !px-2.5 sm:!px-3.5"
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
-          <span className="hidden sm:inline">
-            {loading ? 'Scanning…' : data ? 'Rescan' : 'Scan'}
-          </span>
-        </DashButton>
       </DashToolbar>
 
       <div className="mx-auto w-full min-w-0 max-w-full px-4 py-6 sm:px-6 sm:py-8 md:max-w-7xl">

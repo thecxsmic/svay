@@ -857,17 +857,6 @@ export default function CompetitorsPage() {
             <span className="hidden sm:inline">Save</span>
           </DashButton>
         )}
-        <DashButton
-          size="sm"
-          onClick={analyzeCompetitors}
-          disabled={loading || !selectedChannel}
-          className="!h-9 !px-2.5 sm:!px-3.5"
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
-          <span className="hidden sm:inline">
-            {loading ? 'Analyzing' : data ? 'Rescan' : 'Scan'}
-          </span>
-        </DashButton>
       </DashToolbar>
 
       <DashBody className="space-y-6 pb-20">
