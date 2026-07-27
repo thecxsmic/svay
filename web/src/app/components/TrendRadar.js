@@ -383,32 +383,6 @@ export default function TrendRadar() {
             )}
           </>
         }
-        mobileLeft={
-          data && !loading ? (
-            <>
-              {selectedChannel && (
-                <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5">
-                  <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-600">
-                    Channel
-                  </p>
-                  <p className="mt-0.5 truncate text-sm font-semibold text-white">
-                    {selectedChannel.title}
-                  </p>
-                </div>
-              )}
-              {lastScanTime && (
-                <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5">
-                  <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-600">
-                    Last scan
-                  </p>
-                  <p className="mt-0.5 text-sm font-semibold text-white">
-                    {getCacheAge()}
-                  </p>
-                </div>
-              )}
-            </>
-          ) : null
-        }
         tabItems={data && !loading ? TABS : undefined}
         tabValue={tab}
         onTabChange={setTab}
