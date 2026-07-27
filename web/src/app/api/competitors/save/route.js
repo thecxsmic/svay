@@ -1,5 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
-import { saveAnalysis, getSavedAnalyses, getAnalysisById, getUserChannel, getLastEmail } from "@/lib/cache/turso";
+import { saveAnalysis, getSavedAnalyses, getAnalysisById, getUserChannel, getLastEmail, saveCompetitorHistory } from "@/lib/cache/turso";
 import { apiSuccess, apiError } from "@/lib/utils/response";
 import { getIsDemoMode, MOCK_COMPETITORS_ANALYSIS } from "@/lib/utils/demoMock";
 
@@ -43,7 +43,7 @@ export async function POST(req) {
     const { userId } = await auth();
     if (!userId) return apiError(new Error("Unauthorized"), 401);
 
-    const { subjectId, competitorIds, title } = await req.json();
+    const { subjectId, competitorIds, title, summary } = await req.json();
     if (!subjectId || !competitorIds) {
       return apiError(new Error("Subject ID and Competitor IDs are required"), 400);
     }
@@ -52,6 +52,14 @@ export async function POST(req) {
     if (!result.success && result.error?.includes("FOREIGN KEY constraint failed")) {
       return apiError(new Error("Channel data is still being processed. Please try again in a moment."), 400);
     }
+    
+    // Also save to history for context in future analyses
+    if (result.success && summary) {
+      saveCompetitorHistory(userId, subjectId, competitorIds, summary).catch(err => {
+        console.error("[Competitors Save] Error saving to history:", err);
+      });
+    }
+    
     return apiSuccess(result);
   } catch (error) {
     return apiError(error);

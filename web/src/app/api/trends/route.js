@@ -26,7 +26,7 @@ async function generateObjectWithFallback({ modelName, ...options }) {
 }
 import { z } from "zod";
 import { calculateViralityScore } from "@/lib/ranking/virality";
-import { getTrendRadar, saveTrendRadar, getLastEmail } from "@/lib/cache/turso";
+import { getTrendRadar, saveTrendRadar, getLastEmail, getTrendRadarHistory, saveTrendRadarHistory } from "@/lib/cache/turso";
 import { getIsDemoMode, MOCK_TREND_RADAR } from "@/lib/utils/demoMock";
 
 const trendSchema = z.object({
@@ -332,6 +332,22 @@ Do not generate generic queries. Generate specific, trend-focused queries.`;
           } catch (err) {}
         }
 
+        // Fetch past trend radar scans for context
+        send({ type: 'step', progress: 70, message: 'Loading historical context...' });
+        const pastScans = channelBased && channelId ? await getTrendRadarHistory(channelId, 3) : [];
+        
+        let historicalContext = '';
+        if (pastScans.length > 0) {
+          historicalContext = `\n\nHISTORICAL CONTEXT (Past ${pastScans.length} Scans):`;
+          pastScans.forEach((scan, idx) => {
+            const daysAgo = Math.floor((Date.now() / 1000 - scan.created_at) / 86400);
+            const trends = scan.data?.insights?.emergingTrends || [];
+            const trendTopics = trends.map(t => t.topic).slice(0, 3);
+            historicalContext += `\n${daysAgo} days ago: Tracked trends were ${trendTopics.join(', ')}`;
+          });
+          historicalContext += `\n\nIMPORTANT: Consider what has changed, what's new, and what trends are evolving. Build on previous insights rather than repeating them.`;
+        }
+
         // 5. AI synthesizes Trend Radar
         send({ type: 'step', progress: 80, message: 'AI synthesizing customized Trend Radar...' });
         
@@ -356,16 +372,17 @@ Top Viral Videos in Niche:
 ${videosWithMetrics.slice(0, 10).map(v => `- "${v.title}" by ${v.channelTitle} (Viral Score: ${v.viralScore})`).join('\n')}
 
 COMPETITOR RECENT UPLOADS:
-${competitorInsights.map(c => `Channel: ${c.channel}\nRecent Videos: ${c.recentTitles.join(', ')}`).join('\n\n')}
+${competitorInsights.map(c => `Channel: ${c.channel}\nRecent Videos: ${c.recentTitles.join(', ')}`).join('\n\n')}${historicalContext}
 
 INSTRUCTIONS:
 1. Synthesize this data to find emerging patterns, hooks, and content styles that competitors are using successfully right now.
-2. Customize all 'quick wins' and 'emerging trends' so they specifically fit the user's channel context while leveraging what's currently working for competitors.
-3. Ensure actionable ideas are highly specific to the niche.
-4. Generate exactly 3 highly customized 'videoIdeas' specifically tailored for the user's channel based on the emerging trends.
-5. CRITICAL: Base your 'estimatedViews' and 'predictedViews' strictly on the user's current Average Views (${avgViews > 0 ? avgViews.toLocaleString() : 'Low'}) and Subscriber Count. Scale it realistically for a successful video on THEIR specific channel (e.g., if they average 100 views, a "viral" video for them might be 500-2K views, NOT 1M views).
-6. Total videos analyzed should be exactly ${videosWithMetrics.length}.
-7. CRITICAL: Return ONLY a raw JSON object with the exact structure requested. Do NOT include "$schema", "properties", or any schema definitions in your output.`;
+2. ${pastScans.length > 0 ? 'IMPORTANT: Use the historical context to identify NEW and EVOLVING trends. Focus on what has changed or is emerging since the last scan. Avoid repeating old ideas unless they have significantly evolved.' : 'Focus on current emerging trends and opportunities.'}
+3. Customize all 'quick wins' and 'emerging trends' so they specifically fit the user's channel context while leveraging what's currently working for competitors.
+4. Ensure actionable ideas are highly specific to the niche.
+5. Generate exactly 3 highly customized 'videoIdeas' specifically tailored for the user's channel based on the emerging trends.
+6. CRITICAL: Base your 'estimatedViews' and 'predictedViews' strictly on the user's current Average Views (${avgViews > 0 ? avgViews.toLocaleString() : 'Low'}) and Subscriber Count. Scale it realistically for a successful video on THEIR specific channel (e.g., if they average 100 views, a "viral" video for them might be 500-2K views, NOT 1M views).
+7. Total videos analyzed should be exactly ${videosWithMetrics.length}.
+8. CRITICAL: Return ONLY a raw JSON object with the exact structure requested. Do NOT include "$schema", "properties", or any schema definitions in your output.`;
 
         const { object } = await generateObjectWithFallback({
           modelName: 'openai/gpt-oss-120b',
@@ -377,13 +394,19 @@ INSTRUCTIONS:
         send({ type: 'step', progress: 95, message: 'Finalizing Trend Radar...' });
         
         object.summary.totalVideosAnalyzed = videosWithMetrics.length > 0 ? videosWithMetrics.length : 120;
+        object.historyCount = pastScans.length; // Include history count for UI
 
         send({ type: 'complete', data: object });
 
-        // Save to cache
+        // Save to cache and history
         if (channelBased && channelId) {
           saveTrendRadar(channelId, object).catch(err => {
             console.error("[Trends API] Error saving to Turso:", err);
+          });
+          
+          // Save to history for future context
+          saveTrendRadarHistory(channelId, object).catch(err => {
+            console.error("[Trends API] Error saving to history:", err);
           });
 
           // Trigger email report in background

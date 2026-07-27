@@ -820,4 +820,169 @@ export async function checkEmailRateLimit(userId) {
   }
 }
 
+/**
+ * Save trend radar history (keeps last 10 scans)
+ */
+export async function saveTrendRadarHistory(channelId, data) {
+  if (!process.env.TURSO_DATABASE_URL) return;
+
+  try {
+    const now = Math.floor(Date.now() / 1000);
+    const id = `${channelId}_${now}`;
+    
+    await client.execute({
+      sql: `INSERT INTO trend_radar_history (id, channel_id, data, created_at) VALUES (?, ?, ?, ?)`,
+      args: [id, channelId, JSON.stringify(data), now],
+    });
+
+    // Keep only last 10 records per channel
+    await client.execute({
+      sql: `DELETE FROM trend_radar_history 
+            WHERE channel_id = ? 
+            AND id NOT IN (
+              SELECT id FROM trend_radar_history 
+              WHERE channel_id = ? 
+              ORDER BY created_at DESC 
+              LIMIT 10
+            )`,
+      args: [channelId, channelId],
+    });
+
+    console.log(`[Turso] Saved trend radar history for channel ${channelId}`);
+  } catch (error) {
+    console.error("[Turso] Save Trend Radar History Error:", error);
+  }
+}
+
+/**
+ * Get past trend radar scans for a channel (last N scans)
+ */
+export async function getTrendRadarHistory(channelId, limit = 5) {
+  if (!process.env.TURSO_DATABASE_URL) return [];
+
+  try {
+    const rs = await client.execute({
+      sql: `SELECT data, created_at FROM trend_radar_history 
+            WHERE channel_id = ? 
+            ORDER BY created_at DESC 
+            LIMIT ?`,
+      args: [channelId, limit],
+    });
+
+    return rs.rows.map(row => ({
+      data: JSON.parse(row.data),
+      created_at: row.created_at
+    }));
+  } catch (error) {
+    console.error("[Turso] Get Trend Radar History Error:", error);
+    return [];
+  }
+}
+
+/**
+ * Save competitor analysis history (keeps last 10 analyses)
+ */
+export async function saveCompetitorHistory(userId, subjectId, competitorIds, data) {
+  if (!process.env.TURSO_DATABASE_URL) return;
+
+  try {
+    const now = Math.floor(Date.now() / 1000);
+    const id = `${userId}_${subjectId}_${now}`;
+    
+    await client.execute({
+      sql: `INSERT INTO competitor_history (id, user_id, subject_id, competitor_ids, data, created_at) 
+            VALUES (?, ?, ?, ?, ?, ?)`,
+      args: [id, userId, subjectId, JSON.stringify(competitorIds), JSON.stringify(data), now],
+    });
+
+    // Keep only last 10 records per user/subject combination
+    await client.execute({
+      sql: `DELETE FROM competitor_history 
+            WHERE user_id = ? AND subject_id = ?
+            AND id NOT IN (
+              SELECT id FROM competitor_history 
+              WHERE user_id = ? AND subject_id = ?
+              ORDER BY created_at DESC 
+              LIMIT 10
+            )`,
+      args: [userId, subjectId, userId, subjectId],
+    });
+
+    console.log(`[Turso] Saved competitor history for user ${userId}, subject ${subjectId}`);
+  } catch (error) {
+    console.error("[Turso] Save Competitor History Error:", error);
+  }
+}
+
+/**
+ * Get past competitor analyses for a user and subject (last N analyses)
+ */
+export async function getCompetitorHistory(userId, subjectId, limit = 5) {
+  if (!process.env.TURSO_DATABASE_URL) return [];
+
+  try {
+    const rs = await client.execute({
+      sql: `SELECT data, competitor_ids, created_at FROM competitor_history 
+            WHERE user_id = ? AND subject_id = ?
+            ORDER BY created_at DESC 
+            LIMIT ?`,
+      args: [userId, subjectId, limit],
+    });
+
+    return rs.rows.map(row => ({
+      data: JSON.parse(row.data),
+      competitor_ids: JSON.parse(row.competitor_ids),
+      created_at: row.created_at
+    }));
+  } catch (error) {
+    console.error("[Turso] Get Competitor History Error:", error);
+    return [];
+  }
+}
+
+/**
+ * Initialize history tables
+ */
+export async function initHistoryTables() {
+  if (!process.env.TURSO_DATABASE_URL) return;
+
+  try {
+    // Trend radar history
+    await client.execute(`
+      CREATE TABLE IF NOT EXISTS trend_radar_history (
+        id TEXT PRIMARY KEY,
+        channel_id TEXT NOT NULL,
+        data TEXT NOT NULL,
+        created_at INTEGER NOT NULL
+      )
+    `);
+
+    await client.execute(`
+      CREATE INDEX IF NOT EXISTS idx_trend_radar_history_channel 
+      ON trend_radar_history(channel_id, created_at DESC)
+    `);
+
+    // Competitor analysis history
+    await client.execute(`
+      CREATE TABLE IF NOT EXISTS competitor_history (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        subject_id TEXT NOT NULL,
+        competitor_ids TEXT NOT NULL,
+        data TEXT NOT NULL,
+        created_at INTEGER NOT NULL
+      )
+    `);
+
+    await client.execute(`
+      CREATE INDEX IF NOT EXISTS idx_competitor_history_user_subject 
+      ON competitor_history(user_id, subject_id, created_at DESC)
+    `);
+
+    console.log("[Turso] History tables initialized");
+  } catch (error) {
+    console.error("[Turso] History Tables Initialization Error:", error);
+  }
+}
+
 

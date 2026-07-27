@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useChannel } from '@/contexts/channel';
@@ -30,6 +30,11 @@ import {
   ArrowDownRight,
   Minus,
   Save,
+  X,
+  UserPlus,
+  Loader2,
+  MoreHorizontal,
+  Trash2,
 } from 'lucide-react';
 import { useTitle } from '@/lib/hooks/titles';
 import ResearchNotesModal from '../components/ResearchNotesModal';
@@ -79,9 +84,44 @@ export default function CompetitorsPage() {
   const [rivalId, setRivalId] = useState(null);
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailSuccessMsg, setEmailSuccessMsg] = useState(null);
+  const [pastAnalysesCount, setPastAnalysesCount] = useState(0);
+  const [competitorHistory, setCompetitorHistory] = useState([]);
+  // Manual competitors
+  const [manualInput, setManualInput] = useState('');
+  const [addingManual, setAddingManual] = useState(false);
+  const [manualError, setManualError] = useState(null);
+  // Pinned competitor IDs persist across scans
+  const [pinnedCompetitorIds, setPinnedCompetitorIds] = useState([]);
+  // Blocked competitor IDs — removed channels never come back
+  const [blockedCompetitorIds, setBlockedCompetitorIds] = useState(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      return JSON.parse(localStorage.getItem('competitor_blocked_ids') || '[]');
+    } catch { return []; }
+  });
 
   const selectedChannel = channels.data.find(c => c.id === channels.selectedId);
   const getCacheKey = () => `${CACHE_KEY_PREFIX}${selectedChannel?.id || 'default'}`;
+
+  const loadCompetitorHistory = useCallback(async () => {
+    if (!selectedChannel?.id) return;
+    try {
+      const res = await fetch(`/api/competitors/history?subjectId=${selectedChannel.id}&limit=3`);
+      const json = await res.json();
+      if (json.success && json.history) {
+        setCompetitorHistory(json.history);
+        setPastAnalysesCount(json.history.length);
+      }
+    } catch (err) {
+      console.error('Failed to load competitor history:', err);
+    }
+  }, [selectedChannel?.id]);
+
+  useEffect(() => {
+    if (selectedChannel?.id && !loading) {
+      loadCompetitorHistory();
+    }
+  }, [selectedChannel?.id, loadCompetitorHistory]);
 
   const handleSendEmail = async () => {
     const analysisId = searchParams.get('analysisId');
@@ -229,7 +269,7 @@ export default function CompetitorsPage() {
     setLoading(true);
     setProgress(0);
     setError(null);
-    setData(null);
+    // Don't wipe data — we'll merge in the new scan results
 
     try {
       setCurrentStep('Learning about your channel...');
@@ -252,21 +292,69 @@ export default function CompetitorsPage() {
 
       setCurrentStep('Searching similar creators...');
       setProgress(50);
-      const compRes = await fetch(`/api/youtube/channel?q=${encodeURIComponent(nicheQuery)}`);
-      const compData = await compRes.json();
-      const initialResults = compData.items || [];
+
+      // ── Personalised search: build multiple targeted queries ──────────────
+      // 1) Keywords from top video titles (most specific)
+      const titleKeywords = topVideos.length > 0
+        ? topVideos.map(v => v.snippet.title.split(/\s+/).slice(0, 3).join(' ')).join(' ')
+        : selectedChannel.title;
+
+      // 2) Channel description keywords (first meaningful words)
+      const descWords = (baseChannel.snippet?.description || '')
+        .replace(/https?:\/\/\S+/g, '')
+        .split(/\s+/)
+        .filter(w => w.length > 4)
+        .slice(0, 6)
+        .join(' ');
+
+      // 3) Channel name itself as fallback
+      const nameQuery = selectedChannel.title;
+
+      // Run up to 3 searches with different angles and deduplicate
+      const searchQueries = [
+        titleKeywords,
+        descWords || nameQuery,
+        nameQuery,
+      ].filter(Boolean);
+
+      const allSearchResults = new Map(); // id -> item
+      for (const q of searchQueries) {
+        try {
+          const r = await fetch(`/api/youtube/channel?q=${encodeURIComponent(q)}`);
+          const d = await r.json();
+          for (const item of (d.items || [])) {
+            if (item.id !== selectedChannel.id && !allSearchResults.has(item.id)) {
+              allSearchResults.set(item.id, item);
+            }
+          }
+        } catch (e) {}
+      }
+
+      const initialResults = [...allSearchResults.values()];
       const currentSubs = parseInt(baseChannel.statistics.subscriberCount || 0);
 
       setCurrentStep('Comparing their stats...');
       setProgress(70);
-      const filtered = initialResults.filter(c => c.id !== selectedChannel.id).slice(0, 4);
+
+      // Sort candidates by subscriber proximity to your channel (closest first)
+      // This makes suggestions feel much more relevant
+      const sortedByProximity = initialResults
+        .filter(c => c.id !== selectedChannel.id)
+        .sort((a, b) => {
+          const aSubs = parseInt(a.statistics?.subscriberCount || 0);
+          const bSubs = parseInt(b.statistics?.subscriberCount || 0);
+          return Math.abs(aSubs - currentSubs) - Math.abs(bSubs - currentSubs);
+        })
+        .slice(0, 8); // fetch details for top 8 candidates, keep best 4
       
-      const deepCompetitors = await Promise.all(filtered.map(async (c) => {
+      const deepCompetitors = await Promise.all(sortedByProximity.map(async (c) => {
         try {
           const detailRes = await fetch(`/api/youtube/channel?channelId=${c.id}`);
           const detailData = await detailRes.json();
           if (detailData.success) {
             const compSubs = parseInt(detailData.channel.statistics.subscriberCount);
+            // Skip tiny channels right here to avoid polluting the pool
+            if (compSubs < 100) return null;
             let matchType = "Rising channel";
             if (compSubs > currentSubs * 10) matchType = "Top channel";
             else if (compSubs > currentSubs * 2) matchType = "Bigger channel";
@@ -282,11 +370,87 @@ export default function CompetitorsPage() {
         } catch (e) { return null; }
       }));
 
-      const competitors = deepCompetitors.filter(c => c !== null);
-      
+      // ── Quality bar: ignore channels below this sub count ────────────────
+      const MIN_SUBS = 100;
+      const blocked = new Set(blockedCompetitorIds);
+
+      // Filter out blocked + self from search results
+      const suggestedCompetitors = deepCompetitors
+        .filter(c => c !== null)
+        .filter(c => !blocked.has(c.id));
+
+      // Re-fetch pinned/manual competitors (always kept, blocked list ignored for pinned)
+      let pinnedFresh = [];
+      if (pinnedCompetitorIds.length > 0) {
+        setCurrentStep('Refreshing your pinned rivals...');
+        pinnedFresh = (await Promise.all(pinnedCompetitorIds.map(async (cId) => {
+          try {
+            const r = await fetch(`/api/youtube/channel?channelId=${cId}`);
+            const d = await r.json();
+            if (d.success && d.channel) {
+              const compSubs = parseInt(d.channel.statistics.subscriberCount);
+              let matchType = "Rising channel";
+              if (compSubs > currentSubs * 10) matchType = "Top channel";
+              else if (compSubs > currentSubs * 2) matchType = "Bigger channel";
+              else if (compSubs >= currentSubs * 0.5) matchType = "Similar size";
+              return { ...d.channel, videos: d.videos || [], matchType, pinned: true };
+            }
+          } catch (e) {}
+          return null;
+        }))).filter(Boolean);
+      }
+
+      // ── Lock in existing suggested competitors that pass quality ──────────
+      // Channels already in the list with >= MIN_SUBS stay locked (unless blocked).
+      // New search results only fill slots that are empty.
+      const pinnedIds = new Set(pinnedFresh.map(c => c.id));
+      const existingSuggested = (data?.competitors || [])
+        .filter(c => !c.pinned && !pinnedIds.has(c.id))
+        .filter(c => parseInt(c.statistics?.subscriberCount || 0) >= MIN_SUBS)
+        .filter(c => !blocked.has(c.id)); // never keep blocked channels
+
+      const existingIds = new Set(existingSuggested.map(c => c.id));
+
+      // Refresh existing locked suggestions to update their stats
+      let refreshedExisting = [];
+      if (existingSuggested.length > 0) {
+        setCurrentStep('Refreshing your existing rivals...');
+        refreshedExisting = (await Promise.all(existingSuggested.map(async (c) => {
+          try {
+            const r = await fetch(`/api/youtube/channel?channelId=${c.id}`);
+            const d = await r.json();
+            if (d.success && d.channel) {
+              const compSubs = parseInt(d.channel.statistics.subscriberCount);
+              if (compSubs < MIN_SUBS) return null; // fell below bar — drop it
+              let matchType = "Rising channel";
+              if (compSubs > currentSubs * 10) matchType = "Top channel";
+              else if (compSubs > currentSubs * 2) matchType = "Bigger channel";
+              else if (compSubs >= currentSubs * 0.5) matchType = "Similar size";
+              return { ...d.channel, videos: d.videos || [], matchType };
+            }
+          } catch (e) {}
+          return c; // keep stale data on network error rather than dropping
+        }))).filter(Boolean);
+      }
+
+      // New suggestions only fill empty slots (not already in locked or pinned or blocked)
+      const refreshedIds = new Set(refreshedExisting.map(c => c.id));
+      const newSlots = suggestedCompetitors.filter(
+        c => !existingIds.has(c.id) && !pinnedIds.has(c.id) && !refreshedIds.has(c.id)
+          && !blocked.has(c.id)
+          && parseInt(c.statistics?.subscriberCount || 0) >= MIN_SUBS
+      );
+
+      // Merge: pinned → locked existing → new gap-fillers
+      const merged = [
+        ...pinnedFresh,
+        ...refreshedExisting,
+        ...newSlots,
+      ];
+
       const analysisResult = {
         baseChannel,
-        competitors: competitors.sort((a, b) => parseInt(b.statistics.subscriberCount) - parseInt(a.statistics.subscriberCount)),
+        competitors: merged.sort((a, b) => parseInt(b.statistics.subscriberCount) - parseInt(a.statistics.subscriberCount)),
         timestamp: Date.now()
       };
 
@@ -295,20 +459,28 @@ export default function CompetitorsPage() {
       
       // Auto-save to Turso to get an ID for emailing
       try {
+        const summary = {
+          baseChannelTitle: baseChannel.title,
+          baseChannelSubs: parseInt(baseChannel.statistics.subscriberCount),
+          competitorTitles: merged.map(c => c.title),
+          competitorSubs: merged.map(c => parseInt(c.statistics.subscriberCount)),
+          topCompetitorVideo: merged[0]?.videos[0]?.snippet?.title,
+          timestamp: Date.now()
+        };
+        
         const saveRes = await fetch('/api/competitors/save', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             subjectId: baseChannel.id,
-            competitorIds: competitors.map(c => c.id),
-            title: `Compare: ${baseChannel.title}`
+            competitorIds: merged.map(c => c.id),
+            title: `Compare: ${baseChannel.title}`,
+            summary
           })
         });
         const saveResult = await saveRes.json();
         if (saveResult.success && saveResult.id) {
           router.push(`/competitors?analysisId=${saveResult.id}`);
-          
-          // Automatically trigger the email report
           setCurrentStep('Sending email report...');
           try {
             const emailRes = await fetch('/api/competitors/email', {
@@ -322,7 +494,6 @@ export default function CompetitorsPage() {
             const emailResult = await emailRes.json();
             if (emailResult.success) {
               setLastEmailSentAt(Date.now());
-              console.log("Email report sent automatically");
             }
           } catch (e) {
             console.error("Automatic email failed:", e);
@@ -338,6 +509,94 @@ export default function CompetitorsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Add a competitor manually by YouTube URL or channel handle/ID
+  const addManualCompetitor = async () => {
+    const raw = manualInput.trim();
+    if (!raw || addingManual || !data) return;
+    setAddingManual(true);
+    setManualError(null);
+
+    try {
+      // Parse channel ID from URL or use raw
+      let channelId = raw;
+      const urlMatch = raw.match(/(?:youtube\.com\/(?:channel\/|@))([\w-]+)/);
+      if (urlMatch) channelId = urlMatch[1];
+
+      const currentSubs = parseInt(data.baseChannel.statistics.subscriberCount || 0);
+      const alreadyAdded = data.competitors.some(c => c.id === channelId || c.customUrl === channelId);
+      if (alreadyAdded) {
+        setManualError('This channel is already in your list.');
+        return;
+      }
+
+      // Try by ID first, then by handle search
+      let channelData = null;
+      const byId = await fetch(`/api/youtube/channel?channelId=${channelId}`);
+      const byIdJson = await byId.json();
+      if (byIdJson.success && byIdJson.channel) {
+        channelData = byIdJson;
+      } else {
+        // Try search
+        const byQ = await fetch(`/api/youtube/channel?q=${encodeURIComponent(channelId)}`);
+        const byQJson = await byQ.json();
+        const first = byQJson.items?.[0];
+        if (first) {
+          const detail = await fetch(`/api/youtube/channel?channelId=${first.id}`);
+          const detailJson = await detail.json();
+          if (detailJson.success) channelData = detailJson;
+        }
+      }
+
+      if (!channelData) throw new Error('Channel not found. Try pasting the full YouTube URL.');
+
+      const compSubs = parseInt(channelData.channel.statistics.subscriberCount);
+      let matchType = 'Rising channel';
+      if (compSubs > currentSubs * 10) matchType = 'Top channel';
+      else if (compSubs > currentSubs * 2) matchType = 'Bigger channel';
+      else if (compSubs >= currentSubs * 0.5) matchType = 'Similar size';
+
+      const newComp = { ...channelData.channel, videos: channelData.videos || [], matchType, pinned: true };
+
+      // Pin the ID so it survives re-scans
+      setPinnedCompetitorIds(prev => [...new Set([...prev, newComp.id])]);
+
+      // Merge into current data
+      setData(prev => ({
+        ...prev,
+        competitors: [newComp, ...prev.competitors.filter(c => c.id !== newComp.id)]
+          .sort((a, b) => parseInt(b.statistics.subscriberCount) - parseInt(a.statistics.subscriberCount))
+      }));
+
+      setManualInput('');
+    } catch (err) {
+      setManualError(err.message);
+    } finally {
+      setAddingManual(false);
+    }
+  };
+
+  const removePinnedCompetitor = (id) => {
+    // Remove from pinned list
+    setPinnedCompetitorIds(prev => prev.filter(p => p !== id));
+    // Block so it never comes back via scan
+    setBlockedCompetitorIds(prev => {
+      const next = [...new Set([...prev, id])];
+      try { localStorage.setItem('competitor_blocked_ids', JSON.stringify(next)); } catch {}
+      return next;
+    });
+    setData(prev => prev ? ({ ...prev, competitors: prev.competitors.filter(c => c.id !== id) }) : prev);
+  };
+
+  // Remove a suggested (non-pinned) competitor permanently
+  const removeCompetitor = (id) => {
+    setBlockedCompetitorIds(prev => {
+      const next = [...new Set([...prev, id])];
+      try { localStorage.setItem('competitor_blocked_ids', JSON.stringify(next)); } catch {}
+      return next;
+    });
+    setData(prev => prev ? ({ ...prev, competitors: prev.competitors.filter(c => c.id !== id) }) : prev);
   };
 
   const handleSaveNote = (type, title, metadata) => {
@@ -532,6 +791,11 @@ export default function CompetitorsPage() {
             {data && !loading && insights && (
               <MetaChip icon={Trophy}>
                 Rank #{insights.rank} of {insights.all.length}
+              </MetaChip>
+            )}
+            {pastAnalysesCount > 0 && data && !loading && (
+              <MetaChip icon={Activity} tone="text-[#00f0ff]">
+                {pastAnalysesCount} past comparison{pastAnalysesCount > 1 ? 's' : ''}
               </MetaChip>
             )}
           </>
@@ -832,6 +1096,37 @@ export default function CompetitorsPage() {
               {/* ── RIVALS ─────────────────────────────────────────── */}
               {activeTab === 'rivals' && (
                 <>
+                  {/* Manual add row */}
+                  <div className="flex flex-col gap-2 rounded-2xl border border-white/[0.07] bg-zinc-950/60 p-4 sm:flex-row sm:items-center sm:gap-3">
+                    <div className="flex flex-1 items-center gap-2 rounded-xl border border-white/[0.08] bg-black/40 px-3 py-2">
+                      <UserPlus className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
+                      <input
+                        type="text"
+                        value={manualInput}
+                        onChange={e => { setManualInput(e.target.value); setManualError(null); }}
+                        onKeyDown={e => e.key === 'Enter' && addManualCompetitor()}
+                        placeholder="Paste YouTube channel URL or @handle…"
+                        className="flex-1 bg-transparent text-sm text-white placeholder-zinc-600 outline-none"
+                      />
+                      {manualInput && (
+                        <button onClick={() => { setManualInput(''); setManualError(null); }} className="text-zinc-600 hover:text-white">
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
+                    <button
+                      onClick={addManualCompetitor}
+                      disabled={!manualInput.trim() || addingManual}
+                      className="flex shrink-0 items-center gap-2 rounded-xl border border-[#00f0ff]/20 bg-[#00f0ff]/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-[#00f0ff] transition-all hover:bg-[#00f0ff]/20 disabled:opacity-40"
+                    >
+                      {addingManual ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+                      {addingManual ? 'Adding…' : 'Add competitor'}
+                    </button>
+                  </div>
+                  {manualError && (
+                    <p className="-mt-1 text-xs text-red-400">{manualError}</p>
+                  )}
+
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-600">
                       <Filter className="h-3 w-3" /> Sort
@@ -878,6 +1173,10 @@ export default function CompetitorsPage() {
                           formatNumber={formatNumber}
                           typeColor={typeColor}
                           onSave={() => handleSaveNote('channel', comp.title, comp)}
+                          onRemove={comp.pinned
+                            ? () => removePinnedCompetitor(comp.id)
+                            : () => removeCompetitor(comp.id)
+                          }
                         />
                       ))}
                     </div>
@@ -1198,89 +1497,152 @@ function ActionTip({ n, text }) {
   );
 }
 
-function CompetitorCard({ comp, you, formatNumber, typeColor, onSave }) {
+function CompetitorCard({ comp, you, formatNumber, typeColor, onSave, onRemove }) {
   const s = comp.stats;
   const subGap = s.subs - you.subs;
   const isLeader = subGap > 0;
   const effDelta = s.viewsPerSub - you.viewsPerSub;
+  const recentVideos = (comp.videos || []).slice(0, 5);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handler = (e) => {
+      if (menuRef?.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [menuOpen]);
 
   return (
-    <div className="group flex flex-col gap-4 rounded-2xl border border-white/[0.07] bg-zinc-950/50 p-5 transition-colors hover:border-white/15">
-      <div className="flex items-start justify-between gap-3">
+    <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-b from-zinc-900/80 to-zinc-950/90 transition-all duration-200 hover:border-white/[0.14] hover:shadow-lg hover:shadow-black/40">
+      {/* Subtle top accent line */}
+      <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-[#00f0ff]/30 to-transparent" />
+
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3 p-4 pb-3">
         <div className="flex min-w-0 items-center gap-3">
-          <Avatar ch={comp} size={10} />
+          <div className="relative shrink-0">
+            <Avatar ch={comp} size={12} />
+            {comp.pinned && (
+              <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#00f0ff]/20 ring-1 ring-[#00f0ff]/40">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#00f0ff]" />
+              </span>
+            )}
+          </div>
           <div className="min-w-0">
-            <h4 className="truncate text-sm font-semibold text-white group-hover:text-[#93e9ff]">
+            <h4 className="truncate text-sm font-bold text-white transition-colors group-hover:text-[#93e9ff]">
               {comp.title}
             </h4>
             <span
-              className={`mt-1 inline-flex rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${typeColor(
-                comp.matchType
-              )}`}
+              className={`mt-1 inline-flex items-center rounded-md border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${typeColor(comp.matchType)}`}
             >
               {comp.matchType}
             </span>
           </div>
         </div>
-        <div className="flex shrink-0 gap-1">
-          {comp.customUrl || comp.id ? (
-            <a
-              href={`https://youtube.com/channel/${comp.id}`}
-              target="_blank"
-              rel="noreferrer"
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] text-zinc-500 hover:text-white"
-              title="Open on YouTube"
-            >
-              <ExternalLink className="h-3.5 w-3.5" />
-            </a>
-          ) : null}
+
+        {/* Three-dot menu */}
+        <div className="relative shrink-0" ref={menuRef}>
           <button
             type="button"
-            onClick={onSave}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] text-zinc-500 transition-all hover:bg-white hover:text-black"
-            title="Save to library"
+            onClick={() => setMenuOpen(o => !o)}
+            className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/[0.08] text-zinc-500 transition-colors hover:border-white/20 hover:text-white"
           >
-            <Plus className="h-3.5 w-3.5" />
+            <MoreHorizontal className="h-4 w-4" />
           </button>
+
+          {menuOpen && (
+            <div className="absolute right-0 top-9 z-50 min-w-[160px] overflow-hidden rounded-xl border border-white/[0.1] bg-zinc-900 shadow-2xl shadow-black/60">
+              {/* Open on YouTube */}
+              {comp.id && (
+                <a
+                  href={`https://youtube.com/channel/${comp.id}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-semibold text-zinc-300 transition-colors hover:bg-white/[0.06] hover:text-white"
+                >
+                  <ExternalLink className="h-3.5 w-3.5 text-zinc-500" />
+                  Open on YouTube
+                </a>
+              )}
+              {/* Save to library */}
+              <button
+                type="button"
+                onClick={() => { onSave(); setMenuOpen(false); }}
+                className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-xs font-semibold text-zinc-300 transition-colors hover:bg-white/[0.06] hover:text-white"
+              >
+                <Save className="h-3.5 w-3.5 text-zinc-500" />
+                Save to library
+              </button>
+              {/* Divider */}
+              <div className="mx-3 my-1 h-px bg-white/[0.07]" />
+              {/* Remove */}
+              {onRemove && (
+                <button
+                  type="button"
+                  onClick={() => { onRemove(); setMenuOpen(false); }}
+                  className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-xs font-semibold text-red-400 transition-colors hover:bg-red-500/10"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Remove
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <MiniStat
-          label="Subs"
-          value={formatNumber(s.subs)}
-          hint={
-            <span className={isLeader ? 'text-orange-400' : 'text-emerald-400'}>
-              {isLeader ? '+' : ''}
-              {formatNumber(subGap)} vs you
-            </span>
-          }
-        />
-        <MiniStat label="Views" value={formatNumber(s.views)} />
-        <MiniStat
-          label="Efficiency"
-          value={`${s.viewsPerSub.toFixed(1)}x`}
-          hint={
-            <span className={effDelta >= 0 ? 'text-orange-400' : 'text-emerald-400'}>
-              {effDelta >= 0 ? '+' : ''}
-              {effDelta.toFixed(1)} vs you
-            </span>
-          }
-        />
-        <MiniStat
-          label="Engagement"
-          value={`${s.avgEng.toFixed(2)}%`}
-          hint="Recent sample"
-        />
+      {/* Stats grid */}
+      <div className="grid grid-cols-2 gap-px bg-white/[0.04] mx-4 overflow-hidden rounded-xl">
+        {/* Subs */}
+        <div className="bg-zinc-950/70 p-3">
+          <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-500">Subs</p>
+          <p className="mt-1 text-base font-bold tabular-nums text-white">{formatNumber(s.subs)}</p>
+          <p className={`mt-0.5 text-[10px] font-semibold ${isLeader ? 'text-orange-400' : 'text-emerald-400'}`}>
+            {isLeader ? '+' : ''}{formatNumber(subGap)} vs you
+          </p>
+        </div>
+        {/* Views */}
+        <div className="bg-zinc-950/70 p-3">
+          <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-500">Views</p>
+          <p className="mt-1 text-base font-bold tabular-nums text-white">{formatNumber(s.views)}</p>
+          <p className="mt-0.5 text-[10px] font-semibold text-zinc-600">lifetime total</p>
+        </div>
+        {/* Efficiency */}
+        <div className="bg-zinc-950/70 p-3">
+          <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-500">Efficiency</p>
+          <p className="mt-1 text-base font-bold tabular-nums text-white">{s.viewsPerSub.toFixed(1)}x</p>
+          <p className={`mt-0.5 text-[10px] font-semibold ${effDelta >= 0 ? 'text-orange-400' : 'text-emerald-400'}`}>
+            {effDelta >= 0 ? '+' : ''}{effDelta.toFixed(1)} vs you
+          </p>
+        </div>
+        {/* Engagement */}
+        <div className="bg-zinc-950/70 p-3">
+          <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-500">Engagement</p>
+          <p className="mt-1 text-base font-bold tabular-nums text-white">{s.avgEng.toFixed(2)}%</p>
+          <p className="mt-0.5 text-[10px] font-semibold text-zinc-600">avg likes+comments</p>
+        </div>
       </div>
 
-      <div className="flex flex-wrap gap-3 border-t border-white/[0.05] pt-3 text-[10px] font-bold uppercase tracking-wider text-zinc-600">
-        <span className="inline-flex items-center gap-1">
-          <Video className="h-3 w-3" /> {formatNumber(s.videos)} videos
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <Eye className="h-3 w-3" /> {formatNumber(s.avgRecent)} avg recent
-        </span>
+      {/* Footer */}
+      <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-wider text-zinc-600">
+          <span className="inline-flex items-center gap-1">
+            <Video className="h-3 w-3" /> {formatNumber(s.videos)} videos
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Eye className="h-3 w-3" /> {formatNumber(s.avgRecent)} avg
+          </span>
+        </div>
+        {recentVideos.length > 0 && (
+          <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-700">
+            {recentVideos.length} recent sample
+          </span>
+        )}
       </div>
     </div>
   );

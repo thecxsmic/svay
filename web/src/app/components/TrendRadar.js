@@ -71,6 +71,7 @@ export default function TrendRadar() {
   const [copiedKey, setCopiedKey] = useState(null);
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailSuccessMsg, setEmailSuccessMsg] = useState(null);
+  const [pastScansCount, setPastScansCount] = useState(0);
 
   const selectedChannel = channels.data.find((c) => c.id === channels.selectedId);
   const getCacheKey = () => `${CACHE_KEY_PREFIX}${selectedChannel?.id || 'default'}`;
@@ -197,6 +198,10 @@ export default function TrendRadar() {
                 cacheData(jsonData.data, jsonData.data.lastEmailSentAt);
                 setProgress(100);
                 setTab('overview');
+                // Track if historical context was used
+                if (jsonData.data?.historyCount) {
+                  setPastScansCount(jsonData.data.historyCount);
+                }
               } else if (jsonData.type === 'error') {
                 setError(jsonData.message || jsonData.error);
               }
@@ -370,6 +375,11 @@ export default function TrendRadar() {
             )}
             {lastScanTime && !loading && (
               <MetaChip icon={Clock}>{getCacheAge()}</MetaChip>
+            )}
+            {pastScansCount > 0 && data && !loading && (
+              <MetaChip icon={Layers} tone="text-[#00f0ff]">
+                {pastScansCount} past scan{pastScansCount > 1 ? 's' : ''} analyzed
+              </MetaChip>
             )}
           </>
         }
