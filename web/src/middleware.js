@@ -102,14 +102,14 @@ export default clerkMiddleware(async (auth, request) => {
       );
     }
 
-    // 2. Per-user search limits: 25/hour and 35/day for both search endpoints
+    // 2. Per-user search limits: 20/hour and 30/day for both search endpoints
     const isSearchEndpoint =
       (pathname === '/api/youtube/search' || pathname === '/api/youtube/channel') &&
       request.method === 'GET';
 
     if (isSearchEndpoint) {
-      const SEARCH_HOUR_LIMIT = 25;
-      const SEARCH_DAY_LIMIT  = 35;
+      const SEARCH_HOUR_LIMIT = 20;
+      const SEARCH_DAY_LIMIT  = 30;
       const HOUR_MS = 60 * 60 * 1000;        // 1 hour
       const DAY_MS  = 24 * 60 * 60 * 1000;   // 24 hours
 
@@ -125,7 +125,7 @@ export default clerkMiddleware(async (auth, request) => {
         return new NextResponse(
           JSON.stringify({
             success: false,
-            error: `You've reached the 25 searches/hour limit. Resets in ~${resetIn} minute${resetIn !== 1 ? 's' : ''}.`,
+            error: `You've reached the 20 searches/hour limit. Resets in ~${resetIn} minute${resetIn !== 1 ? 's' : ''}.`,
           }),
           {
             status: 429,
@@ -146,7 +146,7 @@ export default clerkMiddleware(async (auth, request) => {
         return new NextResponse(
           JSON.stringify({
             success: false,
-            error: `You've reached the 35 searches/day limit. Resets in ~${resetIn} hour${resetIn !== 1 ? 's' : ''}.`,
+            error: `You've reached the 30 searches/day limit. Resets in ~${resetIn} hour${resetIn !== 1 ? 's' : ''}.`,
           }),
           {
             status: 429,

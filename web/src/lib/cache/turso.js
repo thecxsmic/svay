@@ -540,6 +540,58 @@ export async function getTrendRadar(channelId) {
 }
 
 /**
+ * Save competitors for a channel (24-hour cache)
+ */
+export async function saveCompetitors(channelId, competitors) {
+  if (!process.env.TURSO_DATABASE_URL) return;
+
+  try {
+    const now = Math.floor(Date.now() / 1000);
+    await client.execute({
+      sql: "INSERT OR REPLACE INTO competitor_cache (channel_id, data, last_updated) VALUES (?, ?, ?)",
+      args: [channelId, JSON.stringify(competitors), now],
+    });
+    console.log(`[Turso] Saved ${competitors.length} competitors for channel ${channelId}`);
+  } catch (error) {
+    console.error("[Turso] Save Competitors Error:", error);
+  }
+}
+
+/**
+ * Get cached competitors for a channel
+ */
+export async function getCompetitors(channelId) {
+  if (!process.env.TURSO_DATABASE_URL) return null;
+
+  try {
+    const rs = await client.execute({
+      sql: "SELECT data, last_updated FROM competitor_cache WHERE channel_id = ?",
+      args: [channelId],
+    });
+
+    if (rs.rows.length === 0) return null;
+
+    const row = rs.rows[0];
+    const now = Math.floor(Date.now() / 1000);
+    const oneDay = 24 * 60 * 60;
+    
+    // Check if cache is still fresh (24 hours)
+    if (now - row.last_updated >= oneDay) {
+      console.log(`[Turso] Competitor cache expired for ${channelId}`);
+      return null;
+    }
+
+    return {
+      data: JSON.parse(row.data),
+      last_updated: row.last_updated
+    };
+  } catch (error) {
+    console.error("[Turso] Get Competitors Error:", error);
+    return null;
+  }
+}
+
+/**
  * Save an item to the Research Library
  */
 export async function saveLibraryItem(userId, { id, type, reference_id, title, content, metadata }) {
@@ -947,6 +999,15 @@ export async function initHistoryTables() {
   if (!process.env.TURSO_DATABASE_URL) return;
 
   try {
+    // Competitor cache table (24-hour TTL)
+    await client.execute(`
+      CREATE TABLE IF NOT EXISTS competitor_cache (
+        channel_id TEXT PRIMARY KEY,
+        data TEXT NOT NULL,
+        last_updated INTEGER NOT NULL
+      )
+    `);
+
     // Trend radar history
     await client.execute(`
       CREATE TABLE IF NOT EXISTS trend_radar_history (

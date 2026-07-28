@@ -56,7 +56,10 @@ export async function DELETE(req) {
       // Delete all generated AI video ideas & insights
       await client.execute("DELETE FROM trend_radar");
       
-      console.log("[Admin Channels API] Purged ALL trend radar caches and set channel freshness to stale.");
+      // Delete all cached competitors
+      await client.execute("DELETE FROM competitor_cache");
+      
+      console.log("[Admin Channels API] Purged ALL trend radar, competitor caches and set channel freshness to stale.");
       return apiSuccess({ success: true, message: "All generated competitor & video idea caches successfully purged." });
     }
 
@@ -76,7 +79,13 @@ export async function DELETE(req) {
       args: [channelId]
     });
 
-    console.log(`[Admin Channels API] Reset cache freshness and cleared ideas for channel: ${channelId}`);
+    // Delete cached competitors for the specific channel
+    await client.execute({
+      sql: "DELETE FROM competitor_cache WHERE channel_id = ?",
+      args: [channelId]
+    });
+
+    console.log(`[Admin Channels API] Reset cache freshness and cleared ideas/competitors for channel: ${channelId}`);
     return apiSuccess({ success: true, message: "Channel competitor & idea cache successfully cleared." });
   } catch (error) {
     console.error("[Admin Channels API] DELETE Error:", error);

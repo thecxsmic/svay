@@ -1,6 +1,6 @@
 import { channelSearchPipeline } from "@/lib/search/channel-pipeline";
 import { fetchYouTubeChannels } from "@/lib/youtube/channels";
-import { searchChannelsLocal, getTrendRadar } from "@/lib/cache/turso";
+import { searchChannelsLocal, getTrendRadar, getCompetitors, saveCompetitors } from "@/lib/cache/turso";
 import { apiSuccess, apiError } from "@/lib/utils/response";
 import { getIsDemoMode, MOCK_CHANNELS, generateMockVideos } from "@/lib/utils/demoMock";
 
@@ -48,8 +48,22 @@ export async function GET(req) {
           results.trends = trendRadar.data;
         }
 
-        if (results.channel && results.videos) {
-          results.competitors = await getCompetitorsForChannel(results.channel, results.videos);
+        // Check competitor cache first (24-hour TTL)
+        const cachedCompetitors = await getCompetitors(channelId);
+        if (cachedCompetitors) {
+          console.log(`[Channel API] Using cached competitors for ${channelId}`);
+          results.competitors = cachedCompetitors.data;
+        } else if (results.channel && results.videos) {
+          console.log(`[Channel API] Fetching fresh competitors for ${channelId}`);
+          const freshCompetitors = await getCompetitorsForChannel(results.channel, results.videos);
+          results.competitors = freshCompetitors;
+          
+          // Save to cache for future requests
+          if (freshCompetitors && freshCompetitors.length > 0) {
+            saveCompetitors(channelId, freshCompetitors).catch(err => {
+              console.error("[Channel API] Error caching competitors:", err);
+            });
+          }
         }
       } catch (err) {
         console.error("[Channel API] Failed to fetch secondary data:", err);
