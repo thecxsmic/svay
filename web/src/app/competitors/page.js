@@ -184,26 +184,28 @@ export default function CompetitorsPage() {
       
       const baseSubs = parseInt(subjectData.channel.statistics.subscriberCount);
       
-      const competitors = await Promise.all(analysis.competitor_ids.map(async (cId) => {
+      // Batch-fetch all competitors in a single API call
+      let validCompetitors = [];
+      if (analysis.competitor_ids?.length > 0) {
         try {
-          const cRes = await fetch(`/api/youtube/channel?channelId=${cId}`);
-          const cData = await cRes.json();
-          if (cData.success && cData.channel) {
-            const compSubs = parseInt(cData.channel.statistics.subscriberCount);
-            let matchType = "Rising channel";
-            if (compSubs > baseSubs * 10) matchType = "Top channel";
-            else if (compSubs > baseSubs * 2) matchType = "Bigger channel";
-            else if (compSubs >= baseSubs * 0.5) matchType = "Similar size";
-            
-            return { ...cData.channel, videos: cData.videos || [], matchType };
+          const ids = analysis.competitor_ids.join(',');
+          const batchRes = await fetch(`/api/youtube/channels-batch?ids=${ids}`);
+          const batchData = await batchRes.json();
+          
+          if (batchData.success && batchData.channels) {
+            validCompetitors = batchData.channels.map(channel => {
+              const compSubs = parseInt(channel.statistics?.subscriberCount || 0);
+              let matchType = "Rising channel";
+              if (compSubs > baseSubs * 10) matchType = "Top channel";
+              else if (compSubs > baseSubs * 2) matchType = "Bigger channel";
+              else if (compSubs >= baseSubs * 0.5) matchType = "Similar size";
+              return { ...channel, videos: [], matchType };
+            });
           }
         } catch (e) {
-          console.error(`Failed to fetch competitor ${cId}:`, e);
+          console.error("Batch fetch failed for saved analysis competitors:", e);
         }
-        return null;
-      }));
-
-      const validCompetitors = competitors.filter(c => c !== null);
+      }
       
       setData({
         baseChannel: { ...subjectData.channel, videos: subjectData.videos || [] },
@@ -347,28 +349,39 @@ export default function CompetitorsPage() {
         })
         .slice(0, 8); // fetch details for top 8 candidates, keep best 4
       
-      const deepCompetitors = await Promise.all(sortedByProximity.map(async (c) => {
+      // Use batch endpoint to fetch all candidates in one API call
+      let deepCompetitors = [];
+      if (sortedByProximity.length > 0) {
         try {
-          const detailRes = await fetch(`/api/youtube/channel?channelId=${c.id}`);
-          const detailData = await detailRes.json();
-          if (detailData.success) {
-            const compSubs = parseInt(detailData.channel.statistics.subscriberCount);
-            // Skip tiny channels right here to avoid polluting the pool
-            if (compSubs < 100) return null;
-            let matchType = "Rising channel";
-            if (compSubs > currentSubs * 10) matchType = "Top channel";
-            else if (compSubs > currentSubs * 2) matchType = "Bigger channel";
-            else if (compSubs >= currentSubs * 0.5) matchType = "Similar size";
+          const ids = sortedByProximity.map(c => c.id).join(',');
+          const batchRes = await fetch(`/api/youtube/channels-batch?ids=${ids}`);
+          const batchData = await batchRes.json();
+          
+          if (batchData.success && batchData.channels) {
+            deepCompetitors = batchData.channels
+              .map(channel => {
+                const compSubs = parseInt(channel.statistics?.subscriberCount || 0);
+                // Skip tiny channels
+                if (compSubs < 100) return null;
+                
+                let matchType = "Rising channel";
+                if (compSubs > currentSubs * 10) matchType = "Top channel";
+                else if (compSubs > currentSubs * 2) matchType = "Bigger channel";
+                else if (compSubs >= currentSubs * 0.5) matchType = "Similar size";
 
-            return {
-              ...detailData.channel,
-              videos: detailData.videos || [],
-              matchType
-            };
+                return {
+                  ...channel,
+                  videos: [], // Batch endpoint doesn't include videos
+                  matchType
+                };
+              })
+              .filter(c => c !== null);
           }
-          return null;
-        } catch (e) { return null; }
-      }));
+        } catch (e) {
+          console.error("Batch fetch failed:", e);
+          deepCompetitors = [];
+        }
+      }
 
       // ── Quality bar: ignore channels below this sub count ────────────────
       const MIN_SUBS = 100;
@@ -383,21 +396,24 @@ export default function CompetitorsPage() {
       let pinnedFresh = [];
       if (pinnedCompetitorIds.length > 0) {
         setCurrentStep('Refreshing your pinned rivals...');
-        pinnedFresh = (await Promise.all(pinnedCompetitorIds.map(async (cId) => {
-          try {
-            const r = await fetch(`/api/youtube/channel?channelId=${cId}`);
-            const d = await r.json();
-            if (d.success && d.channel) {
-              const compSubs = parseInt(d.channel.statistics.subscriberCount);
+        try {
+          const ids = pinnedCompetitorIds.join(',');
+          const batchRes = await fetch(`/api/youtube/channels-batch?ids=${ids}`);
+          const batchData = await batchRes.json();
+          
+          if (batchData.success && batchData.channels) {
+            pinnedFresh = batchData.channels.map(channel => {
+              const compSubs = parseInt(channel.statistics?.subscriberCount || 0);
               let matchType = "Rising channel";
               if (compSubs > currentSubs * 10) matchType = "Top channel";
               else if (compSubs > currentSubs * 2) matchType = "Bigger channel";
               else if (compSubs >= currentSubs * 0.5) matchType = "Similar size";
-              return { ...d.channel, videos: d.videos || [], matchType, pinned: true };
-            }
-          } catch (e) {}
-          return null;
-        }))).filter(Boolean);
+              return { ...channel, videos: [], matchType, pinned: true };
+            });
+          }
+        } catch (e) {
+          console.error("Pinned batch fetch failed:", e);
+        }
       }
 
       // ── Lock in existing suggested competitors that pass quality ──────────
@@ -415,22 +431,31 @@ export default function CompetitorsPage() {
       let refreshedExisting = [];
       if (existingSuggested.length > 0) {
         setCurrentStep('Refreshing your existing rivals...');
-        refreshedExisting = (await Promise.all(existingSuggested.map(async (c) => {
-          try {
-            const r = await fetch(`/api/youtube/channel?channelId=${c.id}`);
-            const d = await r.json();
-            if (d.success && d.channel) {
-              const compSubs = parseInt(d.channel.statistics.subscriberCount);
-              if (compSubs < MIN_SUBS) return null; // fell below bar — drop it
-              let matchType = "Rising channel";
-              if (compSubs > currentSubs * 10) matchType = "Top channel";
-              else if (compSubs > currentSubs * 2) matchType = "Bigger channel";
-              else if (compSubs >= currentSubs * 0.5) matchType = "Similar size";
-              return { ...d.channel, videos: d.videos || [], matchType };
-            }
-          } catch (e) {}
-          return c; // keep stale data on network error rather than dropping
-        }))).filter(Boolean);
+        try {
+          const ids = existingSuggested.map(c => c.id).join(',');
+          const batchRes = await fetch(`/api/youtube/channels-batch?ids=${ids}`);
+          const batchData = await batchRes.json();
+          
+          if (batchData.success && batchData.channels) {
+            refreshedExisting = batchData.channels
+              .map(channel => {
+                const compSubs = parseInt(channel.statistics?.subscriberCount || 0);
+                if (compSubs < MIN_SUBS) return null; // fell below bar — drop it
+                
+                let matchType = "Rising channel";
+                if (compSubs > currentSubs * 10) matchType = "Top channel";
+                else if (compSubs > currentSubs * 2) matchType = "Bigger channel";
+                else if (compSubs >= currentSubs * 0.5) matchType = "Similar size";
+                
+                return { ...channel, videos: [], matchType };
+              })
+              .filter(Boolean);
+          }
+        } catch (e) {
+          console.error("Existing rivals batch fetch failed:", e);
+          // Keep stale data on error
+          refreshedExisting = existingSuggested;
+        }
       }
 
       // New suggestions only fill empty slots (not already in locked or pinned or blocked)
@@ -531,21 +556,38 @@ export default function CompetitorsPage() {
         return;
       }
 
-      // Try by ID first, then by handle search
+      // Try by ID first, then by handle/search
       let channelData = null;
-      const byId = await fetch(`/api/youtube/channel?channelId=${channelId}`);
-      const byIdJson = await byId.json();
-      if (byIdJson.success && byIdJson.channel) {
-        channelData = byIdJson;
+
+      // If it looks like a channel ID (starts with UC + 22 chars), use batch endpoint directly
+      const isChannelId = /^UC[\w-]{22}$/.test(channelId);
+      if (isChannelId) {
+        const batchRes = await fetch(`/api/youtube/channels-batch?ids=${channelId}`);
+        const batchJson = await batchRes.json();
+        const found = batchJson.success && batchJson.channels?.[0];
+        if (found) {
+          channelData = { channel: found, videos: [], success: true };
+        }
       } else {
-        // Try search
-        const byQ = await fetch(`/api/youtube/channel?q=${encodeURIComponent(channelId)}`);
-        const byQJson = await byQ.json();
-        const first = byQJson.items?.[0];
-        if (first) {
-          const detail = await fetch(`/api/youtube/channel?channelId=${first.id}`);
-          const detailJson = await detail.json();
-          if (detailJson.success) channelData = detailJson;
+        // Try full channel lookup by handle/URL
+        const byId = await fetch(`/api/youtube/channel?channelId=${channelId}`);
+        const byIdJson = await byId.json();
+        if (byIdJson.success && byIdJson.channel) {
+          channelData = byIdJson;
+        } else {
+          // Fallback: search by query, then batch-fetch the first result
+          const byQ = await fetch(`/api/youtube/channel?q=${encodeURIComponent(channelId)}`);
+          const byQJson = await byQ.json();
+          const first = byQJson.items?.[0];
+          if (first) {
+            // Use batch for the detail fetch (1 unit vs full channel pipeline)
+            const batchRes = await fetch(`/api/youtube/channels-batch?ids=${first.id}`);
+            const batchJson = await batchRes.json();
+            const found = batchJson.success && batchJson.channels?.[0];
+            if (found) {
+              channelData = { channel: found, videos: [], success: true };
+            }
+          }
         }
       }
 
