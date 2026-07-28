@@ -73,6 +73,22 @@ export default function TrendRadar() {
   const [emailSuccessMsg, setEmailSuccessMsg] = useState(null);
   const [pastScansCount, setPastScansCount] = useState(0);
 
+  const [isLocalhost, setIsLocalhost] = useState(false);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const host = window.location.hostname;
+      setIsLocalhost(
+        host === 'localhost' ||
+          host === '127.0.0.1' ||
+          host.startsWith('192.168.') ||
+          host.startsWith('172.') ||
+          host.endsWith('.local')
+      );
+    }
+  }, []);
+
+  const isDevOrLocal = process.env.NODE_ENV === 'development' || isLocalhost || user?.primaryEmailAddress?.emailAddress === 'thecxsmic@gmail.com';
+
   const selectedChannel = channels.data.find((c) => c.id === channels.selectedId);
   const getCacheKey = () => `${CACHE_KEY_PREFIX}${selectedChannel?.id || 'default'}`;
 
@@ -155,12 +171,12 @@ export default function TrendRadar() {
     }
   };
 
-  const scanTrends = async () => {
+  const scanTrends = async (forceRefresh = false) => {
     if (loading) return;
     setLoading(true);
     setProgress(0);
     setError(null);
-    setData(null);
+    if (forceRefresh) setData(null);
 
     try {
       const response = await fetch('/api/trends', {
@@ -171,6 +187,7 @@ export default function TrendRadar() {
           channelId: selectedChannel?.id,
           channelTitle: selectedChannel?.title,
           channelBased: !!selectedChannel,
+          forceRefresh,
         }),
       });
 
@@ -387,6 +404,17 @@ export default function TrendRadar() {
         tabValue={tab}
         onTabChange={setTab}
       >
+        {data && !loading && isDevOrLocal && (
+          <DashButton
+            variant="ghost"
+            size="sm"
+            onClick={() => scanTrends(true)}
+            title="Force refresh trend radar"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Refresh Intel</span>
+          </DashButton>
+        )}
         {data && !loading && hooks.length > 0 && (
           <DashButton
             variant="secondary"

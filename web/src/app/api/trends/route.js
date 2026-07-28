@@ -26,8 +26,59 @@ async function generateObjectWithFallback({ modelName, ...options }) {
 }
 import { z } from "zod";
 import { calculateViralityScore } from "@/lib/ranking/virality";
-import { getTrendRadar, saveTrendRadar, getLastEmail, getTrendRadarHistory, saveTrendRadarHistory } from "@/lib/cache/turso";
+import { getTrendRadar, saveTrendRadar, getLastEmail, getTrendRadarHistory, saveTrendRadarHistory, getCache, setCache } from "@/lib/cache/turso";
 import { getIsDemoMode, MOCK_TREND_RADAR } from "@/lib/utils/demoMock";
+
+/**
+ * Optimized helper: Fetch recent channel upload videos via playlistItems.list (1 unit) instead of search.list (100 units).
+ * Saves 99 units per channel lookup!
+ */
+async function fetchRecentUploadsViaPlaylist(channelId, limit = 10) {
+  try {
+    const { getYouTubeApiKey } = await import("@/lib/youtube/apiKeyManager");
+    const channelKey = await getYouTubeApiKey("channels.list");
+    const channelUrl = new URL("https://www.googleapis.com/youtube/v3/channels");
+    channelUrl.searchParams.set("part", "contentDetails,snippet,statistics");
+    channelUrl.searchParams.set("id", channelId);
+    channelUrl.searchParams.set("key", channelKey);
+    const channelRes = await fetch(channelUrl.toString());
+    const channelData = await channelRes.json();
+
+    if (!channelData.items || channelData.items.length === 0) return { channel: null, videos: [] };
+    const channel = channelData.items[0];
+    const uploadsPlaylistId = channel.contentDetails?.relatedPlaylists?.uploads;
+
+    if (!uploadsPlaylistId) return { channel, videos: [] };
+
+    const playlistKey = await getYouTubeApiKey("playlistItems.list");
+    const playlistUrl = new URL("https://www.googleapis.com/youtube/v3/playlistItems");
+    playlistUrl.searchParams.set("part", "snippet,contentDetails");
+    playlistUrl.searchParams.set("playlistId", uploadsPlaylistId);
+    playlistUrl.searchParams.set("maxResults", String(limit));
+    playlistUrl.searchParams.set("key", playlistKey);
+
+    const playlistRes = await fetch(playlistUrl.toString());
+    const playlistData = await playlistRes.json();
+
+    if (!playlistData.items || playlistData.items.length === 0) return { channel, videos: [] };
+
+    const videoIds = playlistData.items.map(item => item.contentDetails?.videoId || item.snippet?.resourceId?.videoId).filter(Boolean);
+    if (videoIds.length === 0) return { channel, videos: [] };
+
+    const statsKey = await getYouTubeApiKey("videos.list");
+    const statsUrl = new URL("https://www.googleapis.com/youtube/v3/videos");
+    statsUrl.searchParams.set("part", "snippet,statistics");
+    statsUrl.searchParams.set("id", videoIds.slice(0, 50).join(","));
+    statsUrl.searchParams.set("key", statsKey);
+
+    const statsRes = await fetch(statsUrl.toString());
+    const statsData = await statsRes.json();
+    return { channel, videos: statsData.items || [] };
+  } catch (err) {
+    console.error("[Trends API] Error fetching recent uploads via playlist:", err);
+    return { channel: null, videos: [] };
+  }
+}
 
 const trendSchema = z.object({
   summary: z.object({
@@ -70,7 +121,7 @@ const trendSchema = z.object({
 });
 
 const searchQueriesSchema = z.object({
-  queries: z.array(z.string()).min(3).max(5).describe("Highly specific search queries to find current trending videos in the channel's niche")
+  queries: z.array(z.string()).length(3).describe("3 highly specific search queries to find current trending videos in the channel's niche")
 });
 
 export async function GET(req) {
@@ -105,7 +156,7 @@ export async function POST(req) {
     userId = authResult.userId;
   }
   const body = await req.json();
-  const { channelId, channelTitle, channelBased } = body;
+  const { channelId, channelTitle, channelBased, forceRefresh } = body;
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
@@ -136,8 +187,8 @@ export async function POST(req) {
           return;
         }
 
-        // 0. Check Backend Cache (24 hours)
-        if (channelBased && channelId) {
+        // 0. Check Backend Cache (24 hours) — bypass if forceRefresh is true
+        if (!forceRefresh && channelBased && channelId) {
           const cachedRadar = await getTrendRadar(channelId);
           if (cachedRadar) {
             const now = Math.floor(Date.now() / 1000);
@@ -145,22 +196,20 @@ export async function POST(req) {
             if (now - cachedRadar.last_updated < oneDay) {
               console.log(`[Trends API] Using fresh backend cache for ${channelId}`);
               
-              // Get last email time
               const lastEmail = await getLastEmail(userId, 'trend_radar', channelId);
               
-          // Trigger email report in background if not sent in last 24h
-          const origin = req.headers.get('origin') || req.nextUrl.origin;
-          const cookieHeader = req.headers.get('cookie');
-          fetch(`${origin}/api/trends/email`, {
-            method: 'POST',
-            headers: { 
-              'Content-Type': 'application/json',
-              ...(cookieHeader ? { cookie: cookieHeader } : {})
-            },
-            body: JSON.stringify({ channelId, userId })
-          }).catch(err => {
-            console.error("[Trends API] Error triggering cached email:", err);
-          });
+              const origin = req.headers.get('origin') || req.nextUrl.origin;
+              const cookieHeader = req.headers.get('cookie');
+              fetch(`${origin}/api/trends/email`, {
+                method: 'POST',
+                headers: { 
+                  'Content-Type': 'application/json',
+                  ...(cookieHeader ? { cookie: cookieHeader } : {})
+                },
+                body: JSON.stringify({ channelId, userId })
+              }).catch(err => {
+                console.error("[Trends API] Error triggering cached email:", err);
+              });
 
               send({ type: 'step', progress: 100, message: 'Loading current radar...' });
               send({ type: 'complete', data: { ...cachedRadar.data, lastEmailSentAt: lastEmail } });
@@ -170,69 +219,29 @@ export async function POST(req) {
           }
         }
 
-        send({ type: 'step', progress: 10, message: 'Fetching channel context...' });
+        send({ type: 'step', progress: 10, message: 'Fetching channel context (Low-quota playlist mode)...' });
         
         let channel = null;
         let recentVideos = [];
-        const { getYouTubeApiKey } = await import("@/lib/youtube/apiKeyManager");
 
-        // 1. Fetch channel data & videos
+        // 1. Optimized: Fetch channel data & videos via playlist (3 units vs 100 units!)
         if (channelBased && channelId) {
-          try {
-            const channelKey = await getYouTubeApiKey("channels.list");
-            const channelUrl = new URL("https://www.googleapis.com/youtube/v3/channels");
-            channelUrl.searchParams.set("part", "snippet,statistics");
-            channelUrl.searchParams.set("id", channelId);
-            channelUrl.searchParams.set("key", channelKey);
-            const channelRes = await fetch(channelUrl.toString());
-            const channelData = await channelRes.json();
-            
-            if (channelData.items && channelData.items.length > 0) {
-              channel = channelData.items[0];
-            }
-
-            const searchKey = await getYouTubeApiKey("search.list");
-            const searchUrl = new URL("https://www.googleapis.com/youtube/v3/search");
-            searchUrl.searchParams.set("part", "snippet");
-            searchUrl.searchParams.set("channelId", channelId);
-            searchUrl.searchParams.set("type", "video");
-            searchUrl.searchParams.set("order", "date");
-            searchUrl.searchParams.set("maxResults", "10");
-            searchUrl.searchParams.set("key", searchKey);
-
-            const searchRes = await fetch(searchUrl.toString());
-            const searchData = await searchRes.json();
-
-            if (searchData.items) {
-              const videoIds = searchData.items.map(item => item.id.videoId);
-              if (videoIds.length > 0) {
-                const statsKey = await getYouTubeApiKey("videos.list");
-                const statsUrl = new URL("https://www.googleapis.com/youtube/v3/videos");
-                statsUrl.searchParams.set("part", "snippet,statistics");
-                statsUrl.searchParams.set("id", videoIds.join(","));
-                statsUrl.searchParams.set("key", statsKey);
-
-                const statsRes = await fetch(statsUrl.toString());
-                const statsData = await statsRes.json();
-                recentVideos = statsData.items || [];
-              }
-            }
-          } catch (err) {
-            console.error("Failed to fetch channel context", err);
-          }
+          const res = await fetchRecentUploadsViaPlaylist(channelId, 10);
+          if (res.channel) channel = res.channel;
+          if (res.videos) recentVideos = res.videos;
         }
 
-        // 2. AI generates search queries based on user's videos
-        send({ type: 'step', progress: 30, message: 'AI generating targeted search queries...' });
+        // 2. AI generates 3 targeted search queries
+        send({ type: 'step', progress: 30, message: 'AI generating 3 targeted search queries...' });
         let searchQueries = [];
         
         if (channel && recentVideos.length > 0) {
-          const prompt = `You are a YouTube market researcher. Based on the following recent videos from the channel "${channel.snippet.title}", generate 5 highly specific YouTube search queries that will help us find the CURRENT trending competitors and viral videos in this exact niche.
+          const prompt = `You are a YouTube market researcher. Based on the following recent videos from the channel "${channel.snippet.title}", generate 3 highly specific YouTube search queries that will help us find CURRENT trending competitors and viral videos in this exact niche.
           
 Recent Videos:
-${recentVideos.slice(0, 10).map(v => `- ${v.snippet.title}`).join('\n')}
+${recentVideos.slice(0, 10).map(v => `- ${v.snippet?.title || v.title || ''}`).join('\n')}
 
-Do not generate generic queries. Generate specific, trend-focused queries.`;
+Do not generate generic queries. Generate 3 specific, trend-focused queries.`;
 
           const { object } = await generateObjectWithFallback({
             modelName: 'openai/gpt-oss-120b',
@@ -246,11 +255,23 @@ Do not generate generic queries. Generate specific, trend-focused queries.`;
           searchQueries.push(`${niche} trending 2026`, `${niche} viral`, `how to ${niche} 2026`);
         }
 
-        // 3. Search YouTube using queries
-        send({ type: 'step', progress: 45, message: 'Scanning market for competitors...' });
+        // 3. Search YouTube using queries (Deduplicated & Cached 12h across users)
+        send({ type: 'step', progress: 45, message: 'Scanning market for viral competitors...' });
         const trendingVideos = [];
-        await Promise.all(searchQueries.map(async (query) => {
+        const { getYouTubeApiKey } = await import("@/lib/youtube/apiKeyManager");
+        const uniqueQueries = Array.from(new Set((searchQueries || []).map(q => q.trim().toLowerCase()))).slice(0, 3);
+
+        await Promise.all(uniqueQueries.map(async (query) => {
           try {
+            const cacheKey = `yt_search_v1_${encodeURIComponent(query)}`;
+            const cachedResults = await getCache(cacheKey);
+            if (cachedResults && Array.isArray(cachedResults) && cachedResults.length > 0) {
+              console.log(`[Trends API] Search cache hit for query: "${query}" (0 quota units used)`);
+              trendingVideos.push(...cachedResults);
+              return;
+            }
+
+            const searchKey = await getYouTubeApiKey("search.list");
             const url = new URL("https://www.googleapis.com/youtube/v3/search");
             url.searchParams.set("part", "snippet");
             url.searchParams.set("q", query);
@@ -260,24 +281,25 @@ Do not generate generic queries. Generate specific, trend-focused queries.`;
             const date45DaysAgo = new Date();
             date45DaysAgo.setDate(date45DaysAgo.getDate() - 45);
             url.searchParams.set("publishedAfter", date45DaysAgo.toISOString());
-            url.searchParams.set("key", apiKey);
+            url.searchParams.set("key", searchKey);
 
             const res = await fetch(url.toString());
             const data = await res.json();
             
-            if (data.items) {
+            if (data.items && data.items.length > 0) {
               trendingVideos.push(...data.items);
+              await setCache(cacheKey, data.items, 12 * 3600).catch(() => {});
             }
           } catch (err) {
-            console.error("Search query failed:", query, err);
+            console.error("[Trends API] Search query failed:", query, err);
           }
         }));
 
-        // Fetch stats for trending videos
+        // Fetch stats for trending videos in batches of 50
         const uniqueTrending = [];
         const seenVideoIds = new Set();
         for (const v of trendingVideos) {
-          const vid = v.id?.videoId;
+          const vid = v.id?.videoId || v.id;
           if (vid && !seenVideoIds.has(vid)) {
             seenVideoIds.add(vid);
             uniqueTrending.push(vid);
@@ -293,17 +315,18 @@ Do not generate generic queries. Generate specific, trend-focused queries.`;
 
           for (const chunk of chunks) {
             try {
+              const statsKey = await getYouTubeApiKey("videos.list");
               const statsUrl = new URL("https://www.googleapis.com/youtube/v3/videos");
               statsUrl.searchParams.set("part", "snippet,statistics");
               statsUrl.searchParams.set("id", chunk.join(","));
-              statsUrl.searchParams.set("key", apiKey);
+              statsUrl.searchParams.set("key", statsKey);
               const statsRes = await fetch(statsUrl.toString());
               const statsData = await statsRes.json();
               if (statsData.items) {
                 trendingWithStats.push(...statsData.items);
               }
             } catch(err) {
-              console.error("Stats fetch failed", err);
+              console.error("[Trends API] Stats batch fetch failed", err);
             }
           }
         }
@@ -313,17 +336,17 @@ Do not generate generic queries. Generate specific, trend-focused queries.`;
         const videosWithMetrics = trendingWithStats.map(item => {
           const virality = calculateViralityScore(item);
           return {
-            title: item.snippet.title,
-            channelId: item.snippet.channelId,
-            channelTitle: item.snippet.channelTitle,
-            viewCount: parseInt(item.statistics.viewCount || 0),
+            title: item.snippet?.title || '',
+            channelId: item.snippet?.channelId || '',
+            channelTitle: item.snippet?.channelTitle || '',
+            viewCount: parseInt(item.statistics?.viewCount || 0, 10),
             viralScore: virality.score,
           };
         }).sort((a, b) => b.viralScore - a.viralScore);
 
         const channelCounts = {};
         for (const v of videosWithMetrics) {
-          if (v.channelId === channelId) continue;
+          if (!v.channelId || v.channelId === channelId) continue;
           if (!channelCounts[v.channelId]) {
             channelCounts[v.channelId] = { id: v.channelId, title: v.channelTitle, totalScore: 0 };
           }
@@ -334,23 +357,13 @@ Do not generate generic queries. Generate specific, trend-focused queries.`;
           .sort((a, b) => b.totalScore - a.totalScore)
           .slice(0, 3);
 
-        // Fetch top competitor recent videos
+        // 5. Optimized: Fetch top competitor recent uploads via playlistItems (3 units vs 100 units each!)
         const competitorInsights = [];
         for (const comp of topCompetitors) {
           try {
-            const compVideosUrl = new URL("https://www.googleapis.com/youtube/v3/search");
-            compVideosUrl.searchParams.set("part", "snippet");
-            compVideosUrl.searchParams.set("channelId", comp.id);
-            compVideosUrl.searchParams.set("order", "date");
-            compVideosUrl.searchParams.set("type", "video");
-            compVideosUrl.searchParams.set("maxResults", "5");
-            compVideosUrl.searchParams.set("key", apiKey);
-            
-            const compRes = await fetch(compVideosUrl.toString());
-            const compData = await compRes.json();
-            
-            if (compData.items && compData.items.length > 0) {
-              const compTitles = compData.items.map(i => i.snippet.title);
+            const { videos: compVids } = await fetchRecentUploadsViaPlaylist(comp.id, 5);
+            if (compVids && compVids.length > 0) {
+              const compTitles = compVids.map(i => i.snippet?.title || i.title || '').filter(Boolean);
               competitorInsights.push({
                 channel: comp.title,
                 recentTitles: compTitles
