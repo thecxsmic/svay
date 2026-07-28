@@ -9,22 +9,74 @@ const client = createClient({
   authToken: process.env.TURSO_AUTH_TOKEN || "",
 });
 
+let tablesPromise = null;
+
+export async function ensureTablesExist() {
+  if (!process.env.TURSO_DATABASE_URL) return;
+  if (!tablesPromise) {
+    tablesPromise = (async () => {
+      try {
+        await client.execute(`
+          CREATE TABLE IF NOT EXISTS search_cache (
+            key TEXT PRIMARY KEY,
+            data TEXT,
+            expires_at INTEGER
+          )
+        `);
+
+        await client.execute(`
+          CREATE TABLE IF NOT EXISTS competitor_cache (
+            channel_id TEXT PRIMARY KEY,
+            data TEXT NOT NULL,
+            last_updated INTEGER NOT NULL
+          )
+        `);
+
+        await client.execute(`
+          CREATE TABLE IF NOT EXISTS channel_competitors_graph (
+            channel_id TEXT PRIMARY KEY,
+            competitor_ids TEXT NOT NULL,
+            niche TEXT,
+            keywords TEXT,
+            last_discovered INTEGER NOT NULL
+          )
+        `);
+
+        await client.execute(`
+          CREATE TABLE IF NOT EXISTS competitor_history (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            subject_id TEXT NOT NULL,
+            competitor_ids TEXT NOT NULL,
+            data TEXT NOT NULL,
+            created_at INTEGER NOT NULL
+          )
+        `);
+
+        await client.execute(`
+          CREATE TABLE IF NOT EXISTS trend_radar_history (
+            id TEXT PRIMARY KEY,
+            channel_id TEXT NOT NULL,
+            data TEXT NOT NULL,
+            created_at INTEGER NOT NULL
+          )
+        `);
+
+        console.log("[Turso] Auto-initialized all tables in database");
+      } catch (err) {
+        console.error("[Turso] Auto-table initialization failed:", err);
+        tablesPromise = null;
+      }
+    })();
+  }
+  await tablesPromise;
+}
+
 /**
  * Initialize the cache table if it doesn't exist
  */
 export async function initCacheTable() {
-  try {
-    await client.execute(`
-      CREATE TABLE IF NOT EXISTS search_cache (
-        key TEXT PRIMARY KEY,
-        data TEXT,
-        expires_at INTEGER
-      )
-    `);
-    console.log("[Turso] Cache table initialized");
-  } catch (error) {
-    console.error("[Turso] Initialization Error:", error);
-  }
+  await ensureTablesExist();
 }
 
 /**
@@ -544,6 +596,7 @@ export async function getTrendRadar(channelId) {
  */
 export async function saveCompetitors(channelId, competitors) {
   if (!process.env.TURSO_DATABASE_URL) return;
+  await ensureTablesExist();
 
   try {
     const now = Math.floor(Date.now() / 1000);
@@ -562,6 +615,7 @@ export async function saveCompetitors(channelId, competitors) {
  */
 export async function getCompetitors(channelId) {
   if (!process.env.TURSO_DATABASE_URL) return null;
+  await ensureTablesExist();
 
   try {
     const rs = await client.execute({
@@ -588,6 +642,24 @@ export async function getCompetitors(channelId) {
   } catch (error) {
     console.error("[Turso] Get Competitors Error:", error);
     return null;
+  }
+}
+
+/**
+ * Delete cached competitors for a channel to force refresh
+ */
+export async function deleteCompetitorCache(channelId) {
+  if (!process.env.TURSO_DATABASE_URL) return;
+  await ensureTablesExist();
+
+  try {
+    await client.execute({
+      sql: "DELETE FROM competitor_cache WHERE channel_id = ?",
+      args: [channelId],
+    });
+    console.log(`[Turso] Deleted competitor cache for channel ${channelId}`);
+  } catch (error) {
+    console.error("[Turso] Delete Competitor Cache Error:", error);
   }
 }
 
@@ -1040,9 +1112,86 @@ export async function initHistoryTables() {
       ON competitor_history(user_id, subject_id, created_at DESC)
     `);
 
+    // Persistent Competitor Relationship Graph (Discovered ONCE per channel)
+    await client.execute(`
+      CREATE TABLE IF NOT EXISTS channel_competitors_graph (
+        channel_id TEXT PRIMARY KEY,
+        competitor_ids TEXT NOT NULL,
+        niche TEXT,
+        keywords TEXT,
+        last_discovered INTEGER NOT NULL
+      )
+    `);
+
     console.log("[Turso] History tables initialized");
   } catch (error) {
     console.error("[Turso] History Tables Initialization Error:", error);
+  }
+}
+
+/**
+ * Save discovered competitor graph permanently for a channel (One-time discovery per channel)
+ */
+export async function saveCompetitorGraph(channelId, competitorIds, niche = '', keywords = '') {
+  if (!process.env.TURSO_DATABASE_URL) return;
+  await ensureTablesExist();
+
+  try {
+    const now = Math.floor(Date.now() / 1000);
+    await client.execute({
+      sql: `INSERT OR REPLACE INTO channel_competitors_graph 
+            (channel_id, competitor_ids, niche, keywords, last_discovered) 
+            VALUES (?, ?, ?, ?, ?)`,
+      args: [channelId, JSON.stringify(competitorIds), niche, keywords, now]
+    });
+    console.log(`[Turso Graph] Saved ${competitorIds.length} competitor IDs permanently for ${channelId}`);
+  } catch (error) {
+    console.error("[Turso Graph] Save Error:", error);
+  }
+}
+
+/**
+ * Get stored competitor graph for a channel (Bypasses search.list YouTube queries)
+ */
+export async function getStoredCompetitorGraph(channelId) {
+  if (!process.env.TURSO_DATABASE_URL) return null;
+  await ensureTablesExist();
+
+  try {
+    const rs = await client.execute({
+      sql: "SELECT competitor_ids, niche, keywords, last_discovered FROM channel_competitors_graph WHERE channel_id = ?",
+      args: [channelId]
+    });
+
+    if (rs.rows.length === 0) return null;
+    const row = rs.rows[0];
+    return {
+      competitor_ids: JSON.parse(row.competitor_ids || '[]'),
+      niche: row.niche,
+      keywords: row.keywords,
+      last_discovered: row.last_discovered
+    };
+  } catch (error) {
+    console.error("[Turso Graph] Get Error:", error);
+    return null;
+  }
+}
+
+/**
+ * Delete stored competitor graph for a channel to force re-discovery
+ */
+export async function deleteCompetitorGraph(channelId) {
+  if (!process.env.TURSO_DATABASE_URL) return;
+  await ensureTablesExist();
+
+  try {
+    await client.execute({
+      sql: "DELETE FROM channel_competitors_graph WHERE channel_id = ?",
+      args: [channelId]
+    });
+    console.log(`[Turso Graph] Deleted competitor graph for channel ${channelId}`);
+  } catch (error) {
+    console.error("[Turso Graph] Delete Error:", error);
   }
 }
 
