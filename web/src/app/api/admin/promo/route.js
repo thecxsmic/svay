@@ -62,18 +62,13 @@ export async function GET(req) {
       );
     }
 
-    // CSV export mode
+    // CSV export mode — AppSumo-compatible: no header, one code per line
     if (wantExport) {
       const rows = codesResult.rows;
-      const header = "Code,Tier,Duration (Days),Max Uses,Uses,Expiry\n";
-      const body = rows.map((r) => {
-        const expiry = r.expires_at
-          ? new Date(r.expires_at * 1000).toLocaleDateString()
-          : "No Limit";
-        return `${r.code},${r.tier || "standard"},${r.duration_days},${r.max_uses || "∞"},${r.uses_count},${expiry}`;
-      }).join("\n");
+      // Only emit the code value — AppSumo upload requires exactly one code per line, no header
+      const body = rows.map((r) => r.code).join("\n");
 
-      return new NextResponse(header + body, {
+      return new NextResponse(body, {
         status: 200,
         headers: {
           "Content-Type": "text/csv",
