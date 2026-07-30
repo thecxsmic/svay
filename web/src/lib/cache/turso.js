@@ -62,6 +62,45 @@ export async function ensureTablesExist() {
           )
         `);
 
+        await client.execute(`
+          CREATE TABLE IF NOT EXISTS support_tickets (
+            id TEXT PRIMARY KEY,
+            user_id TEXT,
+            user_email TEXT NOT NULL,
+            user_name TEXT,
+            topic TEXT NOT NULL DEFAULT 'other',
+            subject TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'open',
+            priority TEXT NOT NULL DEFAULT 'normal',
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          )
+        `);
+
+        await client.execute(`
+          CREATE TABLE IF NOT EXISTS support_messages (
+            id TEXT PRIMARY KEY,
+            ticket_id TEXT NOT NULL,
+            sender_type TEXT NOT NULL,
+            sender_id TEXT NOT NULL,
+            sender_name TEXT NOT NULL,
+            message TEXT NOT NULL,
+            created_at INTEGER NOT NULL
+          )
+        `);
+
+        await client.execute(`
+          CREATE TABLE IF NOT EXISTS in_app_notifications (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            title TEXT NOT NULL,
+            message TEXT NOT NULL,
+            link TEXT,
+            read INTEGER NOT NULL DEFAULT 0,
+            created_at INTEGER NOT NULL
+          )
+        `);
+
         console.log("[Turso] Auto-initialized all tables in database");
       } catch (err) {
         console.error("[Turso] Auto-table initialization failed:", err);
@@ -1258,5 +1297,198 @@ export async function incrementMonthlySearchCount(userId) {
     });
   } catch (err) {
     console.error("[Turso SearchUsage] Increment Error:", err);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * Support Ticket System
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+function genId(prefix = "id") {
+  return `${prefix}_${Math.random().toString(36).slice(2, 10)}${Math.random().toString(36).slice(2, 6)}`;
+}
+
+/** Create a new support ticket and its first message. Returns the ticket id. */
+export async function createSupportTicket({ userId, userEmail, userName, topic, subject, message }) {
+  await ensureTablesExist();
+  const now = Date.now();
+  const ticketId = genId("tkt");
+  const msgId = genId("msg");
+
+  await client.batch([
+    {
+      sql: `INSERT INTO support_tickets (id, user_id, user_email, user_name, topic, subject, status, priority, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, 'open', 'normal', ?, ?)`,
+      args: [ticketId, userId || null, userEmail, userName || "Customer", topic, subject, now, now],
+    },
+    {
+      sql: `INSERT INTO support_messages (id, ticket_id, sender_type, sender_id, sender_name, message, created_at)
+            VALUES (?, ?, 'user', ?, ?, ?, ?)`,
+      args: [msgId, ticketId, userId || userEmail, userName || "Customer", message, now],
+    },
+  ]);
+
+  return ticketId;
+}
+
+/** List tickets for a specific user (ordered newest first). */
+export async function getUserTickets(userId, userEmail, limit = 20) {
+  await ensureTablesExist();
+  try {
+    const rs = await client.execute({
+      sql: `SELECT * FROM support_tickets WHERE user_id = ? OR user_email = ? ORDER BY updated_at DESC LIMIT ?`,
+      args: [userId || "", userEmail || "", limit],
+    });
+    return rs.rows.map((r) => ({ ...r }));
+  } catch (err) {
+    console.error("[Turso] getUserTickets error:", err);
+    return [];
+  }
+}
+
+/** Get a single ticket by id (with ownership check unless admin). */
+export async function getTicketById(ticketId, { userId, userEmail, isAdmin } = {}) {
+  await ensureTablesExist();
+  try {
+    const rs = await client.execute({
+      sql: `SELECT * FROM support_tickets WHERE id = ?`,
+      args: [ticketId],
+    });
+    if (rs.rows.length === 0) return null;
+    const ticket = rs.rows[0];
+    if (!isAdmin && ticket.user_id !== userId && ticket.user_email !== userEmail) return null;
+    return { ...ticket };
+  } catch (err) {
+    console.error("[Turso] getTicketById error:", err);
+    return null;
+  }
+}
+
+/** Get all messages for a ticket. */
+export async function getTicketMessages(ticketId) {
+  await ensureTablesExist();
+  try {
+    const rs = await client.execute({
+      sql: `SELECT * FROM support_messages WHERE ticket_id = ? ORDER BY created_at ASC`,
+      args: [ticketId],
+    });
+    return rs.rows.map((r) => ({ ...r }));
+  } catch (err) {
+    console.error("[Turso] getTicketMessages error:", err);
+    return [];
+  }
+}
+
+/** Add a reply message to a ticket and update its updated_at + status. */
+export async function addTicketMessage({ ticketId, senderType, senderId, senderName, message, newStatus }) {
+  await ensureTablesExist();
+  const now = Date.now();
+  const msgId = genId("msg");
+  const status = newStatus || (senderType === "admin" ? "in_progress" : "waiting_admin");
+
+  await client.batch([
+    {
+      sql: `INSERT INTO support_messages (id, ticket_id, sender_type, sender_id, sender_name, message, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      args: [msgId, ticketId, senderType, senderId, senderName, message, now],
+    },
+    {
+      sql: `UPDATE support_tickets SET status = ?, updated_at = ? WHERE id = ?`,
+      args: [status, now, ticketId],
+    },
+  ]);
+
+  return msgId;
+}
+
+/** Update ticket status (admin). */
+export async function updateTicketStatus(ticketId, status) {
+  await ensureTablesExist();
+  await client.execute({
+    sql: `UPDATE support_tickets SET status = ?, updated_at = ? WHERE id = ?`,
+    args: [status, Date.now(), ticketId],
+  });
+}
+
+/** List all tickets (admin view). */
+export async function getAllTickets({ status, limit = 50, offset = 0 } = {}) {
+  await ensureTablesExist();
+  try {
+    let sql = `SELECT * FROM support_tickets`;
+    const args = [];
+    if (status && status !== "all") {
+      sql += ` WHERE status = ?`;
+      args.push(status);
+    }
+    sql += ` ORDER BY updated_at DESC LIMIT ? OFFSET ?`;
+    args.push(limit, offset);
+    const rs = await client.execute({ sql, args });
+    return rs.rows.map((r) => ({ ...r }));
+  } catch (err) {
+    console.error("[Turso] getAllTickets error:", err);
+    return [];
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * In-App Notification System
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/** Create a notification for a user. */
+export async function createNotification({ userId, title, message, link }) {
+  await ensureTablesExist();
+  const id = genId("ntf");
+  const now = Date.now();
+  await client.execute({
+    sql: `INSERT INTO in_app_notifications (id, user_id, title, message, link, read, created_at)
+          VALUES (?, ?, ?, ?, ?, 0, ?)`,
+    args: [id, userId, title, message, link || null, now],
+  });
+  return id;
+}
+
+/** Get notifications for a user (newest first, limit 30). */
+export async function getUserNotifications(userId, limit = 30) {
+  await ensureTablesExist();
+  try {
+    const rs = await client.execute({
+      sql: `SELECT * FROM in_app_notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT ?`,
+      args: [userId, limit],
+    });
+    return rs.rows.map((r) => ({ ...r }));
+  } catch (err) {
+    console.error("[Turso] getUserNotifications error:", err);
+    return [];
+  }
+}
+
+/** Count unread notifications for a user. */
+export async function getUnreadNotificationCount(userId) {
+  await ensureTablesExist();
+  try {
+    const rs = await client.execute({
+      sql: `SELECT COUNT(*) as cnt FROM in_app_notifications WHERE user_id = ? AND read = 0`,
+      args: [userId],
+    });
+    return Number(rs.rows[0]?.cnt || 0);
+  } catch (err) {
+    console.error("[Turso] getUnreadCount error:", err);
+    return 0;
+  }
+}
+
+/** Mark one or all notifications as read for a user. */
+export async function markNotificationsRead(userId, notificationId = null) {
+  await ensureTablesExist();
+  if (notificationId) {
+    await client.execute({
+      sql: `UPDATE in_app_notifications SET read = 1 WHERE id = ? AND user_id = ?`,
+      args: [notificationId, userId],
+    });
+  } else {
+    await client.execute({
+      sql: `UPDATE in_app_notifications SET read = 1 WHERE user_id = ?`,
+      args: [userId],
+    });
   }
 }

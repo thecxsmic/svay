@@ -13,6 +13,7 @@ import ResearchNotesModal from "./ResearchNotesModal";
 import SetupUserChannelModal from "./SetupUserChannelModal";
 import RemoveUserChannelModal from "./RemoveUserChannelModal";
 import MobileAppShell from "./MobileAppShell";
+import NotificationBell from "./NotificationBell";
 import { MobilePageTabsProvider } from "@/contexts/mobilePageTabs";
 import { getPlanLabel } from "@/lib/auth/plans";
 
@@ -475,6 +476,8 @@ export default function LayoutContent({ children, subscription }) {
               >
                 <LifeBuoy className="h-3.5 w-3.5" />
               </Link>
+
+              <NotificationBell />
 
               <Link
                 href="/billing"

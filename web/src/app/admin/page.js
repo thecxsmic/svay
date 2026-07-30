@@ -33,7 +33,15 @@ import {
   RefreshCw,
   AlertTriangle,
   Download,
-  Layers
+  Layers,
+  LifeBuoy,
+  MessageSquare,
+  Send,
+  Clock,
+  Circle,
+  ChevronLeft,
+  Filter,
+  Mail
 } from "lucide-react";
 
 function usd(cents) {
@@ -119,6 +127,17 @@ export default function AdminPage() {
   const [editingQuotaValue, setEditingQuotaValue] = useState("");
   const [editingLabelValue, setEditingLabelValue] = useState("");
 
+  // Support Tickets admin
+  const [tickets, setTickets] = useState([]);
+  const [loadingTickets, setLoadingTickets] = useState(false);
+  const [ticketFilter, setTicketFilter] = useState("all");
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  const [ticketMessages, setTicketMessages] = useState([]);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [adminReply, setAdminReply] = useState("");
+  const [replyStatus, setReplyStatus] = useState("in_progress");
+  const [sendingReply, setSendingReply] = useState(false);
+
   // Check admin authorization
   useEffect(() => {
     if (isLoaded) {
@@ -129,6 +148,7 @@ export default function AdminPage() {
         fetchChannels();
         fetchAffiliates();
         fetchApiKeys();
+        fetchTickets();
       } else {
         setIsAdmin(false);
         setLoadingData(false);
@@ -626,6 +646,85 @@ export default function AdminPage() {
     });
   };
 
+  const fetchTickets = async (status) => {
+    try {
+      setLoadingTickets(true);
+      const s = status || ticketFilter;
+      const res = await fetch(`/api/admin/tickets?status=${s}`);
+      if (res.ok) {
+        const data = await res.json();
+        setTickets(data.tickets || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch tickets:", err);
+    } finally {
+      setLoadingTickets(false);
+    }
+  };
+
+  const fetchTicketDetail = async (ticket) => {
+    setSelectedTicket(ticket);
+    setAdminReply("");
+    setReplyStatus("in_progress");
+    try {
+      setLoadingMessages(true);
+      const res = await fetch(`/api/support/tickets/${ticket.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setTicketMessages(data.messages || []);
+        // refresh ticket with latest
+        setSelectedTicket((prev) => ({ ...prev, ...data.ticket }));
+      }
+    } catch (err) {
+      console.error("Failed to fetch ticket detail:", err);
+    } finally {
+      setLoadingMessages(false);
+    }
+  };
+
+  const handleSendAdminReply = async () => {
+    if (!adminReply.trim() || !selectedTicket) return;
+    setSendingReply(true);
+    try {
+      const res = await fetch("/api/admin/tickets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ticketId: selectedTicket.id,
+          message: adminReply.trim(),
+          status: replyStatus,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to send");
+      setAdminReply("");
+      showToast("Reply sent");
+      fetchTicketDetail(selectedTicket);
+      fetchTickets();
+    } catch (err) {
+      showToast(err.message, "error");
+    } finally {
+      setSendingReply(false);
+    }
+  };
+
+  const handleUpdateTicketStatus = async (ticketId, newStatus) => {
+    try {
+      const res = await fetch("/api/admin/tickets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ticketId, status: newStatus }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      showToast("Status updated");
+      setSelectedTicket((prev) => (prev ? { ...prev, status: newStatus } : prev));
+      fetchTickets();
+    } catch (err) {
+      showToast(err.message, "error");
+    }
+  };
+
   function formatNumber(num) {
     if (!num) return "0";
     const parsed = parseInt(num, 10);
@@ -700,11 +799,15 @@ export default function AdminPage() {
             { id: "affiliates", label: "Affiliates & Payouts", icon: Megaphone },
             { id: "shares", label: "Public Share Reports", icon: Globe },
             { id: "cache", label: "Cache Manager", icon: Database },
-            { id: "apikeys", label: "API Keys", icon: Key }
+            { id: "apikeys", label: "API Keys", icon: Key },
+            { id: "support", label: "Support Tickets", icon: LifeBuoy }
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                setActiveTab(tab.id);
+                if (tab.id === "support") { setSelectedTicket(null); fetchTickets(); }
+              }}
               className={`py-4 text-[9px] sm:text-[10px] uppercase tracking-widest font-black transition-all border-b-2 whitespace-nowrap cursor-pointer flex items-center gap-2 ${
                 activeTab === tab.id 
                   ? "border-brand-volt text-white font-black" 
@@ -713,6 +816,11 @@ export default function AdminPage() {
             >
               <tab.icon className="w-3.5 h-3.5" />
               {tab.label}
+              {tab.id === "support" && tickets.filter(t => t.status === "open" || t.status === "waiting_admin").length > 0 && (
+                <span className="ml-0.5 flex items-center justify-center w-4 h-4 rounded-full bg-brand-volt text-black text-[8px] font-black">
+                  {tickets.filter(t => t.status === "open" || t.status === "waiting_admin").length}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -2022,6 +2130,237 @@ export default function AdminPage() {
               </ul>
             </section>
 
+          </div>
+        )}
+
+        {/* ─── Support Tickets Tab ─────────────────────────────────────────── */}
+        {activeTab === "support" && (
+          <div className="space-y-6 animate-in fade-in duration-300">
+            {!selectedTicket ? (
+              /* ── Ticket List View ── */
+              <>
+                {/* Filter bar */}
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-1.5">
+                    <Filter className="w-3.5 h-3.5 text-zinc-500" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Status</span>
+                  </div>
+                  {["all", "open", "in_progress", "waiting_admin", "waiting_user", "resolved", "closed"].map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => { setTicketFilter(s); fetchTickets(s); }}
+                      className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-wider cursor-pointer transition-all border ${
+                        ticketFilter === s
+                          ? "bg-brand-volt/10 border-brand-volt/30 text-brand-volt"
+                          : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:text-zinc-300"
+                      }`}
+                    >
+                      {s === "all" ? "All" : s.replace("_", " ")}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => fetchTickets()}
+                    disabled={loadingTickets}
+                    className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-wider cursor-pointer bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white transition-all"
+                  >
+                    <RefreshCw className={`w-3 h-3 ${loadingTickets ? "animate-spin" : ""}`} />
+                    Refresh
+                  </button>
+                </div>
+
+                {/* Ticket list */}
+                <section className="bg-zinc-950/80 border border-white/[0.06] rounded-2xl overflow-hidden">
+                  {loadingTickets ? (
+                    <div className="flex items-center justify-center py-16">
+                      <Loader2 className="w-6 h-6 text-zinc-600 animate-spin" />
+                    </div>
+                  ) : tickets.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 gap-3">
+                      <LifeBuoy className="w-10 h-10 text-zinc-800" />
+                      <p className="text-zinc-600 text-xs font-medium">No tickets found</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-white/[0.04]">
+                      {tickets.map((t) => {
+                        const STATUS = {
+                          open: { label: "Open", color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20", icon: Circle },
+                          in_progress: { label: "In Progress", color: "text-[#00f0ff]", bg: "bg-[#00f0ff]/10 border-[#00f0ff]/20", icon: RefreshCw },
+                          waiting_admin: { label: "Waiting on us", color: "text-amber-400", bg: "bg-amber-500/10 border-amber-500/20", icon: Clock },
+                          waiting_user: { label: "Waiting on you", color: "text-violet-400", bg: "bg-violet-500/10 border-violet-500/20", icon: Clock },
+                          resolved: { label: "Resolved", color: "text-zinc-500", bg: "bg-zinc-700/10 border-zinc-700/20", icon: CheckCircle2 },
+                          closed: { label: "Closed", color: "text-zinc-600", bg: "bg-zinc-800/10 border-zinc-800/20", icon: CheckCircle2 },
+                        };
+                        const cfg = STATUS[t.status] || STATUS.open;
+                        const StatusIcon = cfg.icon;
+                        const ago = (() => {
+                          const diff = Date.now() - Number(t.created_at);
+                          const m = Math.floor(diff / 60000);
+                          if (m < 1) return "just now";
+                          if (m < 60) return `${m}m ago`;
+                          const h = Math.floor(m / 60);
+                          if (h < 24) return `${h}h ago`;
+                          return `${Math.floor(h / 24)}d ago`;
+                        })();
+                        return (
+                          <div
+                            key={t.id}
+                            onClick={() => fetchTicketDetail(t)}
+                            className="flex items-start gap-4 px-5 py-4 hover:bg-white/[0.02] cursor-pointer transition-colors group"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-wrap items-center gap-2 mb-1">
+                                <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-wider ${cfg.color} ${cfg.bg}`}>
+                                  <StatusIcon className="w-2.5 h-2.5" strokeWidth={2.5} />
+                                  {cfg.label}
+                                </span>
+                                <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-700 border border-zinc-800 px-2 py-0.5 rounded-full">
+                                  {t.topic}
+                                </span>
+                              </div>
+                              <p className="text-xs font-semibold text-white truncate group-hover:text-brand-volt transition-colors">
+                                {t.subject}
+                              </p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Mail className="w-3 h-3 text-zinc-600" />
+                                <span className="text-[10px] text-zinc-500 truncate">{t.user_email || t.user_name || "Unknown"}</span>
+                                <span className="text-[10px] text-zinc-700">·</span>
+                                <Clock className="w-3 h-3 text-zinc-700" />
+                                <span className="text-[10px] text-zinc-700">{ago}</span>
+                              </div>
+                            </div>
+                            <ChevronLeft className="w-4 h-4 text-zinc-700 rotate-180 group-hover:text-zinc-400 transition-colors flex-shrink-0 mt-1" />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </section>
+
+                {/* Summary row */}
+                {tickets.length > 0 && (
+                  <p className="text-center text-[10px] text-zinc-700">
+                    {tickets.length} ticket{tickets.length !== 1 ? "s" : ""} · {tickets.filter(t => t.status === "open").length} open · {tickets.filter(t => t.status === "waiting_admin").length} waiting on us
+                  </p>
+                )}
+              </>
+            ) : (
+              /* ── Ticket Detail View ── */
+              <>
+                {/* Back + header */}
+                <div className="flex items-start gap-4">
+                  <button
+                    onClick={() => { setSelectedTicket(null); setTicketMessages([]); }}
+                    className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-white transition-colors cursor-pointer bg-transparent border-none"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" /> Back
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-sm font-bold text-white truncate">{selectedTicket.subject}</h2>
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                      <span className="text-[9px] uppercase tracking-wider font-bold text-zinc-600 border border-zinc-800 px-2 py-0.5 rounded-full">{selectedTicket.topic}</span>
+                      <span className="text-[10px] text-zinc-600">{selectedTicket.user_email || selectedTicket.user_name}</span>
+                      {selectedTicket.user_id && (
+                        <span className="text-[9px] text-zinc-700 font-mono">{selectedTicket.user_id.slice(0, 16)}…</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status quick-update */}
+                <section className="bg-zinc-950/80 border border-white/[0.06] rounded-2xl p-4 sm:p-5">
+                  <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-3">Change Status</p>
+                  <div className="flex flex-wrap gap-2">
+                    {["open", "in_progress", "waiting_admin", "waiting_user", "resolved", "closed"].map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => handleUpdateTicketStatus(selectedTicket.id, s)}
+                        className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-wider cursor-pointer transition-all border ${
+                          selectedTicket.status === s
+                            ? "bg-brand-volt/10 border-brand-volt/40 text-brand-volt"
+                            : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:text-zinc-200"
+                        }`}
+                      >
+                        {s.replace("_", " ")}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                {/* Message thread */}
+                <section className="bg-zinc-950/80 border border-white/[0.06] rounded-2xl overflow-hidden">
+                  <div className="border-b border-white/[0.05] px-5 py-3 flex items-center gap-2">
+                    <MessageSquare className="w-3.5 h-3.5 text-zinc-500" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Conversation</span>
+                  </div>
+                  {loadingMessages ? (
+                    <div className="flex items-center justify-center py-10">
+                      <Loader2 className="w-5 h-5 text-zinc-600 animate-spin" />
+                    </div>
+                  ) : ticketMessages.length === 0 ? (
+                    <div className="px-5 py-8 text-center">
+                      <p className="text-[11px] text-zinc-600">No messages in this thread yet.</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-white/[0.03] max-h-[480px] overflow-y-auto">
+                      {ticketMessages.map((msg, i) => {
+                        const isAdmin = msg.sender_type === "admin";
+                        const ts = new Date(Number(msg.created_at)).toLocaleString("en-US", {
+                          month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
+                        });
+                        return (
+                          <div key={i} className={`px-5 py-4 ${isAdmin ? "bg-brand-volt/[0.02]" : ""}`}>
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                                isAdmin
+                                  ? "text-brand-volt border-brand-volt/20 bg-brand-volt/10"
+                                  : "text-zinc-400 border-zinc-700 bg-zinc-900"
+                              }`}>
+                                {isAdmin ? "Svay Support" : (msg.sender_name || "User")}
+                              </span>
+                              <span className="text-[10px] text-zinc-700">{ts}</span>
+                            </div>
+                            <p className="text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap">{msg.message}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </section>
+
+                {/* Admin reply box */}
+                <section className="bg-zinc-950/80 border border-white/[0.06] rounded-2xl p-4 sm:p-5 space-y-4">
+                  <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Send Reply</p>
+                  <textarea
+                    rows={5}
+                    value={adminReply}
+                    onChange={(e) => setAdminReply(e.target.value)}
+                    placeholder="Type your reply to the user…"
+                    className="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white placeholder:text-zinc-700 outline-none focus:border-zinc-600 resize-none transition-colors"
+                  />
+                  <div className="flex flex-wrap items-center gap-3">
+                    <label className="text-[9px] font-black uppercase tracking-widest text-zinc-600">Set status after reply:</label>
+                    <select
+                      value={replyStatus}
+                      onChange={(e) => setReplyStatus(e.target.value)}
+                      className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 text-[10px] text-white outline-none focus:border-zinc-600 cursor-pointer"
+                    >
+                      <option value="in_progress">In Progress</option>
+                      <option value="waiting_user">Waiting on User</option>
+                      <option value="resolved">Resolved</option>
+                      <option value="closed">Closed</option>
+                    </select>
+                    <button
+                      onClick={handleSendAdminReply}
+                      disabled={sendingReply || !adminReply.trim()}
+                      className="ml-auto flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-volt text-black text-[10px] font-black uppercase tracking-wider cursor-pointer hover:bg-brand-volt/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                    >
+                      {sendingReply ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                      {sendingReply ? "Sending…" : "Send Reply"}
+                    </button>
+                  </div>
+                </section>
+              </>
+            )}
           </div>
         )}
 
