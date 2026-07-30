@@ -1196,3 +1196,67 @@ export async function deleteCompetitorGraph(channelId) {
 }
 
 
+// ─────────────────────────────────────────────────────────────────────────────
+// SEARCH USAGE TRACKING (for AppSumo monthly caps)
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function ensureSearchUsageTable() {
+  try {
+    await client.execute(`
+      CREATE TABLE IF NOT EXISTS user_search_usage (
+        user_id TEXT NOT NULL,
+        year_month TEXT NOT NULL,
+        search_count INTEGER DEFAULT 0,
+        updated_at INTEGER,
+        PRIMARY KEY (user_id, year_month)
+      )
+    `);
+  } catch {
+    // already exists
+  }
+}
+
+/**
+ * Get the current month's search count for a user.
+ * @param {string} userId
+ * @returns {Promise<number>}
+ */
+export async function getMonthlySearchCount(userId) {
+  if (!process.env.TURSO_DATABASE_URL) return 0;
+  await ensureSearchUsageTable();
+
+  const yearMonth = new Date().toISOString().slice(0, 7); // "2026-07"
+  try {
+    const rs = await client.execute({
+      sql: "SELECT search_count FROM user_search_usage WHERE user_id = ? AND year_month = ?",
+      args: [userId, yearMonth],
+    });
+    return rs.rows.length > 0 ? (rs.rows[0].search_count || 0) : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Increment the monthly search count for a user by 1.
+ * @param {string} userId
+ */
+export async function incrementMonthlySearchCount(userId) {
+  if (!process.env.TURSO_DATABASE_URL) return;
+  await ensureSearchUsageTable();
+
+  const yearMonth = new Date().toISOString().slice(0, 7);
+  const now = Math.floor(Date.now() / 1000);
+  try {
+    await client.execute({
+      sql: `INSERT INTO user_search_usage (user_id, year_month, search_count, updated_at)
+            VALUES (?, ?, 1, ?)
+            ON CONFLICT(user_id, year_month) DO UPDATE SET
+              search_count = search_count + 1,
+              updated_at = excluded.updated_at`,
+      args: [userId, yearMonth, now],
+    });
+  } catch (err) {
+    console.error("[Turso SearchUsage] Increment Error:", err);
+  }
+}

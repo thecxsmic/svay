@@ -14,6 +14,7 @@ import SetupUserChannelModal from "./SetupUserChannelModal";
 import RemoveUserChannelModal from "./RemoveUserChannelModal";
 import MobileAppShell from "./MobileAppShell";
 import { MobilePageTabsProvider } from "@/contexts/mobilePageTabs";
+import { getPlanLabel } from "@/lib/auth/plans";
 
 const navItems = [
   { name: 'Home', href: '/dashboard', icon: Home },
@@ -77,6 +78,8 @@ export default function LayoutContent({ children, subscription }) {
                   subscription?.planId?.startsWith("promo_") ||
                   subscription?.subscriptionId?.startsWith("admin_grant") || 
                   subscription?.planId?.startsWith("admin_grant");
+
+  const planLabel = getPlanLabel(subscription?.planId, isPromo);
 
   const promoExpiryStr = subscription?.currentPeriodEnd 
     ? new Date(subscription.currentPeriodEnd * 1000).toLocaleDateString()
@@ -324,9 +327,11 @@ export default function LayoutContent({ children, subscription }) {
                 }} />
                 <div className="min-w-0">
                   <p className="text-[10px] font-bold text-white uppercase tracking-tight truncate">
-                    {isPromo ? "Promo Account" : "Pro Account"}
+                    {planLabel} Account
                   </p>
-                  <p className={`text-[8px] font-bold uppercase tracking-widest ${isPromo ? 'text-[#00f0ff]' : 'text-accents-4'}`}>
+                  <p className={`text-[8px] font-bold uppercase tracking-widest ${
+                    planLabel === "Lite" ? 'text-amber-400' : isPromo ? 'text-[#00f0ff]' : 'text-accents-4'
+                  }`}>
                     {isPromo && promoExpiryStr ? `Expires: ${promoExpiryStr}` : "Status: Active"}
                   </p>
                 </div>
@@ -479,7 +484,7 @@ export default function LayoutContent({ children, subscription }) {
                 <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.06] to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
                 <Zap className="relative h-3 w-3 text-[#00f0ff]" fill="currentColor" />
                 <span className="relative">
-                  {isPromo ? "Promo" : "Pro"}
+                  {planLabel}
                 </span>
               </Link>
             </div>

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { channelSearchPipeline } from "@/lib/search/channel-pipeline";
 import { 
   searchChannelsLocal, 
@@ -13,6 +14,9 @@ import { fetchChannelVideos } from "@/lib/youtube/channels";
 import { getYouTubeApiKey } from "@/lib/youtube/apiKeyManager";
 import { apiSuccess, apiError } from "@/lib/utils/response";
 import { getIsDemoMode, MOCK_CHANNELS } from "@/lib/utils/demoMock";
+import { getSubscriptionStatus } from "@/lib/auth/subscription";
+import { getPlanFeatures } from "@/lib/auth/plans";
+import { checkRateLimit } from "@/lib/rateLimit";
 
 /**
  * Production Competitor Discovery Engine (Mirrors test-competitors.mjs)
@@ -374,6 +378,19 @@ export async function getMinimalQuotaCompetitors(channel, videos = [], forceRefr
   }
 }
 
+/**
+ * Returns true if the channelId looks like a direct @handle or a YouTube URL.
+ * These bypass the keyword daily limit since they resolve via channels.list (1 quota unit).
+ */
+function isDirectLookup(channelId) {
+  if (!channelId) return false;
+  return (
+    channelId.startsWith("@") ||
+    channelId.startsWith("http") ||
+    channelId.startsWith("UC") // raw channel ID — already resolved, 0 search quota
+  );
+}
+
 export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
@@ -391,6 +408,40 @@ export async function GET(req) {
         source: "demo"
       });
     }
+
+    // ── Plan enforcement for competitor keyword searches ────────────────────
+    // @handle / UC... / URL lookups bypass entirely — they don't call search.list
+    const isDirect = isDirectLookup(channelId);
+
+    if (!isDirect) {
+      // Only apply rate limit to keyword-based lookups
+      const { userId } = await auth();
+      if (userId) {
+        const sub = await getSubscriptionStatus(userId);
+        const plan = getPlanFeatures(sub?.planId);
+
+        if (isFinite(plan.competitorDailyKeyword)) {
+          const rl = checkRateLimit(
+            `competitor_kw:${userId}`,
+            plan.competitorDailyKeyword,
+            24 * 60 * 60 * 1000
+          );
+          if (rl.limited) {
+            return apiError(
+              Object.assign(
+                new Error(
+                  `Daily competitor keyword search limit reached (${plan.competitorDailyKeyword}/day). ` +
+                  "Search by @username or paste the channel URL to bypass this limit!"
+                ),
+                { competitorDailyLimitReached: true, remaining: 0, tier: plan.tier }
+              ),
+              429
+            );
+          }
+        }
+      }
+    }
+    // ── End plan enforcement ──────────────────────────────────────────────
 
     const pipelineData = await channelSearchPipeline(channelId);
     if (!pipelineData || !pipelineData.channel) {

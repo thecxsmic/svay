@@ -62,10 +62,12 @@ export async function POST(req) {
     }
 
     const durationDays = promo.duration_days || 30;
+    // If the code has a tier set (e.g. appsumo_lite / appsumo_pro) use that as the planId
+    // directly so feature flags resolve correctly. Otherwise fall back to legacy promo_Nd format.
     const expiresAt = now + (durationDays * 24 * 60 * 60);
     const redemptionId = crypto.randomUUID();
     const subscriptionId = `promo_${code.toLowerCase()}_${crypto.randomBytes(4).toString("hex")}`;
-    const planId = `promo_${durationDays}d`;
+    const planId = promo.tier || `promo_${durationDays}d`;
 
     // Perform database updates
     const transaction = await client.transaction();
@@ -96,10 +98,17 @@ export async function POST(req) {
       throw txError;
     }
 
+    const tierLabel = promo.tier === "appsumo_lite"
+      ? "AppSumo Lite"
+      : promo.tier === "appsumo_pro"
+      ? "AppSumo Pro"
+      : `${durationDays} days of free Pro`;
+
     return NextResponse.json({
       success: true,
-      message: `Promo code redeemed! You got ${durationDays} days of free Pro access.`,
+      message: `Promo code redeemed! You now have ${tierLabel} access.`,
       expiresAt,
+      planId,
     });
   } catch (error) {
     console.error("Promo Redemption Error:", error);

@@ -31,7 +31,9 @@ import {
   ToggleLeft,
   ToggleRight,
   RefreshCw,
-  AlertTriangle
+  AlertTriangle,
+  Download,
+  Layers
 } from "lucide-react";
 
 function usd(cents) {
@@ -71,9 +73,17 @@ export default function AdminPage() {
   const [durationDays, setDurationDays] = useState("30");
   const [maxUses, setMaxUses] = useState("");
   const [expiresAtDate, setExpiresAtDate] = useState("");
+  const [codeTier, setCodeTier] = useState(""); // "" = standard, "appsumo_lite", "appsumo_pro"
   const [creatingCode, setCreatingCode] = useState(false);
   const [codeError, setCodeError] = useState("");
   const [codeSuccess, setCodeSuccess] = useState("");
+
+  // Bulk generation state
+  const [bulkCount, setBulkCount] = useState("100");
+  const [bulkGenerating, setBulkGenerating] = useState(false);
+  const [bulkError, setBulkError] = useState("");
+  const [bulkSuccess, setBulkSuccess] = useState("");
+  const [exportingCSV, setExportingCSV] = useState(false);
 
   // Form states - direct grant
   const [grantEmailOrId, setGrantEmailOrId] = useState("");
@@ -273,6 +283,63 @@ export default function AdminPage() {
       setCodeError(err.message);
     } finally {
       setCreatingCode(false);
+    }
+  };
+
+  const handleBulkGenerate = async () => {
+    const count = parseInt(bulkCount, 10);
+    if (!count || count < 1 || count > 1000) {
+      setBulkError("Enter a number between 1 and 1000");
+      return;
+    }
+    setBulkGenerating(true);
+    setBulkError("");
+    setBulkSuccess("");
+    try {
+      const days = parseInt(durationDays, 10);
+      let expiresTimestamp = null;
+      if (expiresAtDate) {
+        expiresTimestamp = Math.floor(new Date(expiresAtDate).getTime() / 1000);
+      }
+      const res = await fetch("/api/admin/promo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          duration_days: days,
+          max_uses: maxUses ? parseInt(maxUses, 10) : null,
+          expires_at: expiresTimestamp,
+          tier: codeTier || null,
+          bulk_count: count,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Bulk generation failed");
+      setBulkSuccess(`${data.count} codes generated successfully!`);
+      fetchAdminData();
+    } catch (err) {
+      setBulkError(err.message);
+    } finally {
+      setBulkGenerating(false);
+    }
+  };
+
+  const handleExportCSV = async (tier) => {
+    setExportingCSV(true);
+    try {
+      const tierParam = tier ? `&tier=${encodeURIComponent(tier)}` : "";
+      const res = await fetch(`/api/admin/promo?export=true${tierParam}`);
+      if (!res.ok) throw new Error("Export failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = tier ? `svay-promo-codes-${tier}.csv` : "svay-promo-codes.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      showToast(err.message, "error");
+    } finally {
+      setExportingCSV(false);
     }
   };
 
@@ -1002,21 +1069,50 @@ export default function AdminPage() {
                     </div>
                     <div>
                       <h2 className="font-display font-extrabold text-base sm:text-lg text-white uppercase">Generate Promo Code</h2>
-                      <p className="text-zinc-500 text-[10px] sm:text-xs mt-0.5">Create custom redeemable promo codes for users.</p>
+                      <p className="text-zinc-500 text-[10px] sm:text-xs mt-0.5">Create AppSumo or standard promo codes.</p>
                     </div>
                   </div>
 
                   <form onSubmit={handleCreateCode} className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                      {/* Tier selector */}
+                      <div className="space-y-1.5 sm:col-span-2">
+                        <label className="text-[9px] sm:text-[10px] font-black text-zinc-400 uppercase tracking-wider">Plan Tier</label>
+                        <div className="flex gap-2 flex-wrap">
+                          {[
+                            { value: "", label: "Standard", color: "zinc" },
+                            { value: "appsumo_lite", label: "AppSumo Lite", color: "amber" },
+                            { value: "appsumo_pro", label: "AppSumo Pro", color: "brand-volt" },
+                          ].map((t) => (
+                            <button
+                              key={t.value}
+                              type="button"
+                              onClick={() => setCodeTier(t.value)}
+                              className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider border transition-all cursor-pointer ${
+                                codeTier === t.value
+                                  ? t.value === "appsumo_lite"
+                                    ? "bg-amber-500/15 border-amber-500/40 text-amber-300"
+                                    : t.value === "appsumo_pro"
+                                    ? "bg-brand-volt/15 border-brand-volt/40 text-brand-volt"
+                                    : "bg-white/10 border-white/20 text-white"
+                                  : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700"
+                              }`}
+                            >
+                              {t.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
                       <div className="space-y-1.5 sm:col-span-2">
                         <label className="text-[9px] sm:text-[10px] font-black text-zinc-400 uppercase tracking-wider">Promo Code String</label>
                         <input 
                           type="text"
-                          placeholder="e.g. FREE30, VIPMONTH"
+                          placeholder="e.g. SUMO-ABC1-XY2Z (leave blank for bulk)"
                           value={newCode}
                           onChange={(e) => setNewCode(e.target.value.toUpperCase())}
                           className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm focus:outline-none focus:border-brand-volt transition-all placeholder:text-zinc-650 font-mono"
-                          required
                         />
                       </div>
 
@@ -1032,6 +1128,7 @@ export default function AdminPage() {
                           <option value="30">30 Days (1 Month)</option>
                           <option value="90">90 Days (3 Months)</option>
                           <option value="365">365 Days (1 Year)</option>
+                          <option value="36500">Lifetime (AppSumo LTD)</option>
                         </select>
                       </div>
 
@@ -1039,7 +1136,7 @@ export default function AdminPage() {
                         <label className="text-[9px] sm:text-[10px] font-black text-zinc-400 uppercase tracking-wider">Max Uses (Optional)</label>
                         <input 
                           type="number"
-                          placeholder="e.g. 50 (empty = unlimited)"
+                          placeholder="e.g. 1 (empty = unlimited)"
                           value={maxUses}
                           onChange={(e) => setMaxUses(e.target.value)}
                           className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm focus:outline-none focus:border-brand-volt transition-all placeholder:text-zinc-650"
@@ -1070,18 +1167,61 @@ export default function AdminPage() {
 
                     <button
                       type="submit"
-                      disabled={creatingCode}
+                      disabled={creatingCode || !newCode.trim()}
                       className="w-full py-3 bg-brand-volt hover:bg-brand-volt/90 text-black font-black text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                     >
                       {creatingCode ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
                         <>
-                          <Plus className="w-3.5 h-3.5 stroke-[3]" /> Generate Code
+                          <Plus className="w-3.5 h-3.5 stroke-[3]" /> Generate Single Code
                         </>
                       )}
                     </button>
                   </form>
+
+                  {/* Bulk generate divider */}
+                  <div className="border-t border-white/5 pt-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Layers className="w-3.5 h-3.5 text-zinc-500" />
+                      <p className="text-[10px] font-black uppercase tracking-wider text-zinc-400">Bulk Generate (AppSumo batch)</p>
+                    </div>
+
+                    <div className="flex gap-2 items-end">
+                      <div className="flex-1 space-y-1">
+                        <label className="text-[9px] font-black text-zinc-500 uppercase tracking-wider">How many codes?</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="1000"
+                          value={bulkCount}
+                          onChange={(e) => setBulkCount(e.target.value)}
+                          className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-brand-volt transition-all"
+                          placeholder="e.g. 500"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleBulkGenerate}
+                        disabled={bulkGenerating}
+                        className="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-white font-black text-[10px] uppercase tracking-wider rounded-xl transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shrink-0"
+                      >
+                        {bulkGenerating ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Layers className="w-3.5 h-3.5" />
+                        )}
+                        Bulk Gen
+                      </button>
+                    </div>
+
+                    {bulkError && <p className="text-brand-rose text-[11px] font-semibold">{bulkError}</p>}
+                    {bulkSuccess && (
+                      <p className="text-emerald-400 text-[11px] font-semibold flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3 h-3 shrink-0" /> {bulkSuccess}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </section>
 
@@ -1169,12 +1309,35 @@ export default function AdminPage() {
                     <p className="text-zinc-500 text-[10px] sm:text-xs mt-0.5">List of generated promo codes and stats.</p>
                   </div>
                 </div>
-                <button 
-                  onClick={fetchAdminData}
-                  className="px-3.5 py-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-850 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-white transition-all cursor-pointer w-full sm:w-auto"
-                >
-                  Refresh
-                </button>
+                <div className="flex gap-2 flex-wrap">
+                  <button 
+                    onClick={fetchAdminData}
+                    className="px-3.5 py-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-850 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-white transition-all cursor-pointer"
+                  >
+                    Refresh
+                  </button>
+                  <button
+                    onClick={() => handleExportCSV("appsumo_lite")}
+                    disabled={exportingCSV}
+                    className="px-3.5 py-2 bg-amber-500/10 border border-amber-500/20 hover:border-amber-500/40 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-amber-300 transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    <Download className="w-3 h-3" /> Lite CSV
+                  </button>
+                  <button
+                    onClick={() => handleExportCSV("appsumo_pro")}
+                    disabled={exportingCSV}
+                    className="px-3.5 py-2 bg-brand-volt/10 border border-brand-volt/20 hover:border-brand-volt/40 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-brand-volt transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    <Download className="w-3 h-3" /> Pro CSV
+                  </button>
+                  <button
+                    onClick={() => handleExportCSV(null)}
+                    disabled={exportingCSV}
+                    className="px-3.5 py-2 bg-zinc-900 border border-zinc-700 hover:border-zinc-500 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-zinc-300 transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    <Download className="w-3 h-3" /> All CSV
+                  </button>
+                </div>
               </div>
 
               {loadingData ? (
@@ -1191,6 +1354,7 @@ export default function AdminPage() {
                     <thead>
                       <tr className="border-b border-white/[0.06] text-zinc-400 font-bold uppercase text-[9px] sm:text-[10px] tracking-wider">
                         <th className="py-3 px-4 sm:py-4 sm:px-6">Code</th>
+                        <th className="py-3 px-4 sm:py-4 sm:px-6">Tier</th>
                         <th className="py-3 px-4 sm:py-4 sm:px-6">Duration</th>
                         <th className="py-3 px-4 sm:py-4 sm:px-6">Redemptions</th>
                         <th className="py-3 px-4 sm:py-4 sm:px-6">Expiry</th>
@@ -1219,8 +1383,21 @@ export default function AdminPage() {
                                 )}
                               </button>
                             </td>
+                            <td className="py-3 px-4 sm:py-4 sm:px-6">
+                              {item.tier === "appsumo_lite" ? (
+                                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500/10 border border-amber-500/20 text-amber-300">Lite</span>
+                              ) : item.tier === "appsumo_pro" ? (
+                                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-brand-volt/10 border border-brand-volt/20 text-brand-volt">Pro</span>
+                              ) : (
+                                <span className="text-[9px] text-zinc-600 font-bold uppercase">Standard</span>
+                              )}
+                            </td>
                             <td className="py-3 px-4 sm:py-4 sm:px-6 font-medium text-zinc-300">
-                              {item.duration_days} Days
+                              {item.duration_days >= 36500 ? (
+                                <span className="text-[#00f0ff] font-bold">Lifetime</span>
+                              ) : (
+                                `${item.duration_days} Days`
+                              )}
                             </td>
                             <td className="py-3 px-4 sm:py-4 sm:px-6 font-medium text-zinc-300">
                               <div className="flex items-center gap-1">
